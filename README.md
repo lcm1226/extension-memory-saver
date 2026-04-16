@@ -49,6 +49,7 @@ The extension shell currently includes:
 - global enable/disable actions
 - save/restore current site setup
 - pinned extensions
+- seeded benchmark labels for the validated YouTube scenario
 
 It does not yet include:
 

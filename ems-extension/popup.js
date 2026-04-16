@@ -176,7 +176,7 @@ function renderExtension(extension) {
   }
 
   const impact = extension.benchmark?.label ?? "unknown";
-  impactPill.textContent = `impact: ${impact}`;
+  impactPill.textContent = extension.benchmark ? `impact: ${impact}` : "impact: not benchmarked";
   if (impact !== "unknown") {
     impactPill.classList.add(`impact-${impact}`);
   }

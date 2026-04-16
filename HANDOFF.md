@@ -80,7 +80,7 @@ Operational lesson:
    - relevance inference
    - enable/disable
    - save/restore site setup
-3. Add benchmark label import UI after the popup flow is validated.
+3. Validate the seeded YouTube benchmark labels in the popup, then add benchmark label import UI.
 4. Only return to deeper measurement work when it unblocks a concrete product decision.
 
 ## Notion context

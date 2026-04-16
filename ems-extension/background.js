@@ -3,7 +3,23 @@ const DEFAULT_STATE = {
   siteProfiles: {},
   restoreSnapshot: null,
   pinnedExtensionIds: [],
-  benchmarkLabels: {}
+  benchmarkLabels: {
+    eimadpbcbfnmbkopoojfekhnkhdbieeh: {
+      label: "medium",
+      source: "youtube-3ext-scenario",
+      notes: "YouTube benchmark: removing Dark Reader reduced renderer private memory."
+    },
+    cmedmhnddgokbjflbjhkbeakkpaeenkc: {
+      label: "high",
+      source: "youtube-3ext-scenario",
+      notes: "YouTube benchmark: removing Bideo Max reduced total and renderer private memory."
+    },
+    bnomihfieiccainjcjblhegjgglakjdd: {
+      label: "high",
+      source: "youtube-3ext-scenario",
+      notes: "YouTube benchmark: removing Improve YouTube reduced total and renderer private memory."
+    }
+  }
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
