@@ -37,8 +37,16 @@ init().catch((error) => {
 });
 
 async function init() {
+  await ensureDefaultState();
   bindEvents();
   await refresh();
+}
+
+async function ensureDefaultState() {
+  const response = await chrome.runtime.sendMessage({ type: "ems.ensure-default-state" });
+  if (response && response.ok === false) {
+    throw new Error(response.error || "Failed to initialize EMS state.");
+  }
 }
 
 function bindEvents() {

@@ -1,38 +1,83 @@
-const DEFAULT_STATE = {
-  schemaVersion: 1,
-  siteProfiles: {},
-  restoreSnapshot: null,
-  pinnedExtensionIds: [],
-  benchmarkLabels: {
-    eimadpbcbfnmbkopoojfekhnkhdbieeh: {
-      label: "medium",
-      source: "youtube-3ext-scenario",
-      notes: "YouTube benchmark: removing Dark Reader reduced renderer private memory."
-    },
-    cmedmhnddgokbjflbjhkbeakkpaeenkc: {
-      label: "high",
-      source: "youtube-3ext-scenario",
-      notes: "YouTube benchmark: removing Bideo Max reduced total and renderer private memory."
-    },
-    bnomihfieiccainjcjblhegjgglakjdd: {
-      label: "high",
-      source: "youtube-3ext-scenario",
-      notes: "YouTube benchmark: removing Improve YouTube reduced total and renderer private memory."
-    }
+const DEFAULT_BENCHMARK_LABELS = {
+  eimadpbcbfnmbkopoojfekhnkhdbieeh: {
+    label: "medium",
+    source: "youtube-3ext-scenario",
+    notes: "YouTube benchmark: removing Dark Reader reduced renderer private memory."
+  },
+  cmedmhnddgokbjflbjhkbeakkpaeenkc: {
+    label: "high",
+    source: "youtube-3ext-scenario",
+    notes: "YouTube benchmark: removing Bideo Max reduced total and renderer private memory."
+  },
+  bnomihfieiccainjcjblhegjgglakjdd: {
+    label: "high",
+    source: "youtube-3ext-scenario",
+    notes: "YouTube benchmark: removing Improve YouTube reduced total and renderer private memory."
   }
 };
 
+const DEFAULT_STATE = {
+  schemaVersion: 2,
+  siteProfiles: {},
+  restoreSnapshot: null,
+  pinnedExtensionIds: [],
+  benchmarkLabels: DEFAULT_BENCHMARK_LABELS
+};
+
 chrome.runtime.onInstalled.addListener(async () => {
+  await ensureDefaultState();
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  await ensureDefaultState();
+});
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type !== "ems.ensure-default-state") {
+    return false;
+  }
+
+  ensureDefaultState()
+    .then(() => sendResponse({ ok: true }))
+    .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
+
+  return true;
+});
+
+async function ensureDefaultState() {
   const current = await chrome.storage.local.get(Object.keys(DEFAULT_STATE));
   const nextState = {};
 
-  for (const [key, value] of Object.entries(DEFAULT_STATE)) {
-    if (current[key] === undefined) {
-      nextState[key] = value;
-    }
+  if (current.schemaVersion !== DEFAULT_STATE.schemaVersion) {
+    nextState.schemaVersion = DEFAULT_STATE.schemaVersion;
+  }
+
+  if (current.siteProfiles === undefined) {
+    nextState.siteProfiles = DEFAULT_STATE.siteProfiles;
+  }
+
+  if (current.restoreSnapshot === undefined) {
+    nextState.restoreSnapshot = DEFAULT_STATE.restoreSnapshot;
+  }
+
+  if (current.pinnedExtensionIds === undefined) {
+    nextState.pinnedExtensionIds = DEFAULT_STATE.pinnedExtensionIds;
+  }
+
+  const mergedBenchmarkLabels = {
+    ...DEFAULT_BENCHMARK_LABELS,
+    ...(current.benchmarkLabels ?? {})
+  };
+
+  const benchmarkNeedsUpdate =
+    current.benchmarkLabels === undefined ||
+    Object.keys(mergedBenchmarkLabels).length !== Object.keys(current.benchmarkLabels ?? {}).length;
+
+  if (benchmarkNeedsUpdate) {
+    nextState.benchmarkLabels = mergedBenchmarkLabels;
   }
 
   if (Object.keys(nextState).length > 0) {
     await chrome.storage.local.set(nextState);
   }
-});
+}
