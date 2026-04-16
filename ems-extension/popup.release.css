@@ -16,10 +16,9 @@
 html,
 body {
   width: 460px;
-  min-height: 680px;
-  max-height: 760px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 720px;
+  max-height: 720px;
+  overflow: hidden;
 }
 
 * {
@@ -35,12 +34,16 @@ body {
 
 .app {
   width: 100%;
-  min-height: 680px;
+  height: 100%;
   padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .hero {
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -69,6 +72,7 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 button {
@@ -102,6 +106,7 @@ button:disabled {
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .metric {
@@ -130,6 +135,7 @@ button:disabled {
   margin: 0 0 12px;
   font-size: 12px;
   color: var(--accent);
+  flex-shrink: 0;
 }
 
 .list-shell {
@@ -137,6 +143,10 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .list-header {
@@ -145,6 +155,7 @@ button:disabled {
   justify-content: space-between;
   padding: 14px 14px 10px;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 .list-header h2 {
@@ -159,6 +170,25 @@ button:disabled {
 
 .extension-list {
   display: grid;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.extension-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.extension-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.extension-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+.extension-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .extension-row {
@@ -254,4 +284,5 @@ button:disabled {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
+  flex-shrink: 0;
 }
