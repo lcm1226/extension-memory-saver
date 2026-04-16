@@ -81,7 +81,8 @@ Operational lesson:
    - enable/disable
    - save/restore site setup
 3. Validate the seeded YouTube benchmark labels in the popup, then add benchmark label import UI.
-4. Only return to deeper measurement work when it unblocks a concrete product decision.
+4. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
+5. Only return to deeper measurement work when it unblocks a concrete product decision.
 
 ## Notion context
 

@@ -64,6 +64,13 @@ It does not yet include:
 3. Click `Load unpacked`
 4. Select the `ems-extension` folder
 5. Open a normal website and test the popup
+6. If you want a custom shortcut, open `chrome://extensions/shortcuts`
+
+## Shortcut note
+
+The default popup shortcut is still `Ctrl+Shift+E`.
+
+`Ctrl+D` is not a safe default because Chrome reserves it for bookmarking, so EMS should treat that binding as a manual user override only, not a shipped default.
 
 ## User actions for cloud handoff
 
