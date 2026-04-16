@@ -5,6 +5,29 @@ const STORAGE_KEYS = {
   benchmarkLabels: "benchmarkLabels"
 };
 
+const SITE_RELEVANCE_HEURISTICS = [
+  {
+    hosts: ["youtube.com", "youtu.be"],
+    keywords: ["youtube", "yt", "video"]
+  },
+  {
+    hosts: ["docs.google.com"],
+    keywords: ["google docs", "docs", "document", "writer"]
+  },
+  {
+    hosts: ["mail.google.com"],
+    keywords: ["gmail", "mail", "inbox"]
+  },
+  {
+    hosts: ["drive.google.com"],
+    keywords: ["google drive", "drive", "storage"]
+  },
+  {
+    hosts: ["github.com"],
+    keywords: ["github", "git", "pull request", "repository", "repo"]
+  }
+];
+
 const state = {
   tab: null,
   origin: null,
@@ -117,6 +140,7 @@ function inferRelevance(extension, pinned, savedForSite) {
   const hostPermissions = extension.hostPermissions ?? [];
   const matchesCurrentSite = Boolean(state.tab?.url) && hostPermissions.some((pattern) => matchPattern(pattern, state.tab.url));
   const allSitesAccess = hostPermissions.includes("<all_urls>");
+  const heuristicMatch = inferHeuristicSiteMatch(extension);
 
   if (savedForSite) {
     return { score: 400, label: "saved for this site", className: "relevance-high" };
@@ -127,6 +151,9 @@ function inferRelevance(extension, pinned, savedForSite) {
   if (pinned) {
     return { score: 250, label: "pinned by you", className: "relevance-mid" };
   }
+  if (heuristicMatch) {
+    return { score: 300, label: "likely for this site", className: "relevance-high" };
+  }
   if (allSitesAccess) {
     return { score: 200, label: "all sites access", className: "relevance-mid" };
   }
@@ -134,6 +161,39 @@ function inferRelevance(extension, pinned, savedForSite) {
     return { score: 100, label: "host access declared", className: "relevance-mid" };
   }
   return { score: 0, label: "unknown", className: "" };
+}
+
+function inferHeuristicSiteMatch(extension) {
+  if (!state.tab?.url) {
+    return false;
+  }
+
+  let hostname;
+  try {
+    hostname = new URL(state.tab.url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+
+  const heuristic = SITE_RELEVANCE_HEURISTICS.find((candidate) =>
+    candidate.hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`))
+  );
+
+  if (!heuristic) {
+    return false;
+  }
+
+  const haystack = [
+    extension.name,
+    extension.shortName,
+    extension.description,
+    extension.homepageUrl
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return heuristic.keywords.some((keyword) => haystack.includes(keyword));
 }
 
 function compareExtensions(left, right) {
