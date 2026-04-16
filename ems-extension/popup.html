@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EMS MVP</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="eyebrow">EMS MVP</p>
+        <h1 id="tab-title">Loading current site...</h1>
+        <p id="tab-origin" class="origin"></p>
+      </header>
+
+      <section class="actions">
+        <button id="lighten-site" class="primary">Lighten This Site</button>
+        <button id="restore-state">Restore Previous State</button>
+        <button id="save-setup">Save Current Setup</button>
+      </section>
+
+      <section class="summary">
+        <div class="metric">
+          <span class="metric-label">Installed</span>
+          <strong id="metric-installed">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Enabled</span>
+          <strong id="metric-enabled">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Site-relevant</span>
+          <strong id="metric-relevant">0</strong>
+        </div>
+      </section>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <section class="list-shell">
+        <div class="list-header">
+          <h2>Extensions</h2>
+          <span class="caption">Likely relevant on this site</span>
+        </div>
+        <div id="extension-list" class="extension-list"></div>
+      </section>
+
+      <footer class="footer-note">
+        <p>
+          Actions here change extension state globally. Impact labels are benchmark-backed or heuristic, not live memory truth.
+        </p>
+      </footer>
+    </main>
+
+    <template id="extension-row-template">
+      <article class="extension-row">
+        <div class="row-main">
+          <div class="name-wrap">
+            <h3 class="extension-name"></h3>
+            <p class="extension-meta"></p>
+          </div>
+          <div class="pills">
+            <span class="pill enabled-pill"></span>
+            <span class="pill relevance-pill"></span>
+            <span class="pill impact-pill"></span>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="pin-toggle" type="button"></button>
+          <button class="state-toggle" type="button"></button>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+  </html>

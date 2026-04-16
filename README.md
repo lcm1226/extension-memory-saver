@@ -11,6 +11,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 
 ## Repo layout
 
+- `ems-extension/`: Chrome extension MVP shell
 - `tools/ems-measure.mjs`: snapshot and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
@@ -34,9 +35,34 @@ Stable Chrome cannot yet support:
 
 ## Immediate next steps
 
-1. Implement the Chrome extension popup MVP defined in `docs/EMS_MVP_SPEC.md`.
+1. Load `ems-extension/` as an unpacked extension and verify popup behavior in Chrome.
 2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
 3. Add import/export flow so benchmark results can drive extension impact labels.
+
+## Current MVP shell
+
+The extension shell currently includes:
+
+- popup with current site title and origin
+- installed extension inventory from `chrome.management`
+- site-relevance inference from host permissions and saved site profiles
+- global enable/disable actions
+- save/restore current site setup
+- pinned extensions
+
+It does not yet include:
+
+- benchmark label import UI
+- polished error handling for all Chrome management edge cases
+- packaged icons or store-ready metadata
+
+## Local test
+
+1. Open `chrome://extensions`
+2. Enable Developer mode
+3. Click `Load unpacked`
+4. Select the `ems-extension` folder
+5. Open a normal website and test the popup
 
 ## User actions for cloud handoff
 

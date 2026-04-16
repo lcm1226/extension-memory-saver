@@ -12,9 +12,14 @@ The goal is not yet a store-ready extension. The current code is for measurement
 - Snapshot diff summarizer
 - Chrome launcher for probe profiles
 - Profile-based extension metadata resolution
+- Chrome extension MVP shell in `ems-extension/`
 
 ## Key local files
 
+- `ems-extension/manifest.json`
+- `ems-extension/popup.js`
+- `ems-extension/popup.html`
+- `ems-extension/popup.css`
 - `tools/ems-measure.mjs`
 - `tools/Start-EMSProbeChrome.ps1`
 - `docs/EMS_MEASUREMENT.md`
@@ -69,13 +74,13 @@ Operational lesson:
 ## Recommended next work
 
 1. Use `docs/EMS_MVP_SPEC.md` as the new product baseline.
-2. Build the Chrome extension popup MVP:
+2. Load `ems-extension/` in Chrome as an unpacked extension and verify:
    - current site
    - installed extension list
    - relevance inference
    - enable/disable
    - save/restore site setup
-3. Keep the Windows probe as supporting infrastructure for benchmark-backed labels.
+3. Add benchmark label import UI after the popup flow is validated.
 4. Only return to deeper measurement work when it unblocks a concrete product decision.
 
 ## Notion context
