@@ -15,6 +15,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
+- `docs/EMS_MVP_SPEC.md`: buildable EMS product definition based on measurement findings
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
 
 ## Current conclusion
@@ -33,9 +34,9 @@ Stable Chrome cannot yet support:
 
 ## Immediate next steps
 
-1. Improve A/B isolation so disabling one extension does not collapse unrelated extension targets.
-2. Add renderer-focused diff output to separate extension-process renderers from ordinary page renderers.
-3. Evaluate a Dev/Canary path with `chrome.processes` for stronger direct attribution.
+1. Implement the Chrome extension popup MVP defined in `docs/EMS_MVP_SPEC.md`.
+2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
+3. Add import/export flow so benchmark results can drive extension impact labels.
 
 ## User actions for cloud handoff
 

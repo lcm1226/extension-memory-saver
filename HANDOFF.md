@@ -68,13 +68,15 @@ Operational lesson:
 
 ## Recommended next work
 
-1. Build a focused clone with only one or a few target extensions loaded.
-2. Add structured diff output for:
-   - total renderer delta
-   - extension-renderer delta
-   - non-extension renderer delta
-3. Try a Dev/Canary run with `chrome.processes`.
-4. If isolation improves, start collecting a small benchmark suite across 3-5 extensions.
+1. Use `docs/EMS_MVP_SPEC.md` as the new product baseline.
+2. Build the Chrome extension popup MVP:
+   - current site
+   - installed extension list
+   - relevance inference
+   - enable/disable
+   - save/restore site setup
+3. Keep the Windows probe as supporting infrastructure for benchmark-backed labels.
+4. Only return to deeper measurement work when it unblocks a concrete product decision.
 
 ## Notion context
 
