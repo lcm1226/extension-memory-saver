@@ -1,0 +1,6 @@
+chrome-probe-profile/
+chrome-user-data-clone/
+snapshots/
+*.log
+*.tmp
+node_modules/
