@@ -138,6 +138,51 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.card-copy {
+  min-height: 48px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.card-actions button {
+  flex: 1;
+}
+
 .list-shell {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
@@ -285,4 +330,10 @@ button:disabled {
   font-size: 11px;
   line-height: 1.5;
   flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
 }

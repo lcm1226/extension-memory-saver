@@ -37,7 +37,7 @@ Stable Chrome cannot yet support:
 
 1. Load `ems-extension/` as an unpacked extension and verify popup behavior in Chrome.
 2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
-3. Add import/export flow so benchmark results can drive extension impact labels.
+3. Validate site profile actions and benchmark import/reset flow in the popup.
 
 ## Current MVP shell
 
@@ -46,14 +46,16 @@ The extension shell currently includes:
 - popup with current site title and origin
 - installed extension inventory from `chrome.management`
 - site-relevance inference from host permissions and saved site profiles
+- hostname + name/description heuristic relevance boosts for common sites
 - global enable/disable actions
 - save/restore current site setup
+- apply/clear saved site setup for the current origin
 - pinned extensions
 - seeded benchmark labels for the validated YouTube scenario
+- benchmark label import/reset controls
 
 It does not yet include:
 
-- benchmark label import UI
 - polished error handling for all Chrome management edge cases
 - packaged icons or store-ready metadata
 

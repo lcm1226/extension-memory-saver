@@ -37,6 +37,33 @@
 
       <p id="status" class="status" aria-live="polite"></p>
 
+      <section class="control-grid">
+        <article class="info-card">
+          <div class="card-header">
+            <h2>Saved Setup</h2>
+            <span class="caption">Current site profile</span>
+          </div>
+          <p id="site-profile-summary" class="card-copy">No saved setup for this site yet.</p>
+          <div class="card-actions">
+            <button id="apply-saved-setup" type="button">Apply Saved Setup</button>
+            <button id="clear-saved-setup" type="button">Clear Saved Setup</button>
+          </div>
+        </article>
+
+        <article class="info-card">
+          <div class="card-header">
+            <h2>Benchmark Labels</h2>
+            <span class="caption">Imported or seeded</span>
+          </div>
+          <p id="benchmark-summary" class="card-copy">No benchmark labels loaded.</p>
+          <div class="card-actions">
+            <button id="import-benchmarks" type="button">Import JSON</button>
+            <button id="reset-benchmarks" type="button">Reset Defaults</button>
+          </div>
+          <input id="benchmark-file-input" type="file" accept=".json,application/json" hidden>
+        </article>
+      </section>
+
       <section class="list-shell">
         <div class="list-header">
           <h2>Extensions</h2>

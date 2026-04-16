@@ -33,6 +33,7 @@ const state = {
   origin: null,
   selfId: null,
   extensions: [],
+  currentSiteProfile: null,
   storage: {
     siteProfiles: {},
     restoreSnapshot: null,
@@ -52,7 +53,14 @@ const ui = {
   template: document.getElementById("extension-row-template"),
   lightenButton: document.getElementById("lighten-site"),
   restoreButton: document.getElementById("restore-state"),
-  saveButton: document.getElementById("save-setup")
+  saveButton: document.getElementById("save-setup"),
+  siteProfileSummary: document.getElementById("site-profile-summary"),
+  applySavedSetupButton: document.getElementById("apply-saved-setup"),
+  clearSavedSetupButton: document.getElementById("clear-saved-setup"),
+  benchmarkSummary: document.getElementById("benchmark-summary"),
+  importBenchmarksButton: document.getElementById("import-benchmarks"),
+  resetBenchmarksButton: document.getElementById("reset-benchmarks"),
+  benchmarkFileInput: document.getElementById("benchmark-file-input")
 };
 
 init().catch((error) => {
@@ -91,6 +99,50 @@ function bindEvents() {
     await refresh();
     setStatus("Saved current setup for this site.");
   }));
+
+  ui.applySavedSetupButton.addEventListener("click", () => runWithStatus("Applying saved site setup...", async () => {
+    await saveRestoreSnapshot();
+    await applySavedSetupForSite();
+    await refresh();
+    setStatus("Applied the saved setup for this site.");
+  }));
+
+  ui.clearSavedSetupButton.addEventListener("click", () => runWithStatus("Clearing saved site setup...", async () => {
+    await clearSavedSetupForSite();
+    await refresh();
+    setStatus("Cleared the saved setup for this site.");
+  }));
+
+  ui.importBenchmarksButton.addEventListener("click", () => {
+    ui.benchmarkFileInput.value = "";
+    ui.benchmarkFileInput.click();
+  });
+
+  ui.resetBenchmarksButton.addEventListener("click", () => runWithStatus("Resetting benchmark labels...", async () => {
+    const defaults = await getDefaultBenchmarkLabels();
+    await chrome.storage.local.set({ [STORAGE_KEYS.benchmarkLabels]: defaults });
+    await refresh();
+    setStatus("Reset benchmark labels to the seeded defaults.");
+  }));
+
+  ui.benchmarkFileInput.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    await runWithStatus("Importing benchmark labels...", async () => {
+      const importedLabels = await importBenchmarkFile(file);
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.benchmarkLabels]: {
+          ...state.storage.benchmarkLabels,
+          ...importedLabels
+        }
+      });
+      await refresh();
+      setStatus(`Imported ${Object.keys(importedLabels).length} benchmark label(s).`);
+    });
+  });
 }
 
 async function refresh() {
@@ -112,6 +164,7 @@ async function refresh() {
     pinnedExtensionIds: storage[STORAGE_KEYS.pinnedExtensionIds] ?? [],
     benchmarkLabels: storage[STORAGE_KEYS.benchmarkLabels] ?? {}
   };
+  state.currentSiteProfile = state.origin ? state.storage.siteProfiles[state.origin] ?? null : null;
   state.extensions = allExtensions
     .filter((extension) => extension.type === "extension" && extension.id !== state.selfId)
     .map((extension) => decorateExtension(extension))
@@ -213,12 +266,48 @@ function render() {
   ui.metricEnabled.textContent = String(state.extensions.filter((extension) => extension.enabled).length);
   ui.metricRelevant.textContent = String(state.extensions.filter((extension) => extension.relevance.score >= 300).length);
   ui.restoreButton.disabled = !state.storage.restoreSnapshot;
+  renderSiteProfileCard();
+  renderBenchmarkCard();
 
   ui.list.replaceChildren();
 
   for (const extension of state.extensions) {
     ui.list.appendChild(renderExtension(extension));
   }
+}
+
+function renderSiteProfileCard() {
+  const savedCount = state.currentSiteProfile?.allowedExtensionIds?.length ?? 0;
+  const updatedAt = state.currentSiteProfile?.updatedAt ? formatDateTime(state.currentSiteProfile.updatedAt) : null;
+
+  if (!state.origin) {
+    ui.siteProfileSummary.textContent = "This tab does not expose a standard web origin.";
+  } else if (!savedCount) {
+    ui.siteProfileSummary.textContent = "No saved setup for this site yet. Save the current enabled set to reuse it later.";
+  } else {
+    ui.siteProfileSummary.textContent = updatedAt
+      ? `${savedCount} extension(s) saved for this site. Last updated ${updatedAt}.`
+      : `${savedCount} extension(s) saved for this site.`;
+  }
+
+  ui.applySavedSetupButton.disabled = !savedCount;
+  ui.clearSavedSetupButton.disabled = !savedCount;
+}
+
+function renderBenchmarkCard() {
+  const labels = Object.values(state.storage.benchmarkLabels);
+  const benchmarkedCount = labels.length;
+  const importedCount = labels.filter((label) => label?.source && label.source !== "youtube-3ext-scenario").length;
+
+  if (!benchmarkedCount) {
+    ui.benchmarkSummary.textContent = "No benchmark labels loaded.";
+  } else if (!importedCount) {
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded from the seeded catalog.`;
+  } else {
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded, including ${importedCount} imported label(s).`;
+  }
+
+  ui.resetBenchmarksButton.disabled = !benchmarkedCount;
 }
 
 function renderExtension(extension) {
@@ -303,6 +392,27 @@ async function saveCurrentSetupForSite() {
   await chrome.storage.local.set({ [STORAGE_KEYS.siteProfiles]: siteProfiles });
 }
 
+async function applySavedSetupForSite() {
+  ensureOrigin();
+  if (!state.currentSiteProfile?.allowedExtensionIds?.length) {
+    throw new Error("No saved setup exists for this site.");
+  }
+
+  await applyEnabledSet(new Set(state.currentSiteProfile.allowedExtensionIds));
+}
+
+async function clearSavedSetupForSite() {
+  ensureOrigin();
+
+  if (!state.currentSiteProfile) {
+    return;
+  }
+
+  const nextProfiles = { ...state.storage.siteProfiles };
+  delete nextProfiles[state.origin];
+  await chrome.storage.local.set({ [STORAGE_KEYS.siteProfiles]: nextProfiles });
+}
+
 async function saveRestoreSnapshot() {
   const enabledExtensionIds = state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id);
   await chrome.storage.local.set({
@@ -373,6 +483,101 @@ async function togglePinned(extensionId, shouldPin) {
   await chrome.storage.local.set({ [STORAGE_KEYS.pinnedExtensionIds]: [...pinnedSet] });
 }
 
+async function getDefaultBenchmarkLabels() {
+  const response = await chrome.runtime.sendMessage({ type: "ems.get-default-benchmark-labels" });
+  if (!response?.ok || !response.benchmarkLabels) {
+    throw new Error("Failed to load the default benchmark labels.");
+  }
+  return response.benchmarkLabels;
+}
+
+async function importBenchmarkFile(file) {
+  const text = await file.text();
+  const payload = JSON.parse(text);
+  const importedLabels = normalizeBenchmarkPayload(payload);
+
+  if (!Object.keys(importedLabels).length) {
+    throw new Error("The JSON file did not contain any usable benchmark labels.");
+  }
+
+  return importedLabels;
+}
+
+function normalizeBenchmarkPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Benchmark import must be a JSON object or array.");
+  }
+
+  if (Array.isArray(payload)) {
+    return normalizeBenchmarkEntries(payload);
+  }
+
+  if (payload.extensions && typeof payload.extensions === "object") {
+    return Array.isArray(payload.extensions)
+      ? normalizeBenchmarkEntries(payload.extensions)
+      : normalizeBenchmarkMap(payload.extensions);
+  }
+
+  return normalizeBenchmarkMap(payload);
+}
+
+function normalizeBenchmarkEntries(entries) {
+  const normalized = {};
+
+  for (const entry of entries) {
+    const extensionId = entry?.extensionId;
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+
+    const next = normalizeBenchmarkEntry(entry);
+    if (next) {
+      normalized[extensionId] = next;
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeBenchmarkMap(map) {
+  const normalized = {};
+
+  for (const [extensionId, entry] of Object.entries(map)) {
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+
+    const next = normalizeBenchmarkEntry(entry);
+    if (next) {
+      normalized[extensionId] = next;
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeBenchmarkEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const label = normalizeBenchmarkLabel(entry.label ?? entry.impact ?? "unknown");
+  return {
+    label,
+    source: entry.source ?? "imported-json",
+    notes: entry.notes ?? entry.note ?? ""
+  };
+}
+
+function normalizeBenchmarkLabel(label) {
+  const normalized = String(label).toLowerCase();
+  return ["low", "medium", "high", "unknown"].includes(normalized) ? normalized : "unknown";
+}
+
+function isExtensionId(value) {
+  return typeof value === "string" && /^[a-p]{32}$/.test(value);
+}
+
 async function runWithStatus(message, fn) {
   try {
     setStatus(message);
@@ -389,11 +594,24 @@ function disablePrimaryActions(disabled) {
   ui.lightenButton.disabled = disabled;
   ui.restoreButton.disabled = disabled || !state.storage.restoreSnapshot;
   ui.saveButton.disabled = disabled;
+  ui.applySavedSetupButton.disabled = disabled || !(state.currentSiteProfile?.allowedExtensionIds?.length);
+  ui.clearSavedSetupButton.disabled = disabled || !(state.currentSiteProfile?.allowedExtensionIds?.length);
+  ui.importBenchmarksButton.disabled = disabled;
+  ui.resetBenchmarksButton.disabled = disabled || !Object.keys(state.storage.benchmarkLabels).length;
+  ui.benchmarkFileInput.disabled = disabled;
 }
 
 function setStatus(message, isError = false) {
   ui.status.textContent = message || "";
   ui.status.style.color = isError ? "var(--bad)" : "var(--accent)";
+}
+
+function formatDateTime(value) {
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return value;
+  }
 }
 
 function ensureOrigin() {

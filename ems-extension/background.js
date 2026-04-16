@@ -33,15 +33,20 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== "ems.ensure-default-state") {
+  if (message?.type === "ems.ensure-default-state") {
+    ensureDefaultState()
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
+
+    return true;
+  }
+
+  if (message?.type === "ems.get-default-benchmark-labels") {
+    sendResponse({ ok: true, benchmarkLabels: DEFAULT_BENCHMARK_LABELS });
     return false;
   }
 
-  ensureDefaultState()
-    .then(() => sendResponse({ ok: true }))
-    .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
-
-  return true;
+  return false;
 });
 
 async function ensureDefaultState() {
