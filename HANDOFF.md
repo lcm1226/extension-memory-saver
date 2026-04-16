@@ -82,6 +82,8 @@ Operational lesson:
    - save/restore site setup
    - apply/clear saved site setup
    - benchmark import/reset controls
+   - status messages clearly explain which extensions changed
+   - `docs/example-benchmark-labels.json` imports cleanly
 3. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
 4. Only return to deeper measurement work when it unblocks a concrete product decision.
 

@@ -17,6 +17,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
 - `docs/EMS_MVP_SPEC.md`: buildable EMS product definition based on measurement findings
+- `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
 
 ## Current conclusion
@@ -38,6 +39,7 @@ Stable Chrome cannot yet support:
 1. Load `ems-extension/` as an unpacked extension and verify popup behavior in Chrome.
 2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
 3. Validate site profile actions and benchmark import/reset flow in the popup.
+4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
 
 ## Current MVP shell
 

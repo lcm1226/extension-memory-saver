@@ -82,35 +82,41 @@ async function ensureDefaultState() {
 
 function bindEvents() {
   ui.lightenButton.addEventListener("click", () => runWithStatus("Lightening site...", async () => {
+    const beforeEnabledIds = getEnabledExtensionIds();
     await saveRestoreSnapshot();
     await lightenCurrentSite();
     await refresh();
-    setStatus("Applied lighter setup for this site.");
+    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
+    setStatus(buildLightenStatus(change));
   }));
 
   ui.restoreButton.addEventListener("click", () => runWithStatus("Restoring previous state...", async () => {
+    const beforeEnabledIds = getEnabledExtensionIds();
     await restorePreviousState();
     await refresh();
-    setStatus("Restored previous extension state.");
+    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
+    setStatus(buildRestoreStatus(change));
   }));
 
   ui.saveButton.addEventListener("click", () => runWithStatus("Saving site setup...", async () => {
     await saveCurrentSetupForSite();
     await refresh();
-    setStatus("Saved current setup for this site.");
+    setStatus(buildSaveStatus());
   }));
 
   ui.applySavedSetupButton.addEventListener("click", () => runWithStatus("Applying saved site setup...", async () => {
+    const beforeEnabledIds = getEnabledExtensionIds();
     await saveRestoreSnapshot();
     await applySavedSetupForSite();
     await refresh();
-    setStatus("Applied the saved setup for this site.");
+    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
+    setStatus(buildApplySavedStatus(change));
   }));
 
   ui.clearSavedSetupButton.addEventListener("click", () => runWithStatus("Clearing saved site setup...", async () => {
     await clearSavedSetupForSite();
     await refresh();
-    setStatus("Cleared the saved setup for this site.");
+    setStatus(`Cleared the saved setup for ${state.origin || "this site"}.`);
   }));
 
   ui.importBenchmarksButton.addEventListener("click", () => {
@@ -140,7 +146,7 @@ function bindEvents() {
         }
       });
       await refresh();
-      setStatus(`Imported ${Object.keys(importedLabels).length} benchmark label(s).`);
+      setStatus(`Imported ${Object.keys(importedLabels).length} benchmark label(s) from ${file.name}.`);
     });
   });
 }
@@ -576,6 +582,92 @@ function normalizeBenchmarkLabel(label) {
 
 function isExtensionId(value) {
   return typeof value === "string" && /^[a-p]{32}$/.test(value);
+}
+
+function getEnabledExtensionIds() {
+  return state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id);
+}
+
+function summarizeEnabledDelta(beforeEnabledIds, afterEnabledIds) {
+  const beforeSet = new Set(beforeEnabledIds);
+  const afterSet = new Set(afterEnabledIds);
+  const enabledNames = [];
+  const disabledNames = [];
+
+  for (const extension of state.extensions) {
+    const wasEnabled = beforeSet.has(extension.id);
+    const isEnabled = afterSet.has(extension.id);
+
+    if (!wasEnabled && isEnabled) {
+      enabledNames.push(extension.name);
+    }
+
+    if (wasEnabled && !isEnabled) {
+      disabledNames.push(extension.name);
+    }
+  }
+
+  return {
+    enabledNames,
+    disabledNames
+  };
+}
+
+function buildLightenStatus(change) {
+  if (!change.disabledNames.length && !change.enabledNames.length) {
+    return "Lighten This Site made no changes. The current enabled set already matches this site's lighter setup.";
+  }
+
+  const parts = [];
+  if (change.disabledNames.length) {
+    parts.push(`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`);
+  }
+  if (change.enabledNames.length) {
+    parts.push(`Enabled ${change.enabledNames.length}: ${joinNames(change.enabledNames)}.`);
+  }
+  return `Lighten This Site updated this browser set. ${parts.join(" ")}`;
+}
+
+function buildRestoreStatus(change) {
+  if (!change.disabledNames.length && !change.enabledNames.length) {
+    return "Restore Previous State made no changes. The previous state was already active.";
+  }
+
+  const parts = [];
+  if (change.enabledNames.length) {
+    parts.push(`Re-enabled ${change.enabledNames.length}: ${joinNames(change.enabledNames)}.`);
+  }
+  if (change.disabledNames.length) {
+    parts.push(`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`);
+  }
+  return `Restored the previous browser-wide extension state. ${parts.join(" ")}`;
+}
+
+function buildSaveStatus() {
+  const enabledExtensions = state.extensions.filter((extension) => extension.enabled).map((extension) => extension.name);
+  return `Saved ${enabledExtensions.length} enabled extension(s) for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}.`;
+}
+
+function buildApplySavedStatus(change) {
+  if (!change.disabledNames.length && !change.enabledNames.length) {
+    return `Apply Saved Setup made no changes. The saved setup for ${state.origin || "this site"} was already active.`;
+  }
+
+  const parts = [];
+  if (change.enabledNames.length) {
+    parts.push(`Enabled ${change.enabledNames.length}: ${joinNames(change.enabledNames)}.`);
+  }
+  if (change.disabledNames.length) {
+    parts.push(`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`);
+  }
+  return `Applied the saved setup for ${state.origin || "this site"}. ${parts.join(" ")}`;
+}
+
+function joinNames(names) {
+  if (!names.length) {
+    return "none";
+  }
+  return names.join(", ");
 }
 
 async function runWithStatus(message, fn) {

@@ -1,0 +1,14 @@
+{
+  "extensions": {
+    "eimadpbcbfnmbkopoojfekhnkhdbieeh": {
+      "label": "medium",
+      "source": "example-import",
+      "notes": "Example import: Dark Reader showed a medium impact in a prior scenario."
+    },
+    "bnomihfieiccainjcjblhegjgglakjdd": {
+      "label": "high",
+      "source": "example-import",
+      "notes": "Example import: Improve YouTube showed a high impact in a prior scenario."
+    }
+  }
+}
