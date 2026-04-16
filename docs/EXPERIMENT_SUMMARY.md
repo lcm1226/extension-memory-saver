@@ -57,3 +57,52 @@ We need a cleaner isolation method so one extension can be added or removed with
 - Tooling confidence: medium-high
 - Per-extension truth confidence: low
 - Session-level direction confidence: medium
+
+## Updated measured run
+
+Scenario:
+
+- Windows 11
+- Google Chrome Stable
+- Test profile rebuilt into a non-default probe clone so remote debugging would work
+- Target URL: `https://www.youtube.com/watch?v=pa4Xo-LQe54`
+- Focused extension set:
+  - `Dark Reader`
+  - `Bideo Max: Auto 8K/4K/HD for YouTube & More`
+  - `'Improve YouTube!'`
+
+Baseline:
+
+- extension targets: `4`
+- chrome processes: `14`
+
+Clean A/B results:
+
+1. Remove `Dark Reader`
+   - extension targets: `4 -> 3`
+   - total private: `337.22 MB -> 283.08 MB`
+   - renderer private: `183.63 MB -> 128.99 MB`
+   - extension-renderer private: `45.83 MB -> 15.52 MB`
+
+2. Remove `Bideo Max`
+   - extension targets: `4 -> 3`
+   - total private: `337.22 MB -> 264.50 MB`
+   - renderer private: `183.63 MB -> 122.04 MB`
+   - extension-renderer private: `45.83 MB -> 74.38 MB`
+
+3. Remove `Improve YouTube`
+   - extension targets: `4 -> 3`
+   - total private: `337.22 MB -> 264.08 MB`
+   - renderer private: `183.63 MB -> 104.30 MB`
+   - extension-renderer private: `45.83 MB -> 52.55 MB`
+
+Interpretation:
+
+- The test harness is now working reliably for a focused 3-extension YouTube scenario.
+- Direct per-extension owned-process memory is still unavailable on stable Chrome.
+- Session and renderer deltas are usable, but extension-renderer deltas can still move counterintuitively because renderer allocation is shared and timing-sensitive.
+
+Key implementation note:
+
+- Launching Chrome against the default `User Data` path can leave the DevTools endpoint unreachable even when `--remote-debugging-port` is passed.
+- The reliable workaround is to copy the profile into a non-default probe directory and launch Chrome from that clone.

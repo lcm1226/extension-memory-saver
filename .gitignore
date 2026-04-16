@@ -1,5 +1,7 @@
 chrome-probe-profile/
 chrome-user-data-clone/
+chrome-profile5-probe*/
+yt3-*/
 snapshots/
 *.log
 *.tmp

@@ -44,6 +44,28 @@ Interpretation:
 
 See `docs/EXPERIMENT_SUMMARY.md` for the latest run in a form that can be pasted into a new session.
 
+## Newer validated scenario
+
+A cleaner rerun was completed with a focused YouTube test profile:
+
+- URL: `https://www.youtube.com/watch?v=pa4Xo-LQe54`
+- extensions:
+  - `Dark Reader`
+  - `Bideo Max: Auto 8K/4K/HD for YouTube & More`
+  - `'Improve YouTube!'`
+
+Results:
+
+- baseline: all 3 target extensions appeared in extension targets
+- removing each target extension produced `4 -> 3` target count changes
+- total private and renderer private both dropped in all three A/B runs
+- `ownedPrivateBytes` remained `0` for target extensions, so stable Chrome still does not expose direct per-extension totals
+
+Operational lesson:
+
+- Do not launch against the default Chrome `User Data` directory if `http://127.0.0.1:<port>/json/version` is unreachable.
+- Use a copied probe profile in the workspace instead.
+
 ## Recommended next work
 
 1. Build a focused clone with only one or a few target extensions loaded.
