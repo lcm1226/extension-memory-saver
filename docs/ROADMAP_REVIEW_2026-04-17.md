@@ -61,10 +61,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 ### Not done yet
 
-- polished handling for Chrome management edge cases
-  - extensions that cannot be disabled
-  - clearer handling when the current tab has no standard origin
-  - more obvious no-op messaging for site setup actions
+- broader handling for remaining Chrome management edge cases
+  - user-facing explanation for enterprise/managed-extension constraints
+  - clearer separation between "saved setup changed nothing" and "Chrome refused part of the request"
+  - more explicit treatment of tabs that should be inventory-only, not actionable
 - packaged icons and store-ready metadata
 - release-oriented UI pass
   - current UI works, but layout density and section sizing still need a deliberate cleanup pass
