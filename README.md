@@ -59,6 +59,7 @@ The extension shell currently includes:
 - save/restore current site setup
 - apply/clear saved site setup for the current origin
 - pinned extensions
+- protected-state and no-op messaging when Chrome will not allow a requested toggle
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls
 - probe-side compact benchmark export command
@@ -66,7 +67,7 @@ The extension shell currently includes:
 
 It does not yet include:
 
-- polished error handling for all Chrome management edge cases
+- explicit use of more metadata for relevance inference beyond the current heuristic inputs
 - packaged icons or store-ready metadata
 
 ## Local test

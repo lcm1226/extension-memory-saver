@@ -33,6 +33,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - seeded YouTube benchmark catalog
 - heuristic site relevance boosts for common sites
 - clearer action feedback after user operations
+- clearer no-op and protected-extension messaging
+- safer action disabling when the current tab has no standard web origin
 
 ### Partially done
 
@@ -83,9 +85,9 @@ Close the remaining MVP-spec gaps:
 
 Make the extension safer and easier to trust:
 
-- improve error and no-op states
 - add a small help/state explainer section
 - make destructive-feeling actions more obvious about being browser-wide
+- add automated popup verification once a working Playwright path exists
 
 ### Priority 3
 
@@ -103,4 +105,4 @@ The next concrete implementation step should be:
 
 1. make scenario authoring and catalog generation less manual
 2. stronger relevance inference from additional metadata
-3. edge-case and trust-state handling
+3. add a lightweight help/trust explainer without growing the popup too much

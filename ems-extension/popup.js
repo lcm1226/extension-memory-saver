@@ -82,34 +82,28 @@ async function ensureDefaultState() {
 
 function bindEvents() {
   ui.lightenButton.addEventListener("click", () => runWithStatus("Lightening site...", async () => {
-    const beforeEnabledIds = getEnabledExtensionIds();
     await saveRestoreSnapshot();
-    await lightenCurrentSite();
+    const change = await lightenCurrentSite();
     await refresh();
-    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
     setStatus(buildLightenStatus(change));
   }));
 
   ui.restoreButton.addEventListener("click", () => runWithStatus("Restoring previous state...", async () => {
-    const beforeEnabledIds = getEnabledExtensionIds();
-    await restorePreviousState();
+    const change = await restorePreviousState();
     await refresh();
-    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
     setStatus(buildRestoreStatus(change));
   }));
 
   ui.saveButton.addEventListener("click", () => runWithStatus("Saving site setup...", async () => {
-    await saveCurrentSetupForSite();
+    const result = await saveCurrentSetupForSite();
     await refresh();
-    setStatus(buildSaveStatus());
+    setStatus(buildSaveStatus(result));
   }));
 
   ui.applySavedSetupButton.addEventListener("click", () => runWithStatus("Applying saved site setup...", async () => {
-    const beforeEnabledIds = getEnabledExtensionIds();
     await saveRestoreSnapshot();
-    await applySavedSetupForSite();
+    const change = await applySavedSetupForSite();
     await refresh();
-    const change = summarizeEnabledDelta(beforeEnabledIds, getEnabledExtensionIds());
     setStatus(buildApplySavedStatus(change));
   }));
 
@@ -271,9 +265,9 @@ function render() {
   ui.metricInstalled.textContent = String(state.extensions.length);
   ui.metricEnabled.textContent = String(state.extensions.filter((extension) => extension.enabled).length);
   ui.metricRelevant.textContent = String(state.extensions.filter((extension) => extension.relevance.score >= 300).length);
-  ui.restoreButton.disabled = !state.storage.restoreSnapshot;
   renderSiteProfileCard();
   renderBenchmarkCard();
+  disablePrimaryActions(false);
 
   ui.list.replaceChildren();
 
@@ -353,9 +347,17 @@ function renderExtension(extension) {
 
   const canDisable = extension.enabled && extension.mayDisable;
   const canEnable = !extension.enabled && extension.mayEnable !== false;
+  const protectedState = !canDisable && !canEnable;
 
-  stateToggle.textContent = extension.enabled ? "Disable" : "Enable";
-  stateToggle.disabled = !(canDisable || canEnable);
+  stateToggle.textContent = protectedState
+    ? (extension.enabled ? "Protected" : "Unavailable")
+    : (extension.enabled ? "Disable" : "Enable");
+  stateToggle.disabled = protectedState;
+  stateToggle.title = protectedState
+    ? (extension.enabled
+      ? "Chrome does not allow this extension to be disabled from EMS."
+      : "Chrome does not allow this extension to be enabled from EMS.")
+    : "";
   stateToggle.addEventListener("click", () => runWithStatus(`${extension.enabled ? "Disabling" : "Enabling"} ${extension.name}...`, async () => {
     await chrome.management.setEnabled(extension.id, !extension.enabled);
     await refresh();
@@ -378,6 +380,12 @@ function buildMetaLine(extension) {
   if (extension.savedForSite) {
     parts.push("saved");
   }
+  if (extension.enabled && !extension.mayDisable) {
+    parts.push("cannot disable here");
+  }
+  if (!extension.enabled && extension.mayEnable === false) {
+    parts.push("cannot enable here");
+  }
   if (extension.benchmark?.notes) {
     parts.push(extension.benchmark.notes);
   }
@@ -387,6 +395,8 @@ function buildMetaLine(extension) {
 async function saveCurrentSetupForSite() {
   ensureOrigin();
   const enabledExtensionIds = state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id);
+  const previousIds = new Set(state.currentSiteProfile?.allowedExtensionIds ?? []);
+  const nextIds = new Set(enabledExtensionIds);
   const siteProfiles = {
     ...state.storage.siteProfiles,
     [state.origin]: {
@@ -396,6 +406,10 @@ async function saveCurrentSetupForSite() {
     }
   };
   await chrome.storage.local.set({ [STORAGE_KEYS.siteProfiles]: siteProfiles });
+  return {
+    enabledExtensionIds,
+    changed: !sameIdSet(previousIds, nextIds)
+  };
 }
 
 async function applySavedSetupForSite() {
@@ -404,7 +418,7 @@ async function applySavedSetupForSite() {
     throw new Error("No saved setup exists for this site.");
   }
 
-  await applyEnabledSet(new Set(state.currentSiteProfile.allowedExtensionIds));
+  return applyEnabledSet(new Set(state.currentSiteProfile.allowedExtensionIds));
 }
 
 async function clearSavedSetupForSite() {
@@ -434,7 +448,7 @@ async function restorePreviousState() {
   if (!snapshot?.enabledExtensionIds) {
     throw new Error("No previous state is available to restore.");
   }
-  await applyEnabledSet(new Set(snapshot.enabledExtensionIds));
+  return applyEnabledSet(new Set(snapshot.enabledExtensionIds));
 }
 
 async function lightenCurrentSite() {
@@ -460,23 +474,39 @@ async function lightenCurrentSite() {
     keepEnabledIds.add(extensionId);
   }
 
-  await applyEnabledSet(keepEnabledIds);
+  return applyEnabledSet(keepEnabledIds);
 }
 
 async function applyEnabledSet(keepEnabledIds) {
+  const change = {
+    enabledNames: [],
+    disabledNames: [],
+    skippedEnableNames: [],
+    skippedDisableNames: []
+  };
+
   for (const extension of state.extensions) {
     const shouldBeEnabled = keepEnabledIds.has(extension.id);
     if (extension.enabled === shouldBeEnabled) {
       continue;
     }
     if (!shouldBeEnabled && !extension.mayDisable) {
+      change.skippedDisableNames.push(extension.name);
       continue;
     }
     if (shouldBeEnabled && extension.mayEnable === false) {
+      change.skippedEnableNames.push(extension.name);
       continue;
     }
     await chrome.management.setEnabled(extension.id, shouldBeEnabled);
+    if (shouldBeEnabled) {
+      change.enabledNames.push(extension.name);
+    } else {
+      change.disabledNames.push(extension.name);
+    }
   }
+
+  return change;
 }
 
 async function togglePinned(extensionId, shouldPin) {
@@ -584,37 +614,11 @@ function isExtensionId(value) {
   return typeof value === "string" && /^[a-p]{32}$/.test(value);
 }
 
-function getEnabledExtensionIds() {
-  return state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id);
-}
-
-function summarizeEnabledDelta(beforeEnabledIds, afterEnabledIds) {
-  const beforeSet = new Set(beforeEnabledIds);
-  const afterSet = new Set(afterEnabledIds);
-  const enabledNames = [];
-  const disabledNames = [];
-
-  for (const extension of state.extensions) {
-    const wasEnabled = beforeSet.has(extension.id);
-    const isEnabled = afterSet.has(extension.id);
-
-    if (!wasEnabled && isEnabled) {
-      enabledNames.push(extension.name);
-    }
-
-    if (wasEnabled && !isEnabled) {
-      disabledNames.push(extension.name);
-    }
-  }
-
-  return {
-    enabledNames,
-    disabledNames
-  };
-}
-
 function buildLightenStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
+    if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
+      return `Lighten This Site could not finish fully. ${buildSkippedSummary(change)}`;
+    }
     return "Lighten This Site made no changes. The current enabled set already matches this site's lighter setup.";
   }
 
@@ -625,11 +629,18 @@ function buildLightenStatus(change) {
   if (change.enabledNames.length) {
     parts.push(`Enabled ${change.enabledNames.length}: ${joinNames(change.enabledNames)}.`);
   }
+  const skippedSummary = buildSkippedSummary(change);
+  if (skippedSummary) {
+    parts.push(skippedSummary);
+  }
   return `Lighten This Site updated this browser set. ${parts.join(" ")}`;
 }
 
 function buildRestoreStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
+    if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
+      return `Restore Previous State could not finish fully. ${buildSkippedSummary(change)}`;
+    }
     return "Restore Previous State made no changes. The previous state was already active.";
   }
 
@@ -640,16 +651,32 @@ function buildRestoreStatus(change) {
   if (change.disabledNames.length) {
     parts.push(`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`);
   }
+  const skippedSummary = buildSkippedSummary(change);
+  if (skippedSummary) {
+    parts.push(skippedSummary);
+  }
   return `Restored the previous browser-wide extension state. ${parts.join(" ")}`;
 }
 
-function buildSaveStatus() {
-  const enabledExtensions = state.extensions.filter((extension) => extension.enabled).map((extension) => extension.name);
+function buildSaveStatus(result) {
+  const enabledExtensions = result?.enabledExtensionIds
+    ? state.extensions
+      .filter((extension) => result.enabledExtensionIds.includes(extension.id))
+      .map((extension) => extension.name)
+    : state.extensions.filter((extension) => extension.enabled).map((extension) => extension.name);
+
+  if (result && !result.changed) {
+    return `Saved setup already matched the current enabled set for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}.`;
+  }
+
   return `Saved ${enabledExtensions.length} enabled extension(s) for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}.`;
 }
 
 function buildApplySavedStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
+    if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
+      return `Apply Saved Setup could not finish fully. ${buildSkippedSummary(change)}`;
+    }
     return `Apply Saved Setup made no changes. The saved setup for ${state.origin || "this site"} was already active.`;
   }
 
@@ -660,7 +687,24 @@ function buildApplySavedStatus(change) {
   if (change.disabledNames.length) {
     parts.push(`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`);
   }
+  const skippedSummary = buildSkippedSummary(change);
+  if (skippedSummary) {
+    parts.push(skippedSummary);
+  }
   return `Applied the saved setup for ${state.origin || "this site"}. ${parts.join(" ")}`;
+}
+
+function buildSkippedSummary(change) {
+  const parts = [];
+
+  if (change.skippedDisableNames?.length) {
+    parts.push(`Could not disable ${change.skippedDisableNames.length}: ${joinNames(change.skippedDisableNames)}.`);
+  }
+  if (change.skippedEnableNames?.length) {
+    parts.push(`Could not enable ${change.skippedEnableNames.length}: ${joinNames(change.skippedEnableNames)}.`);
+  }
+
+  return parts.join(" ");
 }
 
 function joinNames(names) {
@@ -683,13 +727,17 @@ async function runWithStatus(message, fn) {
 }
 
 function disablePrimaryActions(disabled) {
-  ui.lightenButton.disabled = disabled;
+  const hasOrigin = Boolean(state.origin);
+  const hasSavedSetup = Boolean(state.currentSiteProfile?.allowedExtensionIds?.length);
+  const hasBenchmarks = Boolean(Object.keys(state.storage.benchmarkLabels).length);
+
+  ui.lightenButton.disabled = disabled || !hasOrigin;
   ui.restoreButton.disabled = disabled || !state.storage.restoreSnapshot;
-  ui.saveButton.disabled = disabled;
-  ui.applySavedSetupButton.disabled = disabled || !(state.currentSiteProfile?.allowedExtensionIds?.length);
-  ui.clearSavedSetupButton.disabled = disabled || !(state.currentSiteProfile?.allowedExtensionIds?.length);
+  ui.saveButton.disabled = disabled || !hasOrigin;
+  ui.applySavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
+  ui.clearSavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
   ui.importBenchmarksButton.disabled = disabled;
-  ui.resetBenchmarksButton.disabled = disabled || !Object.keys(state.storage.benchmarkLabels).length;
+  ui.resetBenchmarksButton.disabled = disabled || !hasBenchmarks;
   ui.benchmarkFileInput.disabled = disabled;
 }
 
@@ -710,6 +758,20 @@ function ensureOrigin() {
   if (!state.origin) {
     throw new Error("Current tab does not have a standard web origin.");
   }
+}
+
+function sameIdSet(left, right) {
+  if (left.size !== right.size) {
+    return false;
+  }
+
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function safeOrigin(url) {
