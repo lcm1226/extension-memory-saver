@@ -4,7 +4,7 @@ const path = require("node:path");
 const { test, expect, chromium } = require("@playwright/test");
 
 test.describe("EMS popup", () => {
-  test("covers inventory, save/apply/restore flow, import, and trust copy", async () => {
+  test("covers inventory, save/apply/restore/clear flow, import/reset, and trust copy", async () => {
     test.setTimeout(90_000);
     const extensionPath = path.resolve(__dirname, "..", "..", "ems-extension");
     const mockYoutubeExtensionPath = path.resolve(__dirname, "fixtures", "mock-youtube-helper");
@@ -99,6 +99,17 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#status")).toContainText("Imported 1 benchmark label");
       await expect(page.locator("#benchmark-summary")).toContainText("including 1 imported label");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: high");
+
+      await page.getByRole("button", { name: "Reset Defaults" }).click();
+      await expect(page.locator("#status")).toContainText("Reset benchmark labels to the seeded defaults.");
+      await expect(page.locator("#benchmark-summary")).toContainText("loaded from the seeded catalog");
+      await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not benchmarked");
+
+      await page.getByRole("button", { name: "Clear Saved Setup" }).click();
+      await expect(page.locator("#status")).toContainText("Cleared the saved setup for https://www.youtube.com.");
+      await expect(page.locator("#site-profile-summary")).toContainText("No saved setup for this site yet");
+      await expect(page.getByRole("button", { name: "Apply Saved Setup" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Clear Saved Setup" })).toBeDisabled();
 
       await page.locator(".help-shell summary").click();
       await expect(page.locator(".help-shell")).toContainText("benchmark guidance");

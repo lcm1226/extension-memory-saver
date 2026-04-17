@@ -70,7 +70,7 @@ The extension shell currently includes:
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - less-manual scenario specs for one-target removal runs
-- basic Playwright popup verification with a mock extension
+- basic Playwright popup verification with mock extensions
 
 It does not yet include:
 
@@ -97,7 +97,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, benchmark import, and help/trust copy
+- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, and help/trust copy
 
 ## Shortcut note
 
