@@ -43,6 +43,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - saved site profiles
     - host permission matching
     - hostname/name/description heuristics
+    - homepage host matching
+    - permission-based hints for browser-wide or tab-level capability
   - still missing from the original spec:
     - explicit handling of `optional_host_permissions`
     - explicit handling of `content_scripts.matches`

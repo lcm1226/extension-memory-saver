@@ -78,6 +78,9 @@ Operational lesson:
    - current site
    - installed extension list
    - relevance inference
+     - host permission matching
+     - homepage host matching
+     - browser-wide / tab-level permission hints
    - enable/disable
    - save/restore site setup
    - apply/clear saved site setup

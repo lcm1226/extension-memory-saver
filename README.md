@@ -56,6 +56,7 @@ The extension shell currently includes:
 - installed extension inventory from `chrome.management`
 - site-relevance inference from host permissions and saved site profiles
 - hostname + name/description heuristic relevance boosts for common sites
+- homepage host matching and permission-based relevance hints
 - global enable/disable actions
 - save/restore current site setup
 - apply/clear saved site setup for the current origin

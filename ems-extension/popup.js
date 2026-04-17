@@ -28,6 +28,24 @@ const SITE_RELEVANCE_HEURISTICS = [
   }
 ];
 
+const BROWSER_WIDE_PERMISSION_HINTS = [
+  "declarativeNetRequest",
+  "declarativeNetRequestFeedback",
+  "declarativeNetRequestWithHostAccess",
+  "proxy",
+  "contentSettings",
+  "privacy",
+  "webRequest",
+  "webRequestBlocking"
+];
+
+const TAB_LEVEL_PERMISSION_HINTS = [
+  "activeTab",
+  "scripting",
+  "tabs",
+  "webNavigation"
+];
+
 const state = {
   tab: null,
   origin: null,
@@ -191,15 +209,22 @@ function decorateExtension(extension) {
 
 function inferRelevance(extension, pinned, savedForSite) {
   const hostPermissions = extension.hostPermissions ?? [];
+  const permissions = extension.permissions ?? [];
   const matchesCurrentSite = Boolean(state.tab?.url) && hostPermissions.some((pattern) => matchPattern(pattern, state.tab.url));
   const allSitesAccess = hostPermissions.includes("<all_urls>");
   const heuristicMatch = inferHeuristicSiteMatch(extension);
+  const homepageMatch = inferHomepageSiteMatch(extension);
+  const browserWidePermissionHint = permissions.some((permission) => BROWSER_WIDE_PERMISSION_HINTS.includes(permission));
+  const tabLevelPermissionHint = permissions.some((permission) => TAB_LEVEL_PERMISSION_HINTS.includes(permission));
 
   if (savedForSite) {
     return { score: 400, label: "saved for this site", className: "relevance-high" };
   }
   if (matchesCurrentSite) {
     return { score: 300, label: "matches this site", className: "relevance-high" };
+  }
+  if (homepageMatch) {
+    return { score: 300, label: "homepage matches this site", className: "relevance-high" };
   }
   if (pinned) {
     return { score: 250, label: "pinned by you", className: "relevance-mid" };
@@ -212,6 +237,12 @@ function inferRelevance(extension, pinned, savedForSite) {
   }
   if (hostPermissions.length > 0) {
     return { score: 100, label: "host access declared", className: "relevance-mid" };
+  }
+  if (browserWidePermissionHint) {
+    return { score: 180, label: "browser-wide control", className: "relevance-mid" };
+  }
+  if (tabLevelPermissionHint) {
+    return { score: 130, label: "tab-level capability", className: "relevance-mid" };
   }
   return { score: 0, label: "unknown", className: "" };
 }
@@ -247,6 +278,42 @@ function inferHeuristicSiteMatch(extension) {
     .toLowerCase();
 
   return heuristic.keywords.some((keyword) => haystack.includes(keyword));
+}
+
+function inferHomepageSiteMatch(extension) {
+  if (!state.tab?.url || !extension.homepageUrl) {
+    return false;
+  }
+
+  let tabUrl;
+  let homepageUrl;
+  try {
+    tabUrl = new URL(state.tab.url);
+    homepageUrl = new URL(extension.homepageUrl);
+  } catch {
+    return false;
+  }
+
+  const tabHost = tabUrl.hostname.toLowerCase();
+  const homepageHost = homepageUrl.hostname.toLowerCase();
+
+  if (!homepageHost) {
+    return false;
+  }
+
+  return hostsLikelyMatch(tabHost, homepageHost);
+}
+
+function hostsLikelyMatch(leftHost, rightHost) {
+  if (!leftHost || !rightHost) {
+    return false;
+  }
+
+  if (leftHost === rightHost) {
+    return true;
+  }
+
+  return leftHost.endsWith(`.${rightHost}`) || rightHost.endsWith(`.${leftHost}`);
 }
 
 function compareExtensions(left, right) {
