@@ -87,6 +87,8 @@ Operational lesson:
     - `docs/example-benchmark-labels.json` imports cleanly
 3. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 4. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
+   - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
+   - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
 5. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
 6. Only return to deeper measurement work when it unblocks a concrete product decision.
 7. Playwright-style browser verification is still not wired up here because the local `npx` path is broken, so direct popup automation needs separate tooling repair first.

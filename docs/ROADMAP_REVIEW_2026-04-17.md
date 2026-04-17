@@ -53,8 +53,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - compact benchmark export command from the probe workflow
     - documented mapping rule from measured deltas to `low/medium/high`
     - multi-scenario catalog build command with JSON scenario spec
+    - auto-selection when a scenario removes exactly one extension target
+    - optional `extensionName` / `extensionNameContains` selectors for ambiguous scenarios
   - still missing:
-    - smoother scenario authoring / less-manual scenario metadata
+    - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
   - automated regression verification is still missing
@@ -79,7 +81,7 @@ Close the remaining MVP-spec gaps:
 
 - support `optional_host_permissions` in relevance scoring where available
 - investigate whether `content_scripts.matches` can be surfaced reliably enough for inference
-- make scenario authoring and catalog generation less manual
+- keep reducing manual scenario authoring for richer datasets
 
 ### Priority 2
 

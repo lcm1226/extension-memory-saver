@@ -93,6 +93,28 @@ Example spec file:
 
 - `docs/youtube-benchmark-scenarios.json`
 
+`build-catalog` now supports a less-manual spec flow:
+
+- if one extension target disappears in the `after` snapshot, the scenario can omit selectors entirely
+- if the diff is ambiguous, add one of:
+  - `extensionId`
+  - `extensionName`
+  - `extensionNameContains`
+
+Minimal spec example:
+
+```json
+{
+  "source": "youtube-3ext-scenario",
+  "scenarios": [
+    {
+      "before": "../snapshots/yt3-baseline.json",
+      "after": "../snapshots/yt3-after-darkreader.json"
+    }
+  ]
+}
+```
+
 ## Current label mapping rule
 
 `export-labels` maps a scenario to `low` / `medium` / `high` using:

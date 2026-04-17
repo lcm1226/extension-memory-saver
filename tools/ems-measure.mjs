@@ -571,6 +571,46 @@ function normalizeExportSource(source) {
   return source;
 }
 
+function normalizeNameForMatch(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function resolveBenchmarkCandidates(diff, options = {}) {
+  const { extensionId, extensionName, extensionNameContains, strictSingleCandidate = false } = options;
+
+  if (extensionId) {
+    return diff.extensionDiffs.filter((row) => row.extensionId === extensionId);
+  }
+
+  if (extensionName) {
+    const expectedName = normalizeNameForMatch(extensionName);
+    return diff.extensionDiffs.filter((row) => normalizeNameForMatch(row.name) === expectedName);
+  }
+
+  if (extensionNameContains) {
+    const expectedNamePart = normalizeNameForMatch(extensionNameContains);
+    return diff.extensionDiffs.filter((row) => normalizeNameForMatch(row.name).includes(expectedNamePart));
+  }
+
+  const removedCandidates = diff.removedExtensionTargets;
+  if (removedCandidates.length > 0) {
+    if (strictSingleCandidate && removedCandidates.length !== 1) {
+      throw new Error("This diff removed more than one extension target. Add extensionId, extensionName, or extensionNameContains to the scenario spec.");
+    }
+    return removedCandidates;
+  }
+
+  const negativeTargetCandidates = diff.extensionDiffs.filter((row) => row.targetDelta < 0);
+  if (negativeTargetCandidates.length > 0) {
+    if (strictSingleCandidate && negativeTargetCandidates.length !== 1) {
+      throw new Error("This diff changed more than one target row. Add extensionId, extensionName, or extensionNameContains to the scenario spec.");
+    }
+    return negativeTargetCandidates;
+  }
+
+  return [];
+}
+
 function mergeCatalogPayloads(existingPayload, exportPayload) {
   return existingPayload && typeof existingPayload === "object"
     ? {
@@ -586,21 +626,27 @@ function mergeCatalogPayloads(existingPayload, exportPayload) {
     : exportPayload;
 }
 
-function buildBenchmarkExport(diff, { source, extensionId }) {
+function buildBenchmarkExport(diff, options = {}) {
+  const {
+    source,
+    extensionId,
+    extensionName,
+    extensionNameContains,
+    strictSingleCandidate = false
+  } = options;
   const normalizedSource = normalizeExportSource(source);
   const totalPrivateDrop = Math.max(0, -diff.sessionDelta.totalPrivate);
   const rendererPrivateDrop = Math.max(0, -diff.sessionDelta.rendererPrivate);
   const impactLabel = inferImpactLabel({ totalPrivateDrop, rendererPrivateDrop });
-
-  let candidates = diff.removedExtensionTargets;
-  if (extensionId) {
-    candidates = diff.extensionDiffs.filter((row) => row.extensionId === extensionId);
-  } else if (candidates.length === 0) {
-    candidates = diff.extensionDiffs.filter((row) => row.targetDelta < 0);
-  }
+  const candidates = resolveBenchmarkCandidates(diff, {
+    extensionId,
+    extensionName,
+    extensionNameContains,
+    strictSingleCandidate
+  });
 
   if (candidates.length === 0) {
-    throw new Error("No removed extension target was found in this diff. Pass --extension-id if you want to export a specific extension row.");
+    throw new Error("No benchmark candidate was found in this diff. Pass --extension-id or add extensionName / extensionNameContains when the diff is ambiguous.");
   }
 
   const extensions = {};
@@ -683,7 +729,10 @@ async function buildCatalogFromSpec(specFile, options) {
     const diff = summarizeDiff(before, after);
     const exportPayload = buildBenchmarkExport(diff, {
       source: scenario.source ?? spec.source ?? options.source,
-      extensionId: scenario.extensionId ?? options.extensionId
+      extensionId: scenario.extensionId ?? options.extensionId,
+      extensionName: scenario.extensionName,
+      extensionNameContains: scenario.extensionNameContains,
+      strictSingleCandidate: true
     });
     catalog = mergeCatalogPayloads(catalog, exportPayload);
   }

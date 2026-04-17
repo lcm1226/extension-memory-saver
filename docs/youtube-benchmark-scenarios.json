@@ -3,18 +3,15 @@
   "scenarios": [
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-darkreader.json",
-      "extensionId": "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+      "after": "../snapshots/yt3-after-darkreader.json"
     },
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-bideomax.json",
-      "extensionId": "cmedmhnddgokbjflbjhkbeakkpaeenkc"
+      "after": "../snapshots/yt3-after-bideomax.json"
     },
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-improveyoutube.json",
-      "extensionId": "bnomihfieiccainjcjblhegjgglakjdd"
+      "after": "../snapshots/yt3-after-improveyoutube.json"
     }
   ]
 }

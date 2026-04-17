@@ -46,6 +46,7 @@ Stable Chrome cannot yet support:
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
 7. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
+8. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
 
 ## Current MVP shell
 
@@ -64,6 +65,7 @@ The extension shell currently includes:
 - benchmark label import/reset controls
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
+- less-manual scenario specs for one-target removal runs
 
 It does not yet include:
 
