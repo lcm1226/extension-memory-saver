@@ -1,0 +1,20 @@
+{
+  "source": "youtube-3ext-scenario",
+  "scenarios": [
+    {
+      "before": "../snapshots/yt3-baseline.json",
+      "after": "../snapshots/yt3-after-darkreader.json",
+      "extensionId": "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+    },
+    {
+      "before": "../snapshots/yt3-baseline.json",
+      "after": "../snapshots/yt3-after-bideomax.json",
+      "extensionId": "cmedmhnddgokbjflbjhkbeakkpaeenkc"
+    },
+    {
+      "before": "../snapshots/yt3-baseline.json",
+      "after": "../snapshots/yt3-after-improveyoutube.json",
+      "extensionId": "bnomihfieiccainjcjblhegjgglakjdd"
+    }
+  ]
+}

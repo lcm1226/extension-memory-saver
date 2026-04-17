@@ -50,8 +50,9 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - seeded local catalog
     - compact benchmark export command from the probe workflow
     - documented mapping rule from measured deltas to `low/medium/high`
+    - multi-scenario catalog build command with JSON scenario spec
   - still missing:
-    - multi-scenario catalog generation workflow
+    - smoother scenario authoring / less-manual scenario metadata
 - end-to-end verification
   - manual verification happened on the real YouTube page
   - automated regression verification is still missing
@@ -76,7 +77,7 @@ Close the remaining MVP-spec gaps:
 
 - support `optional_host_permissions` in relevance scoring where available
 - investigate whether `content_scripts.matches` can be surfaced reliably enough for inference
-- turn the compact benchmark export into a smoother multi-scenario catalog workflow
+- make scenario authoring and catalog generation less manual
 
 ### Priority 2
 
@@ -100,6 +101,6 @@ Behavior work should stay ahead of UI polish.
 
 The next concrete implementation step should be:
 
-1. turn benchmark export into a smoother multi-scenario catalog workflow
+1. make scenario authoring and catalog generation less manual
 2. stronger relevance inference from additional metadata
 3. edge-case and trust-state handling

@@ -84,9 +84,10 @@ Operational lesson:
    - benchmark import/reset controls
     - status messages clearly explain which extensions changed
     - `docs/example-benchmark-labels.json` imports cleanly
-3. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn clean A/B probe runs into popup-import JSON.
-4. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
-5. Only return to deeper measurement work when it unblocks a concrete product decision.
+3. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
+4. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
+5. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
+6. Only return to deeper measurement work when it unblocks a concrete product decision.
 
 ## Notion context
 

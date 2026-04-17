@@ -20,6 +20,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/ROADMAP_REVIEW_2026-04-17.md`: implemented vs missing roadmap audit
 - `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
+- `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
 
 ## Current conclusion
@@ -44,6 +45,7 @@ Stable Chrome cannot yet support:
 4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
+7. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
 
 ## Current MVP shell
 
@@ -60,6 +62,7 @@ The extension shell currently includes:
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls
 - probe-side compact benchmark export command
+- probe-side multi-scenario catalog build command
 
 It does not yet include:
 

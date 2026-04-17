@@ -79,6 +79,20 @@ node .\ems-measure.mjs export-labels `
 
 If the output file already exists, `export-labels` merges the new `extensions` entry into the existing JSON map.
 
+## Multi-scenario catalog example
+
+Use `build-catalog` when you already have a scenario spec file.
+
+```powershell
+node .\ems-measure.mjs build-catalog `
+  .\docs\youtube-benchmark-scenarios.json `
+  --out .\docs\generated-youtube-benchmark-labels.json
+```
+
+Example spec file:
+
+- `docs/youtube-benchmark-scenarios.json`
+
 ## Current label mapping rule
 
 `export-labels` maps a scenario to `low` / `medium` / `high` using:

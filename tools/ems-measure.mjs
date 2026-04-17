@@ -16,11 +16,13 @@ Usage:
   node ems-measure.mjs snapshot [--host 127.0.0.1] [--port 9222] [--profile-dir "C:\\...\\Profile 4"] [--out snapshots\\ems-snapshot.json]
   node ems-measure.mjs diff <before.json> <after.json>
   node ems-measure.mjs export-labels <before.json> <after.json> [--source youtube-3ext-scenario] [--extension-id <id>] [--out docs\\generated-benchmark-labels.json]
+  node ems-measure.mjs build-catalog <scenarios.json> [--out docs\\generated-benchmark-labels.json]
 
 Commands:
   snapshot   Capture CDP targets plus Windows chrome.exe process memory.
   diff       Compare two snapshot files and summarize deltas.
   export-labels  Convert a validated A/B diff into popup import JSON.
+  build-catalog  Build one popup import catalog from multiple diff scenarios.
 `);
 }
 
@@ -569,6 +571,21 @@ function normalizeExportSource(source) {
   return source;
 }
 
+function mergeCatalogPayloads(existingPayload, exportPayload) {
+  return existingPayload && typeof existingPayload === "object"
+    ? {
+        ...existingPayload,
+        generatedAt: exportPayload.generatedAt,
+        source: exportPayload.source,
+        thresholds: exportPayload.thresholds,
+        extensions: {
+          ...(existingPayload.extensions ?? {}),
+          ...exportPayload.extensions
+        }
+      }
+    : exportPayload;
+}
+
 function buildBenchmarkExport(diff, { source, extensionId }) {
   const normalizedSource = normalizeExportSource(source);
   const totalPrivateDrop = Math.max(0, -diff.sessionDelta.totalPrivate);
@@ -620,19 +637,7 @@ async function exportBenchmarkLabels(beforeFile, afterFile, options) {
   const exportPayload = buildBenchmarkExport(diff, options);
   const outputPath = options.out ?? path.join(process.cwd(), "docs", "generated-benchmark-labels.json");
   const existingPayload = await tryReadJson(outputPath);
-  const mergedPayload =
-    existingPayload && typeof existingPayload === "object"
-      ? {
-          ...existingPayload,
-          generatedAt: exportPayload.generatedAt,
-          source: exportPayload.source,
-          thresholds: exportPayload.thresholds,
-          extensions: {
-            ...(existingPayload.extensions ?? {}),
-            ...exportPayload.extensions
-          }
-        }
-      : exportPayload;
+  const mergedPayload = mergeCatalogPayloads(existingPayload, exportPayload);
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, JSON.stringify(mergedPayload, null, 2), "utf8");
@@ -642,6 +647,59 @@ async function exportBenchmarkLabels(beforeFile, afterFile, options) {
   console.log(`Extensions in file: ${Object.keys(mergedPayload.extensions).length}`);
   for (const [candidateId, entry] of Object.entries(exportPayload.extensions)) {
     console.log(`- ${candidateId} | label=${entry.label} | ${entry.notes}`);
+  }
+}
+
+function resolveSpecPath(baseDir, targetPath) {
+  if (path.isAbsolute(targetPath)) {
+    return targetPath;
+  }
+  return path.resolve(baseDir, targetPath);
+}
+
+function ensureScenarioSpec(spec) {
+  if (!spec || typeof spec !== "object") {
+    throw new Error("Catalog spec must be a JSON object.");
+  }
+  if (!Array.isArray(spec.scenarios) || spec.scenarios.length === 0) {
+    throw new Error("Catalog spec must include a non-empty scenarios array.");
+  }
+}
+
+async function buildCatalogFromSpec(specFile, options) {
+  const specPath = path.resolve(specFile);
+  const specDir = path.dirname(specPath);
+  const spec = await loadJson(specPath);
+  ensureScenarioSpec(spec);
+
+  let catalog = null;
+  for (const scenario of spec.scenarios) {
+    if (!scenario?.before || !scenario?.after) {
+      throw new Error("Each scenario must include before and after snapshot paths.");
+    }
+
+    const before = await loadJson(resolveSpecPath(specDir, scenario.before));
+    const after = await loadJson(resolveSpecPath(specDir, scenario.after));
+    const diff = summarizeDiff(before, after);
+    const exportPayload = buildBenchmarkExport(diff, {
+      source: scenario.source ?? spec.source ?? options.source,
+      extensionId: scenario.extensionId ?? options.extensionId
+    });
+    catalog = mergeCatalogPayloads(catalog, exportPayload);
+  }
+
+  const outputPath = options.out
+    ? path.resolve(options.out)
+    : path.join(process.cwd(), "docs", "generated-benchmark-labels.json");
+
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, JSON.stringify(catalog, null, 2), "utf8");
+
+  console.log(`Saved benchmark catalog: ${outputPath}`);
+  console.log(`Scenarios processed: ${spec.scenarios.length}`);
+  console.log(`Extensions in file: ${Object.keys(catalog.extensions ?? {}).length}`);
+  for (const [extensionId, entry] of Object.entries(catalog.extensions ?? {})) {
+    console.log(`- ${extensionId} | label=${entry.label} | ${entry.notes}`);
   }
 }
 
@@ -670,6 +728,14 @@ async function main() {
       throw new Error("export-labels requires <before.json> and <after.json>");
     }
     await exportBenchmarkLabels(positionals[0], positionals[1], options);
+    return;
+  }
+
+  if (command === "build-catalog") {
+    if (positionals.length !== 1) {
+      throw new Error("build-catalog requires <scenarios.json>");
+    }
+    await buildCatalogFromSpec(positionals[0], options);
     return;
   }
 
