@@ -38,6 +38,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - safer action disabling when the current tab has no standard web origin
 - lightweight help / trust explainer in the popup
 - basic Playwright popup verification path
+- verified inventory-only behavior on non-web tabs through Playwright and fixed `chrome://` opaque-origin handling
 
 ### Partially done
 
@@ -66,7 +67,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, and help/trust copy using mock extensions
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, and inventory-only behavior on non-web tabs using mock extensions
   - broader regression coverage is still missing
 
 ### Not done yet

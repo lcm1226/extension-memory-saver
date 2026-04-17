@@ -62,6 +62,7 @@ The extension shell currently includes:
 - global enable/disable actions
 - save/restore current site setup
 - apply/clear saved site setup for the current origin
+- correct inventory-only handling for non-web tabs such as `chrome://extensions`
 - pinned extensions
 - protected-state and no-op messaging when Chrome will not allow a requested toggle
 - lightweight help / trust explainer in the popup
@@ -97,7 +98,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, and help/trust copy
+- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, and inventory-only behavior on non-web tabs
 
 ## Shortcut note
 

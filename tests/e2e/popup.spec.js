@@ -3,37 +3,53 @@ const os = require("node:os");
 const path = require("node:path");
 const { test, expect, chromium } = require("@playwright/test");
 
+async function launchPopupContext() {
+  const extensionPath = path.resolve(__dirname, "..", "..", "ems-extension");
+  const mockYoutubeExtensionPath = path.resolve(__dirname, "fixtures", "mock-youtube-helper");
+  const mockDocsExtensionPath = path.resolve(__dirname, "fixtures", "mock-docs-helper");
+  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "ems-playwright-"));
+
+  const context = await chromium.launchPersistentContext(userDataDir, {
+    channel: "chromium",
+    headless: true,
+    args: [
+      `--disable-extensions-except=${extensionPath},${mockYoutubeExtensionPath},${mockDocsExtensionPath}`,
+      `--load-extension=${extensionPath},${mockYoutubeExtensionPath},${mockDocsExtensionPath}`
+    ]
+  });
+
+  context.setDefaultTimeout(15_000);
+  let [serviceWorker] = context.serviceWorkers();
+  if (!serviceWorker) {
+    serviceWorker = await context.waitForEvent("serviceworker", { timeout: 15_000 });
+  }
+
+  const extensionId = serviceWorker.url().split("/")[2];
+  return { context, userDataDir, extensionId };
+}
+
+async function openPopupPage(context, extensionId, testUrl, testTitle) {
+  const popupUrl = new URL(`chrome-extension://${extensionId}/popup.html`);
+  popupUrl.searchParams.set("emsTestUrl", testUrl);
+  popupUrl.searchParams.set("emsTestTitle", testTitle);
+
+  const page = await context.newPage();
+  await page.goto(popupUrl.toString(), { waitUntil: "domcontentloaded" });
+  return page;
+}
+
 test.describe("EMS popup", () => {
   test("covers inventory, save/apply/restore/clear flow, import/reset, and trust copy", async () => {
     test.setTimeout(90_000);
-    const extensionPath = path.resolve(__dirname, "..", "..", "ems-extension");
-    const mockYoutubeExtensionPath = path.resolve(__dirname, "fixtures", "mock-youtube-helper");
-    const mockDocsExtensionPath = path.resolve(__dirname, "fixtures", "mock-docs-helper");
-    const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "ems-playwright-"));
-
-    const context = await chromium.launchPersistentContext(userDataDir, {
-      channel: "chromium",
-      headless: true,
-      args: [
-        `--disable-extensions-except=${extensionPath},${mockYoutubeExtensionPath},${mockDocsExtensionPath}`,
-        `--load-extension=${extensionPath},${mockYoutubeExtensionPath},${mockDocsExtensionPath}`
-      ]
-    });
+    const { context, userDataDir, extensionId } = await launchPopupContext();
 
     try {
-      context.setDefaultTimeout(15_000);
-      let [serviceWorker] = context.serviceWorkers();
-      if (!serviceWorker) {
-        serviceWorker = await context.waitForEvent("serviceworker", { timeout: 15_000 });
-      }
-
-      const extensionId = serviceWorker.url().split("/")[2];
-      const popupUrl = new URL(`chrome-extension://${extensionId}/popup.html`);
-      popupUrl.searchParams.set("emsTestUrl", "https://www.youtube.com/watch?v=pa4Xo-LQe54");
-      popupUrl.searchParams.set("emsTestTitle", "EMS Playwright Test");
-
-      const page = await context.newPage();
-      await page.goto(popupUrl.toString(), { waitUntil: "domcontentloaded" });
+      const page = await openPopupPage(
+        context,
+        extensionId,
+        "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+        "EMS Playwright Test"
+      );
 
       await expect(page.locator("#tab-title")).toHaveText("EMS Playwright Test");
       await expect(page.locator("#tab-origin")).toHaveText("https://www.youtube.com");
@@ -114,6 +130,34 @@ test.describe("EMS popup", () => {
       await page.locator(".help-shell summary").click();
       await expect(page.locator(".help-shell")).toContainText("benchmark guidance");
       await expect(page.locator(".help-shell")).toContainText("browser-wide extension state");
+    } finally {
+      await context.close();
+      await fs.rm(userDataDir, { recursive: true, force: true });
+    }
+  });
+
+  test("disables site actions on tabs without a standard web origin", async () => {
+    test.setTimeout(90_000);
+    const { context, userDataDir, extensionId } = await launchPopupContext();
+
+    try {
+      const page = await openPopupPage(
+        context,
+        extensionId,
+        "chrome://extensions",
+        "Chrome Extensions"
+      );
+
+      await expect(page.locator("#tab-title")).toHaveText("Chrome Extensions");
+      await expect(page.locator("#tab-origin")).toHaveText("chrome://extensions");
+      await expect(page.locator("#site-profile-summary")).toContainText("does not expose a standard web origin");
+      await expect(page.getByRole("button", { name: "Lighten This Site" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Save Current Setup" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Apply Saved Setup" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Clear Saved Setup" })).toBeDisabled();
+      await expect(page.locator("#metric-installed")).toHaveText("2");
+      await expect(page.locator("#metric-enabled")).toHaveText("2");
+      await expect(page.locator("#metric-relevant")).toHaveText("0");
     } finally {
       await context.close();
       await fs.rm(userDataDir, { recursive: true, force: true });

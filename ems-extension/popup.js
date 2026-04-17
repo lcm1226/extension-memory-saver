@@ -868,7 +868,14 @@ function sameIdSet(left, right) {
 
 function safeOrigin(url) {
   try {
-    return new URL(url).origin;
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return null;
+    }
+    if (parsed.origin === "null") {
+      return null;
+    }
+    return parsed.origin;
   } catch {
     return null;
   }

@@ -76,6 +76,7 @@ Operational lesson:
 1. Use `docs/EMS_MVP_SPEC.md` as the product baseline and `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap audit.
 2. Load `ems-extension/` in Chrome as an unpacked extension and verify:
    - current site
+   - non-web tabs such as `chrome://extensions` stay inventory-only and do not expose site actions
    - installed extension list
    - relevance inference
      - host permission matching
@@ -91,7 +92,7 @@ Operational lesson:
     - `docs/example-benchmark-labels.json` imports cleanly
 3. Run `npm run test:e2e` for the current Playwright smoke test.
    - this uses a test-only popup query override plus a mock YouTube helper extension
-- current assertions cover inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, and help/trust copy
+- current assertions cover inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, and inventory-only behavior on non-web tabs
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
