@@ -65,6 +65,35 @@ node .\ems-measure.mjs snapshot --port 9222 --profile-dir "C:\Users\...\Profile 
 node .\ems-measure.mjs diff .\snapshots\baseline.json .\snapshots\after.json
 ```
 
+## Benchmark export example
+
+Use this after a clean A/B removal run to generate popup-import JSON.
+
+```powershell
+node .\ems-measure.mjs export-labels `
+  .\snapshots\yt3-baseline.json `
+  .\snapshots\yt3-after-darkreader.json `
+  --source youtube-3ext-scenario `
+  --out .\docs\generated-darkreader-label.json
+```
+
+If the output file already exists, `export-labels` merges the new `extensions` entry into the existing JSON map.
+
+## Current label mapping rule
+
+`export-labels` maps a scenario to `low` / `medium` / `high` using:
+
+`max(totalPrivateDrop, rendererPrivateDrop)`
+
+Thresholds:
+
+- `high`: `>= 60 MB`
+- `medium`: `>= 25 MB`
+- `low`: `>= 8 MB`
+- otherwise `unknown`
+
+This is still scenario guidance, not live truth.
+
 ## What to look at
 
 - `extensionSummaries[*].ownedPrivateBytes`

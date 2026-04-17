@@ -15,10 +15,12 @@ function printHelp() {
 Usage:
   node ems-measure.mjs snapshot [--host 127.0.0.1] [--port 9222] [--profile-dir "C:\\...\\Profile 4"] [--out snapshots\\ems-snapshot.json]
   node ems-measure.mjs diff <before.json> <after.json>
+  node ems-measure.mjs export-labels <before.json> <after.json> [--source youtube-3ext-scenario] [--extension-id <id>] [--out docs\\generated-benchmark-labels.json]
 
 Commands:
   snapshot   Capture CDP targets plus Windows chrome.exe process memory.
   diff       Compare two snapshot files and summarize deltas.
+  export-labels  Convert a validated A/B diff into popup import JSON.
 `);
 }
 
@@ -37,6 +39,10 @@ function parseArgs(argv) {
       options.out = rest[++i];
     } else if (token === "--profile-dir") {
       options.profileDir = rest[++i];
+    } else if (token === "--source") {
+      options.source = rest[++i];
+    } else if (token === "--extension-id") {
+      options.extensionId = rest[++i];
     } else {
       positionals.push(token);
     }
@@ -350,6 +356,13 @@ function formatSignedBytes(bytes) {
   return `${sign}${formatBytes(bytes)}`;
 }
 
+function formatCompactBytes(bytes) {
+  if (bytes <= 0) {
+    return "0 B";
+  }
+  return formatBytes(bytes);
+}
+
 async function collectSnapshot({ host, port, out, profileDir }) {
   const baseHttpUrl = `http://${host}:${port}`;
   const version = await httpJson(`${baseHttpUrl}/json/version`);
@@ -524,6 +537,114 @@ async function diffSnapshots(beforeFile, afterFile) {
   }
 }
 
+function inferImpactLabel({ totalPrivateDrop, rendererPrivateDrop }) {
+  const strongestDrop = Math.max(totalPrivateDrop, rendererPrivateDrop);
+  const highThreshold = 60 * 1024 * 1024;
+  const mediumThreshold = 25 * 1024 * 1024;
+  const lowThreshold = 8 * 1024 * 1024;
+
+  if (strongestDrop >= highThreshold) {
+    return "high";
+  }
+  if (strongestDrop >= mediumThreshold) {
+    return "medium";
+  }
+  if (strongestDrop >= lowThreshold) {
+    return "low";
+  }
+  return "unknown";
+}
+
+function buildExportNote({ source, extensionName, totalPrivateDrop, rendererPrivateDrop, targetDelta }) {
+  const sourceLabel = source ?? "snapshot-diff-export";
+  const safeName = String(extensionName).replace(/[^\x20-\x7E]+/g, " ").replace(/\s+/g, " ").trim();
+  const targetText = targetDelta < 0 ? "removed target observed" : "target removal not observed";
+  return `${sourceLabel}: ${safeName} scenario showed total private drop ${formatCompactBytes(totalPrivateDrop)} and renderer private drop ${formatCompactBytes(rendererPrivateDrop)}; ${targetText}.`;
+}
+
+function normalizeExportSource(source) {
+  if (!source) {
+    return "snapshot-diff-export";
+  }
+  return source;
+}
+
+function buildBenchmarkExport(diff, { source, extensionId }) {
+  const normalizedSource = normalizeExportSource(source);
+  const totalPrivateDrop = Math.max(0, -diff.sessionDelta.totalPrivate);
+  const rendererPrivateDrop = Math.max(0, -diff.sessionDelta.rendererPrivate);
+  const impactLabel = inferImpactLabel({ totalPrivateDrop, rendererPrivateDrop });
+
+  let candidates = diff.removedExtensionTargets;
+  if (extensionId) {
+    candidates = diff.extensionDiffs.filter((row) => row.extensionId === extensionId);
+  } else if (candidates.length === 0) {
+    candidates = diff.extensionDiffs.filter((row) => row.targetDelta < 0);
+  }
+
+  if (candidates.length === 0) {
+    throw new Error("No removed extension target was found in this diff. Pass --extension-id if you want to export a specific extension row.");
+  }
+
+  const extensions = {};
+  for (const candidate of candidates) {
+    extensions[candidate.extensionId] = {
+      label: impactLabel,
+      source: normalizedSource,
+      notes: buildExportNote({
+        source: normalizedSource,
+        extensionName: candidate.name ?? candidate.extensionId,
+        totalPrivateDrop,
+        rendererPrivateDrop,
+        targetDelta: candidate.targetDelta
+      })
+    };
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    source: normalizedSource,
+    thresholds: {
+      highAtOrAboveBytes: 60 * 1024 * 1024,
+      mediumAtOrAboveBytes: 25 * 1024 * 1024,
+      lowAtOrAboveBytes: 8 * 1024 * 1024,
+      basedOn: "max(totalPrivateDrop, rendererPrivateDrop)"
+    },
+    extensions
+  };
+}
+
+async function exportBenchmarkLabels(beforeFile, afterFile, options) {
+  const [before, after] = await Promise.all([loadJson(beforeFile), loadJson(afterFile)]);
+  const diff = summarizeDiff(before, after);
+  const exportPayload = buildBenchmarkExport(diff, options);
+  const outputPath = options.out ?? path.join(process.cwd(), "docs", "generated-benchmark-labels.json");
+  const existingPayload = await tryReadJson(outputPath);
+  const mergedPayload =
+    existingPayload && typeof existingPayload === "object"
+      ? {
+          ...existingPayload,
+          generatedAt: exportPayload.generatedAt,
+          source: exportPayload.source,
+          thresholds: exportPayload.thresholds,
+          extensions: {
+            ...(existingPayload.extensions ?? {}),
+            ...exportPayload.extensions
+          }
+        }
+      : exportPayload;
+
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, JSON.stringify(mergedPayload, null, 2), "utf8");
+
+  console.log(`Saved benchmark labels: ${outputPath}`);
+  console.log(`Source: ${mergedPayload.source}`);
+  console.log(`Extensions in file: ${Object.keys(mergedPayload.extensions).length}`);
+  for (const [candidateId, entry] of Object.entries(exportPayload.extensions)) {
+    console.log(`- ${candidateId} | label=${entry.label} | ${entry.notes}`);
+  }
+}
+
 async function main() {
   const { command, options, positionals } = parseArgs(process.argv.slice(2));
   if (!command || command === "--help" || command === "-h" || command === "help") {
@@ -541,6 +662,14 @@ async function main() {
       throw new Error("diff requires <before.json> and <after.json>");
     }
     await diffSnapshots(positionals[0], positionals[1]);
+    return;
+  }
+
+  if (command === "export-labels") {
+    if (positionals.length !== 2) {
+      throw new Error("export-labels requires <before.json> and <after.json>");
+    }
+    await exportBenchmarkLabels(positionals[0], positionals[1], options);
     return;
   }
 

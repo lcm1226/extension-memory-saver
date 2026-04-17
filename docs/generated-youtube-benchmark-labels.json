@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-17T01:41:48.114Z",
+  "source": "youtube-3ext-scenario",
+  "thresholds": {
+    "highAtOrAboveBytes": 62914560,
+    "mediumAtOrAboveBytes": 26214400,
+    "lowAtOrAboveBytes": 8388608,
+    "basedOn": "max(totalPrivateDrop, rendererPrivateDrop)"
+  },
+  "extensions": {
+    "eimadpbcbfnmbkopoojfekhnkhdbieeh": {
+      "label": "medium",
+      "source": "youtube-3ext-scenario",
+      "notes": "youtube-3ext-scenario: Dark Reader scenario showed total private drop 54.14 MB and renderer private drop 54.64 MB; removed target observed."
+    },
+    "cmedmhnddgokbjflbjhkbeakkpaeenkc": {
+      "label": "high",
+      "source": "youtube-3ext-scenario",
+      "notes": "youtube-3ext-scenario: Bideo Max: Auto 8K/4K/HD for YouTube & More scenario showed total private drop 72.72 MB and renderer private drop 61.59 MB; removed target observed."
+    },
+    "bnomihfieiccainjcjblhegjgglakjdd": {
+      "label": "high",
+      "source": "youtube-3ext-scenario",
+      "notes": "youtube-3ext-scenario: 'Improve YouTube!' (for YouTube & Videos) scenario showed total private drop 73.14 MB and renderer private drop 79.33 MB; removed target observed."
+    }
+  }
+}
