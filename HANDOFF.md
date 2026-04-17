@@ -103,6 +103,14 @@ Use this repository as the transfer unit.
 - Preferred: push to GitHub, then open the repo in Cloud Codex.
 - Fallback: upload this folder or paste `HANDOFF.md` plus the latest diff output into the new session.
 
+## Working rule
+
+Before reporting that filesystem cleanup or path changes are complete, run verification directly.
+
+- verify repo status
+- verify JavaScript syntax for edited extension files
+- verify at least one repo-internal measurement/tool command still runs from the new path layout
+
 ## What the user needs to do
 
 1. Choose whether to use GitHub or a manual folder/upload handoff.
