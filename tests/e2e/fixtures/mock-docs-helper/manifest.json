@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "MockDocs Helper",
+  "version": "0.1.0",
+  "description": "Mock extension for EMS Playwright verification on Google Docs pages.",
+  "homepage_url": "https://docs.google.com/",
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://docs.google.com/*"
+  ]
+}

@@ -95,8 +95,9 @@ It does not yet include:
 Current automated coverage:
 
 - loads EMS plus a mock YouTube helper extension
+- loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, no-op action messaging, and help/trust copy
+- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, benchmark import, and help/trust copy
 
 ## Shortcut note
 

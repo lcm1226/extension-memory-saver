@@ -65,7 +65,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, no-op messaging, and help/trust copy using a mock extension
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, benchmark import, and help/trust copy using mock extensions
   - broader regression coverage is still missing
 
 ### Not done yet
@@ -96,6 +96,8 @@ Make the extension safer and easier to trust:
 
 - make destructive-feeling actions more obvious about being browser-wide
 - broaden automated popup verification beyond the current smoke test
+  - add reset / clear-saved-setup assertions
+  - add protected-extension scenarios if we can simulate them cleanly
 
 ### Priority 3
 
