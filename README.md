@@ -62,6 +62,7 @@ The extension shell currently includes:
 - apply/clear saved site setup for the current origin
 - pinned extensions
 - protected-state and no-op messaging when Chrome will not allow a requested toggle
+- lightweight help / trust explainer in the popup
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls
 - probe-side compact benchmark export command

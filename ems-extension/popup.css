@@ -204,6 +204,38 @@ button:disabled {
   flex-direction: column;
 }
 
+.help-shell {
+  margin: 10px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
+}
+
+.help-shell summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.help-shell[open] summary {
+  margin-bottom: 8px;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.help-list li + li {
+  margin-top: 6px;
+}
+
 .list-header {
   display: flex;
   align-items: baseline;
