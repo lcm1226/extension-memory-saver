@@ -17,6 +17,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
 - `docs/EMS_MVP_SPEC.md`: buildable EMS product definition based on measurement findings
+- `docs/ROADMAP_REVIEW_2026-04-17.md`: implemented vs missing roadmap audit
 - `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
 
@@ -40,6 +41,7 @@ Stable Chrome cannot yet support:
 2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
 3. Validate site profile actions and benchmark import/reset flow in the popup.
 4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
+5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 
 ## Current MVP shell
 

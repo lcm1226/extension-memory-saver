@@ -73,7 +73,7 @@ Operational lesson:
 
 ## Recommended next work
 
-1. Use `docs/EMS_MVP_SPEC.md` as the new product baseline.
+1. Use `docs/EMS_MVP_SPEC.md` as the product baseline and `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap audit.
 2. Load `ems-extension/` in Chrome as an unpacked extension and verify:
    - current site
    - installed extension list
