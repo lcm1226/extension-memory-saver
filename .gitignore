@@ -6,3 +6,6 @@ snapshots/
 *.log
 *.tmp
 node_modules/
+.npm-cache/
+playwright-report/
+test-results/

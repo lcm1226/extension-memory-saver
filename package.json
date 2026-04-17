@@ -1,0 +1,27 @@
+{
+  "name": "ems-memory-probe",
+  "version": "1.0.0",
+  "description": "Windows-first measurement harness for Chromium extension memory experiments.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Use npm run test:e2e\" && exit 1",
+    "test:e2e": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lcm1226/extension-memory-saver.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lcm1226/extension-memory-saver/issues"
+  },
+  "homepage": "https://github.com/lcm1226/extension-memory-saver#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

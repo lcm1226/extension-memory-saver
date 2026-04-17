@@ -22,6 +22,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
 - `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
+- `tests/e2e/`: Playwright popup verification with a mock extension fixture
 
 ## Current conclusion
 
@@ -47,6 +48,7 @@ Stable Chrome cannot yet support:
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
 7. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
 8. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
+9. Use `npm run test:e2e` for the current Playwright popup smoke test.
 
 ## Current MVP shell
 
@@ -68,6 +70,7 @@ The extension shell currently includes:
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - less-manual scenario specs for one-target removal runs
+- basic Playwright popup verification with a mock extension
 
 It does not yet include:
 
@@ -82,6 +85,18 @@ It does not yet include:
 4. Select the `ems-extension` folder
 5. Open a normal website and test the popup
 6. If you want a custom shortcut, open `chrome://extensions/shortcuts`
+
+## Automated verification
+
+1. Install repo dependencies with `npm install`
+2. Install Playwright Chromium with `npx playwright install chromium`
+3. Run `npm run test:e2e`
+
+Current automated coverage:
+
+- loads EMS plus a mock YouTube helper extension
+- opens `popup.html` with a test tab override
+- verifies inventory metrics, relevance labeling, no-op action messaging, and help/trust copy
 
 ## Shortcut note
 

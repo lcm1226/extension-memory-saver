@@ -60,6 +60,8 @@ const state = {
   }
 };
 
+const testTabOverride = readTestTabOverride();
+
 const ui = {
   tabTitle: document.getElementById("tab-title"),
   tabOrigin: document.getElementById("tab-origin"),
@@ -164,7 +166,7 @@ function bindEvents() {
 }
 
 async function refresh() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await resolveCurrentTab();
   if (!tab || !tab.url) {
     throw new Error("No active tab URL is available.");
   }
@@ -189,6 +191,29 @@ async function refresh() {
     .sort(compareExtensions);
 
   render();
+}
+
+function readTestTabOverride() {
+  const params = new URLSearchParams(window.location.search);
+  const url = params.get("emsTestUrl");
+  if (!url) {
+    return null;
+  }
+
+  return {
+    id: -1,
+    title: params.get("emsTestTitle") || "EMS Test Tab",
+    url
+  };
+}
+
+async function resolveCurrentTab() {
+  if (testTabOverride) {
+    return testTabOverride;
+  }
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab ?? null;
 }
 
 function decorateExtension(extension) {

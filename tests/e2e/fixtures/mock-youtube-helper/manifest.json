@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "MockTube Helper",
+  "version": "0.1.0",
+  "description": "Mock extension for EMS Playwright verification on YouTube pages.",
+  "homepage_url": "https://www.youtube.com/",
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ]
+}

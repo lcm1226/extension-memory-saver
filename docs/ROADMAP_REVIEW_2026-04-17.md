@@ -36,6 +36,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - clearer no-op and protected-extension messaging
 - safer action disabling when the current tab has no standard web origin
 - lightweight help / trust explainer in the popup
+- basic Playwright popup verification path
 
 ### Partially done
 
@@ -64,7 +65,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - automated regression verification is still missing
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, no-op messaging, and help/trust copy using a mock extension
+  - broader regression coverage is still missing
 
 ### Not done yet
 
@@ -93,14 +95,13 @@ Close the remaining MVP-spec gaps:
 Make the extension safer and easier to trust:
 
 - make destructive-feeling actions more obvious about being browser-wide
-- add automated popup verification once a working Playwright path exists
+- broaden automated popup verification beyond the current smoke test
 
 ### Priority 3
 
 Prepare for a cleaner handoff/release cycle:
 
 - add icons and basic metadata
-- add a simple automated verification path
 - do one deliberate UI polish pass after behavior stabilizes
 
 ## Decision
