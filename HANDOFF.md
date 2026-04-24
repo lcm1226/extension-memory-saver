@@ -95,12 +95,13 @@ Operational lesson:
    - this uses a test-only popup query override plus mock extensions and a test-only management fixture
 - current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
-5. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
+5. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
+6. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
    - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
-6. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
-7. Only return to deeper measurement work when it unblocks a concrete product decision.
-8. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
+7. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
+8. Only return to deeper measurement work when it unblocks a concrete product decision.
+9. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
 
 ## Latest verified checkpoint
 
@@ -123,7 +124,7 @@ Operational lesson:
 
 ## Current next priorities
 
-1. keep reducing manual scenario authoring and catalog generation work
+1. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
 2. decide whether any deeper relevance inference needs a non-stable or profile-read path
 3. prepare icons/basic metadata and a release UI pass once behavior stops moving
 4. expand non-technical docs when the interaction model is stable

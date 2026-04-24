@@ -44,6 +44,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - verified saved-setup conflict handling when protected states block part of `Apply Saved Setup`
 - added folder-move / new-thread handoff docs so the repo can move without losing working context
 - made `npm run test:e2e` resolve the repo-local Playwright browser after folder moves
+- added `discover-scenarios` to generate catalog scenario specs from one baseline and a folder of after snapshots
 
 ### Partially done
 
@@ -66,10 +67,11 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - compact benchmark export command from the probe workflow
     - documented mapping rule from measured deltas to `low/medium/high`
     - multi-scenario catalog build command with JSON scenario spec
+    - scenario discovery command for one-baseline/many-after snapshot sets
     - auto-selection when a scenario removes exactly one extension target
     - optional `extensionName` / `extensionNameContains` selectors for ambiguous scenarios
   - still missing:
-    - smoother scenario authoring for richer metadata beyond current selectors
+    - smoother scenario authoring for richer metadata beyond current discovered baseline/after datasets
 - end-to-end verification
   - manual verification happened on the real YouTube page
   - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states using mock extensions plus a test-only management fixture
@@ -95,7 +97,7 @@ Close the remaining MVP-spec gaps:
 
 - support `optional_host_permissions` in relevance scoring where available
 - investigate whether `content_scripts.matches` can be surfaced reliably enough for inference
-- keep reducing manual scenario authoring for richer datasets
+- keep reducing manual scenario authoring only when richer datasets need metadata beyond current discovery
 
 ### Priority 2
 
@@ -118,6 +120,6 @@ Behavior work should stay ahead of UI polish.
 
 The next concrete implementation step should be:
 
-1. make scenario authoring and catalog generation less manual
-2. decide whether any deeper relevance inference needs a non-stable or profile-read path
-3. prepare icons/basic metadata once behavior work stops moving
+1. decide whether any deeper relevance inference needs a non-stable or profile-read path
+2. prepare icons/basic metadata once behavior work stops moving
+3. add non-technical docs for the benchmark-backed control model

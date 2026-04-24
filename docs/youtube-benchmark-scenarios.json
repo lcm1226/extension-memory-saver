@@ -1,17 +1,44 @@
 {
   "source": "youtube-3ext-scenario",
+  "discovery": {
+    "before": "../snapshots/yt3-baseline.json",
+    "afterDir": "../snapshots",
+    "afterPrefix": "yt3-after-",
+    "skipped": []
+  },
   "scenarios": [
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-darkreader.json"
+      "after": "../snapshots/yt3-after-bideomax.json",
+      "extensionId": "cmedmhnddgokbjflbjhkbeakkpaeenkc",
+      "extensionName": "Bideo Max: Auto 8K/4K/HD for YouTube & More",
+      "summary": {
+        "totalPrivateDropBytes": 76251136,
+        "rendererPrivateDropBytes": 64585728,
+        "targetDelta": -1
+      }
     },
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-bideomax.json"
+      "after": "../snapshots/yt3-after-darkreader.json",
+      "extensionId": "eimadpbcbfnmbkopoojfekhnkhdbieeh",
+      "extensionName": "Dark Reader",
+      "summary": {
+        "totalPrivateDropBytes": 56770560,
+        "rendererPrivateDropBytes": 57294848,
+        "targetDelta": -1
+      }
     },
     {
       "before": "../snapshots/yt3-baseline.json",
-      "after": "../snapshots/yt3-after-improveyoutube.json"
+      "after": "../snapshots/yt3-after-improveyoutube.json",
+      "extensionId": "bnomihfieiccainjcjblhegjgglakjdd",
+      "extensionName": "'Improve YouTube!' (for YouTube & Videos)",
+      "summary": {
+        "totalPrivateDropBytes": 76693504,
+        "rendererPrivateDropBytes": 83185664,
+        "targetDelta": -1
+      }
     }
   ]
 }

@@ -48,10 +48,11 @@ Stable Chrome cannot yet support:
 4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
-7. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
-8. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
-9. Use `npm run test:e2e` for the current Playwright popup smoke test.
-10. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
+7. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
+8. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
+9. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
+10. Use `npm run test:e2e` for the current Playwright popup smoke test.
+11. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
 ## Current MVP shell
 
@@ -74,6 +75,7 @@ The extension shell currently includes:
 - benchmark label import/reset controls
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
+- probe-side scenario discovery command for one-baseline/many-after snapshot sets
 - less-manual scenario specs for one-target removal runs
 - basic Playwright popup verification with mock extensions
 - test-only management fixture support for protected/unavailable scenarios

@@ -17,12 +17,14 @@ Usage:
   node ems-measure.mjs diff <before.json> <after.json>
   node ems-measure.mjs export-labels <before.json> <after.json> [--source youtube-3ext-scenario] [--extension-id <id>] [--out docs\\generated-benchmark-labels.json]
   node ems-measure.mjs build-catalog <scenarios.json> [--out docs\\generated-benchmark-labels.json]
+  node ems-measure.mjs discover-scenarios <before.json> <after-dir> [--after-prefix yt3-after-] [--source youtube-3ext-scenario] [--out docs\\youtube-benchmark-scenarios.json]
 
 Commands:
   snapshot   Capture CDP targets plus Windows chrome.exe process memory.
   diff       Compare two snapshot files and summarize deltas.
   export-labels  Convert a validated A/B diff into popup import JSON.
   build-catalog  Build one popup import catalog from multiple diff scenarios.
+  discover-scenarios  Discover build-catalog scenarios from one baseline and an after-snapshot folder.
 `);
 }
 
@@ -45,6 +47,8 @@ function parseArgs(argv) {
       options.source = rest[++i];
     } else if (token === "--extension-id") {
       options.extensionId = rest[++i];
+    } else if (token === "--after-prefix") {
+      options.afterPrefix = rest[++i];
     } else {
       positionals.push(token);
     }
@@ -712,6 +716,97 @@ function ensureScenarioSpec(spec) {
   }
 }
 
+function toSpecPath(filePath, specDir) {
+  const relativePath = path.relative(specDir, filePath);
+  return relativePath.split(path.sep).join("/");
+}
+
+function defaultDiscoverySource(beforeFile) {
+  return `${path.basename(beforeFile, path.extname(beforeFile))}-discovered`;
+}
+
+function sanitizeSpecText(value) {
+  return String(value ?? "").replace(/[^\x20-\x7E]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+async function discoverCatalogScenarios(beforeFile, afterDir, options) {
+  const beforePath = path.resolve(beforeFile);
+  const afterDirPath = path.resolve(afterDir);
+  const outputPath = options.out
+    ? path.resolve(options.out)
+    : path.join(process.cwd(), "docs", "generated-benchmark-scenarios.json");
+  const specDir = path.dirname(outputPath);
+  const before = await loadJson(beforePath);
+  const entries = await fs.readdir(afterDirPath, { withFileTypes: true });
+  const afterFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .filter((entry) => !options.afterPrefix || entry.name.startsWith(options.afterPrefix))
+    .map((entry) => path.join(afterDirPath, entry.name))
+    .filter((filePath) => path.resolve(filePath) !== beforePath)
+    .sort((a, b) => a.localeCompare(b));
+
+  const scenarios = [];
+  const skipped = [];
+
+  for (const afterFile of afterFiles) {
+    try {
+      const after = await loadJson(afterFile);
+      const diff = summarizeDiff(before, after);
+      const candidates = resolveBenchmarkCandidates(diff, { strictSingleCandidate: true });
+      if (candidates.length !== 1) {
+        skipped.push({ after: toSpecPath(afterFile, specDir), reason: "No single removed extension target was found." });
+        continue;
+      }
+
+      const [candidate] = candidates;
+      scenarios.push({
+        before: toSpecPath(beforePath, specDir),
+        after: toSpecPath(afterFile, specDir),
+        extensionId: candidate.extensionId,
+        extensionName: candidate.name ? sanitizeSpecText(candidate.name) : null,
+        summary: {
+          totalPrivateDropBytes: Math.max(0, -diff.sessionDelta.totalPrivate),
+          rendererPrivateDropBytes: Math.max(0, -diff.sessionDelta.rendererPrivate),
+          targetDelta: candidate.targetDelta
+        }
+      });
+    } catch (error) {
+      skipped.push({ after: toSpecPath(afterFile, specDir), reason: error.message });
+    }
+  }
+
+  if (scenarios.length === 0) {
+    throw new Error("No usable scenarios were discovered. Try --after-prefix or inspect the skipped files in the command output.");
+  }
+
+  const spec = {
+    source: options.source ?? defaultDiscoverySource(beforePath),
+    discovery: {
+      before: toSpecPath(beforePath, specDir),
+      afterDir: toSpecPath(afterDirPath, specDir),
+      afterPrefix: options.afterPrefix ?? null,
+      skipped
+    },
+    scenarios
+  };
+
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, JSON.stringify(spec, null, 2), "utf8");
+
+  console.log(`Saved scenario spec: ${outputPath}`);
+  console.log(`Scenarios discovered: ${scenarios.length}`);
+  console.log(`Files skipped: ${skipped.length}`);
+  for (const scenario of scenarios) {
+    console.log(`- ${scenario.extensionName ?? scenario.extensionId} (${scenario.extensionId}) | after=${scenario.after}`);
+  }
+  if (skipped.length > 0) {
+    console.log("Skipped files:");
+    for (const row of skipped) {
+      console.log(`- ${row.after} | ${row.reason}`);
+    }
+  }
+}
+
 async function buildCatalogFromSpec(specFile, options) {
   const specPath = path.resolve(specFile);
   const specDir = path.dirname(specPath);
@@ -785,6 +880,14 @@ async function main() {
       throw new Error("build-catalog requires <scenarios.json>");
     }
     await buildCatalogFromSpec(positionals[0], options);
+    return;
+  }
+
+  if (command === "discover-scenarios") {
+    if (positionals.length !== 2) {
+      throw new Error("discover-scenarios requires <before.json> and <after-dir>");
+    }
+    await discoverCatalogScenarios(positionals[0], positionals[1], options);
     return;
   }
 

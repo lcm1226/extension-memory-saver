@@ -115,6 +115,21 @@ Minimal spec example:
 }
 ```
 
+## Scenario discovery example
+
+Use `discover-scenarios` when you have one baseline snapshot plus a folder of after snapshots and want to generate a `build-catalog` spec automatically.
+
+```powershell
+node .\tools\ems-measure.mjs discover-scenarios `
+  .\snapshots\yt3-baseline.json `
+  .\snapshots `
+  --after-prefix yt3-after- `
+  --source youtube-3ext-scenario `
+  --out .\docs\youtube-benchmark-scenarios.json
+```
+
+The command scans JSON files in the after-snapshot folder, keeps diffs where exactly one extension target disappeared, records the inferred extension id/name, and writes a stable spec file for `build-catalog`.
+
 ## Current label mapping rule
 
 `export-labels` maps a scenario to `low` / `medium` / `high` using:
