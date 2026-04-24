@@ -22,7 +22,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
 - `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
 - `HANDOFF.md`: concise context for continuing work in another Codex environment
-- `tests/e2e/`: Playwright popup verification with a mock extension fixture
+- `tests/e2e/`: Playwright popup verification with mock extensions and management fixtures
 
 ## Current conclusion
 
@@ -72,6 +72,7 @@ The extension shell currently includes:
 - probe-side multi-scenario catalog build command
 - less-manual scenario specs for one-target removal runs
 - basic Playwright popup verification with mock extensions
+- test-only management fixture support for protected/unavailable scenarios
 
 It does not yet include:
 
@@ -98,7 +99,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, and inventory-only behavior on non-web tabs
+- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
 
 ## Shortcut note
 

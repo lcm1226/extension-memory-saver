@@ -39,6 +39,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - lightweight help / trust explainer in the popup
 - basic Playwright popup verification path
 - verified inventory-only behavior on non-web tabs through Playwright and fixed `chrome://` opaque-origin handling
+- verified protected/unavailable extension handling through a test-only management fixture
 
 ### Partially done
 
@@ -67,7 +68,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, and inventory-only behavior on non-web tabs using mock extensions
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips using mock extensions plus a test-only management fixture
   - broader regression coverage is still missing
 
 ### Not done yet
@@ -98,7 +99,7 @@ Make the extension safer and easier to trust:
 
 - make destructive-feeling actions more obvious about being browser-wide
 - broaden automated popup verification beyond the current smoke test
-  - add protected-extension scenarios if we can simulate them cleanly
+  - if useful, add one saved-setup conflict case on top of the current protected fixture coverage
 
 ### Priority 3
 

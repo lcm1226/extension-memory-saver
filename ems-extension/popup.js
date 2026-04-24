@@ -61,6 +61,71 @@ const state = {
 };
 
 const testTabOverride = readTestTabOverride();
+const testManagementFixtureName = readTestManagementFixtureName();
+let testManagementState = null;
+
+const TEST_MANAGEMENT_FIXTURES = {
+  protected: {
+    extensions: [
+      {
+        id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        name: "ProtectedTube Helper",
+        shortName: "ProtectedTube",
+        version: "1.0.0",
+        description: "Protected helper for YouTube pages.",
+        enabled: true,
+        mayDisable: false,
+        mayEnable: true,
+        type: "extension",
+        hostPermissions: ["https://www.youtube.com/*"],
+        permissions: ["activeTab"],
+        homepageUrl: "https://www.youtube.com"
+      },
+      {
+        id: "cccccccccccccccccccccccccccccccc",
+        name: "LockedOffTube Helper",
+        shortName: "LockedOffTube",
+        version: "1.0.0",
+        description: "Unavailable helper for YouTube pages.",
+        enabled: false,
+        mayDisable: true,
+        mayEnable: false,
+        type: "extension",
+        hostPermissions: ["https://www.youtube.com/*"],
+        permissions: ["activeTab"],
+        homepageUrl: "https://www.youtube.com"
+      },
+      {
+        id: "dddddddddddddddddddddddddddddddd",
+        name: "ProtectedDocs Helper",
+        shortName: "ProtectedDocs",
+        version: "1.0.0",
+        description: "Protected helper for Google Docs pages.",
+        enabled: true,
+        mayDisable: false,
+        mayEnable: true,
+        type: "extension",
+        hostPermissions: ["https://docs.google.com/*"],
+        permissions: ["activeTab"],
+        homepageUrl: "https://docs.google.com"
+      },
+      {
+        id: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        name: "ToggleableDocs Helper",
+        shortName: "ToggleableDocs",
+        version: "1.0.0",
+        description: "Normal helper for Google Docs pages.",
+        enabled: true,
+        mayDisable: true,
+        mayEnable: true,
+        type: "extension",
+        hostPermissions: ["https://docs.google.com/*"],
+        permissions: ["activeTab"],
+        homepageUrl: "https://docs.google.com"
+      }
+    ]
+  }
+};
 
 const ui = {
   tabTitle: document.getElementById("tab-title"),
@@ -173,7 +238,7 @@ async function refresh() {
 
   const self = await chrome.management.getSelf();
   const storage = await chrome.storage.local.get(Object.values(STORAGE_KEYS));
-  const allExtensions = await chrome.management.getAll();
+  const allExtensions = await resolveAllExtensions();
 
   state.tab = tab;
   state.origin = safeOrigin(tab.url);
@@ -207,6 +272,11 @@ function readTestTabOverride() {
   };
 }
 
+function readTestManagementFixtureName() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("emsTestManagementFixture");
+}
+
 async function resolveCurrentTab() {
   if (testTabOverride) {
     return testTabOverride;
@@ -214,6 +284,51 @@ async function resolveCurrentTab() {
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab ?? null;
+}
+
+async function resolveAllExtensions() {
+  const fixtureState = getTestManagementState();
+  if (fixtureState) {
+    return cloneFixtureValue(fixtureState.extensions);
+  }
+  return chrome.management.getAll();
+}
+
+async function setExtensionEnabled(extensionId, enabled) {
+  const fixtureState = getTestManagementState();
+  if (!fixtureState) {
+    await chrome.management.setEnabled(extensionId, enabled);
+    return;
+  }
+
+  const extension = fixtureState.extensions.find((candidate) => candidate.id === extensionId);
+  if (!extension) {
+    throw new Error(`Unknown test extension: ${extensionId}`);
+  }
+  if (!enabled && extension.mayDisable === false) {
+    throw new Error(`Fixture does not allow disabling ${extension.name}.`);
+  }
+  if (enabled && extension.mayEnable === false) {
+    throw new Error(`Fixture does not allow enabling ${extension.name}.`);
+  }
+  extension.enabled = enabled;
+}
+
+function getTestManagementState() {
+  if (!testManagementFixtureName) {
+    return null;
+  }
+  if (!TEST_MANAGEMENT_FIXTURES[testManagementFixtureName]) {
+    throw new Error(`Unknown EMS test management fixture: ${testManagementFixtureName}`);
+  }
+  if (!testManagementState) {
+    testManagementState = cloneFixtureValue(TEST_MANAGEMENT_FIXTURES[testManagementFixtureName]);
+  }
+  return testManagementState;
+}
+
+function cloneFixtureValue(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function decorateExtension(extension) {
@@ -451,7 +566,7 @@ function renderExtension(extension) {
       : "Chrome does not allow this extension to be enabled from EMS.")
     : "";
   stateToggle.addEventListener("click", () => runWithStatus(`${extension.enabled ? "Disabling" : "Enabling"} ${extension.name}...`, async () => {
-    await chrome.management.setEnabled(extension.id, !extension.enabled);
+    await setExtensionEnabled(extension.id, !extension.enabled);
     await refresh();
     setStatus(`${extension.enabled ? "Disabled" : "Enabled"} ${extension.name}.`);
   }));
@@ -590,7 +705,7 @@ async function applyEnabledSet(keepEnabledIds) {
       change.skippedEnableNames.push(extension.name);
       continue;
     }
-    await chrome.management.setEnabled(extension.id, shouldBeEnabled);
+    await setExtensionEnabled(extension.id, shouldBeEnabled);
     if (shouldBeEnabled) {
       change.enabledNames.push(extension.name);
     } else {

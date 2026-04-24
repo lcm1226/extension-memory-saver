@@ -28,10 +28,13 @@ async function launchPopupContext() {
   return { context, userDataDir, extensionId };
 }
 
-async function openPopupPage(context, extensionId, testUrl, testTitle) {
+async function openPopupPage(context, extensionId, options) {
   const popupUrl = new URL(`chrome-extension://${extensionId}/popup.html`);
-  popupUrl.searchParams.set("emsTestUrl", testUrl);
-  popupUrl.searchParams.set("emsTestTitle", testTitle);
+  popupUrl.searchParams.set("emsTestUrl", options.testUrl);
+  popupUrl.searchParams.set("emsTestTitle", options.testTitle);
+  if (options.managementFixture) {
+    popupUrl.searchParams.set("emsTestManagementFixture", options.managementFixture);
+  }
 
   const page = await context.newPage();
   await page.goto(popupUrl.toString(), { waitUntil: "domcontentloaded" });
@@ -47,8 +50,10 @@ test.describe("EMS popup", () => {
       const page = await openPopupPage(
         context,
         extensionId,
-        "https://www.youtube.com/watch?v=pa4Xo-LQe54",
-        "EMS Playwright Test"
+        {
+          testUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+          testTitle: "EMS Playwright Test"
+        }
       );
 
       await expect(page.locator("#tab-title")).toHaveText("EMS Playwright Test");
@@ -144,8 +149,10 @@ test.describe("EMS popup", () => {
       const page = await openPopupPage(
         context,
         extensionId,
-        "chrome://extensions",
-        "Chrome Extensions"
+        {
+          testUrl: "chrome://extensions",
+          testTitle: "Chrome Extensions"
+        }
       );
 
       await expect(page.locator("#tab-title")).toHaveText("Chrome Extensions");
@@ -158,6 +165,56 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-installed")).toHaveText("2");
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#metric-relevant")).toHaveText("0");
+    } finally {
+      await context.close();
+      await fs.rm(userDataDir, { recursive: true, force: true });
+    }
+  });
+
+  test("shows protected and unavailable extensions and reports skipped bulk actions", async () => {
+    test.setTimeout(90_000);
+    const { context, userDataDir, extensionId } = await launchPopupContext();
+
+    try {
+      const page = await openPopupPage(
+        context,
+        extensionId,
+        {
+          testUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+          testTitle: "EMS Protected Fixture",
+          managementFixture: "protected"
+        }
+      );
+
+      await expect(page.locator("#metric-installed")).toHaveText("4");
+      await expect(page.locator("#metric-enabled")).toHaveText("3");
+      await expect(page.locator("#metric-relevant")).toHaveText("2");
+
+      const protectedTubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "ProtectedTube Helper" }) });
+      const lockedOffTubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "LockedOffTube Helper" }) });
+      const protectedDocsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "ProtectedDocs Helper" }) });
+      const toggleableDocsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "ToggleableDocs Helper" }) });
+
+      await expect(protectedTubeRow.locator(".state-toggle")).toHaveText("Protected");
+      await expect(protectedTubeRow.locator(".state-toggle")).toBeDisabled();
+      await expect(protectedTubeRow.locator(".extension-meta")).toContainText("cannot disable here");
+
+      await expect(lockedOffTubeRow.locator(".state-toggle")).toHaveText("Unavailable");
+      await expect(lockedOffTubeRow.locator(".state-toggle")).toBeDisabled();
+      await expect(lockedOffTubeRow.locator(".extension-meta")).toContainText("cannot enable here");
+
+      await page.getByRole("button", { name: "Lighten This Site" }).click();
+      await expect(page.locator("#metric-enabled")).toHaveText("2");
+      await expect(page.locator("#status")).toContainText("Disabled 1: ToggleableDocs Helper");
+      await expect(page.locator("#status")).toContainText("Could not disable 1: ProtectedDocs Helper");
+      await expect(page.locator("#status")).toContainText("Could not enable 1: LockedOffTube Helper");
+      await expect(toggleableDocsRow.locator(".enabled-pill")).toContainText("disabled");
+      await expect(protectedDocsRow.locator(".enabled-pill")).toContainText("enabled");
+
+      await page.getByRole("button", { name: "Restore Previous State" }).click();
+      await expect(page.locator("#metric-enabled")).toHaveText("3");
+      await expect(page.locator("#status")).toContainText("Re-enabled 1: ToggleableDocs Helper");
+      await expect(toggleableDocsRow.locator(".enabled-pill")).toContainText("enabled");
     } finally {
       await context.close();
       await fs.rm(userDataDir, { recursive: true, force: true });
