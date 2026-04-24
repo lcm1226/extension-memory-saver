@@ -41,6 +41,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - verified inventory-only behavior on non-web tabs through Playwright and fixed `chrome://` opaque-origin handling
 - verified protected/unavailable extension handling through a test-only management fixture
 - added explicit browser-wide action banner and browser-wide/no-op status copy
+- verified saved-setup conflict handling when protected states block part of `Apply Saved Setup`
+- added folder-move / new-thread handoff docs so the repo can move without losing working context
 
 ### Partially done
 
@@ -69,7 +71,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips using mock extensions plus a test-only management fixture
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states using mock extensions plus a test-only management fixture
   - broader regression coverage is still missing
 
 ### Not done yet
@@ -96,17 +98,18 @@ Close the remaining MVP-spec gaps:
 
 ### Priority 2
 
-Make the extension safer and easier to trust:
+Prepare for a cleaner handoff/release cycle:
 
-- broaden automated popup verification beyond the current smoke test
-  - if useful, add one saved-setup conflict case on top of the current protected fixture coverage
+- preserve and maintain the current popup verification breadth as behavior changes
+- add icons and basic metadata
+- do one deliberate UI polish pass after behavior stabilizes
 
 ### Priority 3
 
-Prepare for a cleaner handoff/release cycle:
+Make the project easier to continue outside the current thread:
 
-- add icons and basic metadata
-- do one deliberate UI polish pass after behavior stabilizes
+- keep the folder-move / new-thread handoff docs current as milestones change
+- add non-technical docs once the behavior model stops moving
 
 ## Decision
 
@@ -115,5 +118,5 @@ Behavior work should stay ahead of UI polish.
 The next concrete implementation step should be:
 
 1. make scenario authoring and catalog generation less manual
-2. add one saved-setup conflict case on top of the current protected fixture coverage if it still closes a meaningful trust gap
-3. decide whether any deeper relevance inference needs a non-stable or profile-read path
+2. decide whether any deeper relevance inference needs a non-stable or profile-read path
+3. prepare icons/basic metadata once behavior work stops moving

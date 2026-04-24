@@ -227,4 +227,56 @@ test.describe("EMS popup", () => {
       await fs.rm(userDataDir, { recursive: true, force: true });
     }
   });
+
+  test("reports saved-setup conflicts when protected states block apply", async () => {
+    test.setTimeout(90_000);
+    const { context, userDataDir, extensionId } = await launchPopupContext();
+
+    try {
+      const page = await openPopupPage(
+        context,
+        extensionId,
+        {
+          testUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+          testTitle: "EMS Saved Setup Conflict Fixture",
+          managementFixture: "protected"
+        }
+      );
+
+      await page.evaluate(async () => {
+        await chrome.storage.local.set({
+          siteProfiles: {
+            "https://www.youtube.com": {
+              origin: "https://www.youtube.com",
+              allowedExtensionIds: [
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "cccccccccccccccccccccccccccccccc"
+              ],
+              updatedAt: new Date().toISOString()
+            }
+          }
+        });
+      });
+
+      await page.reload({ waitUntil: "domcontentloaded" });
+
+      const protectedDocsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "ProtectedDocs Helper" }) });
+      const toggleableDocsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "ToggleableDocs Helper" }) });
+
+      await expect(page.locator("#site-profile-summary")).toContainText("2 extension(s) saved for this site");
+      await expect(page.getByRole("button", { name: "Apply Saved Setup" })).toBeEnabled();
+
+      await page.getByRole("button", { name: "Apply Saved Setup" }).click();
+      await expect(page.locator("#metric-enabled")).toHaveText("2");
+      await expect(page.locator("#status")).toContainText("Applied the saved setup for https://www.youtube.com across this browser");
+      await expect(page.locator("#status")).toContainText("Disabled 1: ToggleableDocs Helper");
+      await expect(page.locator("#status")).toContainText("Could not disable 1: ProtectedDocs Helper");
+      await expect(page.locator("#status")).toContainText("Could not enable 1: LockedOffTube Helper");
+      await expect(toggleableDocsRow.locator(".enabled-pill")).toContainText("disabled");
+      await expect(protectedDocsRow.locator(".enabled-pill")).toContainText("enabled");
+    } finally {
+      await context.close();
+      await fs.rm(userDataDir, { recursive: true, force: true });
+    }
+  });
 });

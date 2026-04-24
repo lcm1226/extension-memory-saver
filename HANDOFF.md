@@ -4,7 +4,7 @@
 
 `EMS Memory Probe` is a research harness for measuring Chromium extension memory under Windows.
 
-The goal is not yet a store-ready extension. The current code is for measurement and feasibility work.
+The project now also includes an extension MVP that uses benchmark-backed guidance instead of claiming live per-extension memory truth.
 
 ## What has been built
 
@@ -93,7 +93,7 @@ Operational lesson:
     - `docs/example-benchmark-labels.json` imports cleanly
 3. Run `npm run test:e2e` for the current Playwright smoke test.
    - this uses a test-only popup query override plus mock extensions and a test-only management fixture
-- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
+- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
@@ -101,6 +101,32 @@ Operational lesson:
 6. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
 7. Only return to deeper measurement work when it unblocks a concrete product decision.
 8. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
+
+## Latest verified checkpoint
+
+- latest local verification includes Playwright coverage for:
+  - inventory metrics and relevance labeling
+  - browser-wide trust banner copy
+  - `Lighten This Site`
+  - `Restore Previous State`
+  - `Save Current Setup`
+  - `Apply Saved Setup`
+  - `Clear Saved Setup`
+  - benchmark import/reset
+  - help/trust copy
+  - inventory-only behavior on non-web tabs
+  - protected/unavailable bulk-action skips
+  - saved-setup conflict handling when protected states block part of `Apply Saved Setup`
+- current product stance:
+  - stable Chrome still cannot expose reliable live per-extension total memory
+  - EMS should continue as a benchmark-backed control panel, not a live memory meter
+
+## Current next priorities
+
+1. keep reducing manual scenario authoring and catalog generation work
+2. decide whether any deeper relevance inference needs a non-stable or profile-read path
+3. prepare icons/basic metadata and a release UI pass once behavior stops moving
+4. expand non-technical docs when the interaction model is stable
 
 ## Notion context
 
@@ -117,6 +143,21 @@ Use this repository as the transfer unit.
 
 - Preferred: push to GitHub, then open the repo in Cloud Codex.
 - Fallback: upload this folder or paste `HANDOFF.md` plus the latest diff output into the new session.
+- If the folder moves locally, follow `docs/FOLDER_MOVE_HANDOFF.md` and use `docs/NEW_THREAD_PROMPT.md` as the next-thread opener.
+
+## Folder move continuity
+
+The repo should remain portable as long as the whole `ems-memory-probe` folder moves together.
+
+After moving it:
+
+1. open the repo from the new path
+2. if Git warns about ownership, run `git config --global --add safe.directory "<new-path>"`
+3. run `npm install`
+4. run `PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium`
+5. run `npm run test:e2e`
+6. re-load the unpacked `ems-extension/` from the new path in Chrome because unpacked-extension paths are absolute
+7. read `HANDOFF.md`, `docs/FOLDER_MOVE_HANDOFF.md`, and `docs/ROADMAP_REVIEW_2026-04-17.md` before editing
 
 ## Working rule
 

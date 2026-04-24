@@ -18,6 +18,8 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
 - `docs/EMS_MVP_SPEC.md`: buildable EMS product definition based on measurement findings
 - `docs/ROADMAP_REVIEW_2026-04-17.md`: implemented vs missing roadmap audit
+- `docs/FOLDER_MOVE_HANDOFF.md`: checklist for moving this repo to a new folder or machine
+- `docs/NEW_THREAD_PROMPT.md`: ready-to-paste prompt for starting a new Codex thread
 - `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
 - `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
@@ -49,6 +51,7 @@ Stable Chrome cannot yet support:
 7. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
 8. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
 9. Use `npm run test:e2e` for the current Playwright popup smoke test.
+10. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
 ## Current MVP shell
 
@@ -100,7 +103,18 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
+- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
+
+## Folder move / thread handoff
+
+This repo is the transfer unit.
+
+If the project folder moves:
+
+1. Copy the whole `ems-memory-probe` folder, ideally including `.git`
+2. Re-load the unpacked Chrome extension from the new path because Chrome stores unpacked-extension paths as absolute paths
+3. Run the bootstrap checklist in `docs/FOLDER_MOVE_HANDOFF.md`
+4. Start the next Codex thread with `docs/NEW_THREAD_PROMPT.md`
 
 ## Shortcut note
 
