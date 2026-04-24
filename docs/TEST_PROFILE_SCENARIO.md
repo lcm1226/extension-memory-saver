@@ -2,7 +2,7 @@
 
 ## Goal
 
-Validate the EMS measurement harness on a clean test Chrome profile with exactly three installed extensions.
+Validate the EMS measurement harness on a clean test Chrome profile with exactly three installed extensions. All EMS manual/browser verification should stay on this kind of dedicated test profile, not the default personal Chrome profile.
 
 This run is for harness verification first, not for final per-extension truth claims.
 

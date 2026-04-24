@@ -46,6 +46,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - made `npm run test:e2e` resolve the repo-local Playwright browser after folder moves
 - added `discover-scenarios` to generate catalog scenario specs from one baseline and a folder of after snapshots
 - added structured scenario-delta memory metrics to benchmark catalog entries and row-level popup memory-impact display
+- added `profile-inventory` for test/probe profile manifest signals (`optional_host_permissions`, `content_scripts.matches`)
 
 ### Partially done
 
@@ -57,10 +58,11 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - homepage host matching
     - permission-based hints for browser-wide or tab-level capability
   - still missing from the original spec:
-    - explicit handling of `optional_host_permissions`
-    - explicit handling of `content_scripts.matches`
+    - wiring test/probe profile manifest signals into popup relevance as an optional import/enrichment path
   - current constraint:
-    - `chrome.management.ExtensionInfo` documents `hostPermissions`, `permissions`, and `homepageUrl`, but does not expose `optional_host_permissions` or `content_scripts.matches`, so stable public metadata still leaves a hard ceiling here
+    - `chrome.management.ExtensionInfo` documents `hostPermissions`, `permissions`, and `homepageUrl`, but does not expose `optional_host_permissions` or `content_scripts.matches`, so stable public metadata still leaves a hard ceiling inside the runtime popup
+  - latest probe-side progress:
+    - `profile-inventory` can read `optional_host_permissions` and `content_scripts.matches` from a test/probe profile on disk
 - benchmark workflow integration
   - implemented:
     - import UI
@@ -99,8 +101,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 Close the remaining MVP-spec gaps:
 
-- support `optional_host_permissions` in relevance scoring where available
-- investigate whether `content_scripts.matches` can be surfaced reliably enough for inference
+- decide whether to add a popup import/enrichment path for `profile-inventory` manifest signals
+- support `optional_host_permissions` and `content_scripts.matches` in relevance scoring only when imported/enriched data is available
 - keep reducing manual scenario authoring only when richer datasets need metadata beyond current discovery
 
 ### Priority 2

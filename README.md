@@ -6,13 +6,13 @@ Windows-first measurement harness for Chromium extension memory experiments.
 
 - Capture Chrome DevTools Protocol targets from a remote debugging port
 - Capture live `chrome.exe` memory from Windows
-- Resolve extension ids to profile-installed extension names and versions
+- Resolve extension ids to profile-installed extension names, versions, and manifest relevance signals
 - Compare two snapshots and summarize session-level deltas
 
 ## Repo layout
 
 - `ems-extension/`: Chrome extension MVP shell
-- `tools/ems-measure.mjs`: snapshot and diff CLI
+- `tools/ems-measure.mjs`: snapshot, profile inventory, and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
@@ -33,6 +33,7 @@ Stable Chrome can support:
 - extension target discovery
 - session-level A/B memory comparison
 - renderer delta analysis
+- test/probe profile manifest inventory for `optional_host_permissions` and `content_scripts.matches`
 
 Stable Chrome cannot yet support:
 
@@ -49,10 +50,11 @@ Stable Chrome cannot yet support:
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
 7. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
-8. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
-9. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
-10. Use `npm run test:e2e` for the current Playwright popup smoke test.
-11. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
+8. Use `node .\tools\ems-measure.mjs profile-inventory --profile-dir <TEST_PROFILE_DIR> --out .\test-results\profile-inventory.json` to inspect manifest-only relevance signals from a test/probe profile.
+9. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
+10. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
+11. Use `npm run test:e2e` for the current Playwright popup smoke test.
+12. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
 ## Current MVP shell
 
@@ -76,6 +78,7 @@ The extension shell currently includes:
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets
+- probe-side profile inventory command for manifest-only relevance signals
 - less-manual scenario specs for one-target removal runs
 - basic Playwright popup verification with mock extensions
 - test-only management fixture support for protected/unavailable scenarios
@@ -86,6 +89,8 @@ It does not yet include:
 - packaged icons or store-ready metadata
 
 ## Local test
+
+Use only a dedicated Chrome test profile for manual EMS verification. Do not validate EMS behavior against the default personal Chrome profile.
 
 1. Open `chrome://extensions`
 2. Enable Developer mode

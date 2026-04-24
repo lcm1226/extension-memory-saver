@@ -70,6 +70,7 @@ Operational lesson:
 
 - Do not launch against the default Chrome `User Data` directory if `http://127.0.0.1:<port>/json/version` is unreachable.
 - Use a copied probe profile in the workspace instead.
+- Manual/browser verification should stay on a dedicated Chrome test profile, not the default personal profile.
 
 ## Recommended next work
 
@@ -96,12 +97,13 @@ Operational lesson:
 - current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
-6. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
+6. Use `node .\tools\ems-measure.mjs profile-inventory --profile-dir <TEST_PROFILE_DIR> --out .\test-results\profile-inventory.json` to read manifest-only relevance signals from a test/probe profile.
+7. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
    - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
-7. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
-8. Only return to deeper measurement work when it unblocks a concrete product decision.
-9. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
+8. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
+9. Only return to deeper measurement work when it unblocks a concrete product decision.
+10. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
 
 ## Latest verified checkpoint
 
@@ -122,6 +124,7 @@ Operational lesson:
   - stable Chrome still cannot expose reliable live per-extension total memory
   - EMS should continue as a benchmark-backed control panel, not a live memory meter
   - benchmark entries now carry structured scenario-delta metrics and the popup shows row-level measured memory impact estimates
+  - profile inventory can now read manifest-only relevance signals from test/probe profiles
 
 ## Current next priorities
 

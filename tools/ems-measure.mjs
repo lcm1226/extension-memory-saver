@@ -14,6 +14,7 @@ function printHelp() {
 
 Usage:
   node ems-measure.mjs snapshot [--host 127.0.0.1] [--port 9222] [--profile-dir "C:\\...\\Profile 4"] [--out snapshots\\ems-snapshot.json]
+  node ems-measure.mjs profile-inventory --profile-dir "C:\\...\\Profile 4" [--out snapshots\\profile-inventory.json]
   node ems-measure.mjs diff <before.json> <after.json>
   node ems-measure.mjs export-labels <before.json> <after.json> [--source youtube-3ext-scenario] [--extension-id <id>] [--out docs\\generated-benchmark-labels.json]
   node ems-measure.mjs build-catalog <scenarios.json> [--out docs\\generated-benchmark-labels.json]
@@ -21,6 +22,7 @@ Usage:
 
 Commands:
   snapshot   Capture CDP targets plus Windows chrome.exe process memory.
+  profile-inventory  Read installed extension manifest metadata from a test/probe profile without launching Chrome.
   diff       Compare two snapshot files and summarize deltas.
   export-labels  Convert a validated A/B diff into popup import JSON.
   build-catalog  Build one popup import catalog from multiple diff scenarios.
@@ -74,6 +76,57 @@ async function tryReadJson(filePath) {
   }
 }
 
+function asStringArray(value) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
+
+function uniqueStrings(values) {
+  return [...new Set(values.filter((value) => typeof value === "string" && value.length > 0))];
+}
+
+function collectContentScriptMatches(manifest) {
+  if (!Array.isArray(manifest.content_scripts)) {
+    return [];
+  }
+
+  return uniqueStrings(manifest.content_scripts.flatMap((script) => asStringArray(script?.matches)));
+}
+
+function looksLikeHostPattern(value) {
+  return value === "<all_urls>" || /^[a-z*]+:\/\//.test(value);
+}
+
+function collectOptionalHostPermissions(manifest) {
+  const optionalHostPermissions = asStringArray(manifest.optional_host_permissions);
+  const optionalPermissionOrigins = asStringArray(manifest.optional_permissions).filter(looksLikeHostPattern);
+  return uniqueStrings([...optionalHostPermissions, ...optionalPermissionOrigins]);
+}
+
+function collectManifestHostPermissions(manifest) {
+  const hostPermissions = asStringArray(manifest.host_permissions);
+  const permissionOrigins = asStringArray(manifest.permissions).filter(looksLikeHostPattern);
+  return uniqueStrings([...hostPermissions, ...permissionOrigins]);
+}
+
+async function readDefaultLocaleMessages(basePath, manifest) {
+  if (!manifest.default_locale) {
+    return null;
+  }
+  return tryReadJson(path.join(basePath, "_locales", manifest.default_locale, "messages.json"));
+}
+
+function resolveManifestMessage(value, messages) {
+  if (typeof value !== "string") {
+    return value;
+  }
+  if (!value.startsWith("__MSG_") || !value.endsWith("__")) {
+    return value;
+  }
+
+  const messageKey = value.slice("__MSG_".length, -2);
+  return messages?.[messageKey]?.message ?? value;
+}
+
 async function collectInstalledExtensions(profileDir) {
   if (!profileDir) {
     return new Map();
@@ -115,26 +168,26 @@ async function collectInstalledExtensions(profileDir) {
         continue;
       }
 
-      let displayName = manifest.name ?? extensionId;
-      if (typeof displayName === "string" && displayName.startsWith("__MSG_") && displayName.endsWith("__")) {
-        const messageKey = displayName.slice("__MSG_".length, -2);
-        const locale = manifest.default_locale;
-        if (locale) {
-          const messages = await tryReadJson(path.join(basePath, "_locales", locale, "messages.json"));
-          const resolved = messages?.[messageKey]?.message;
-          if (resolved) {
-            displayName = resolved;
-          }
-        }
-      }
+      const localeMessages = await readDefaultLocaleMessages(basePath, manifest);
+      const displayName = resolveManifestMessage(manifest.name, localeMessages) ?? normalizedId;
+      const description = resolveManifestMessage(manifest.description, localeMessages) ?? "";
+
+      const manifestHostPermissions = collectManifestHostPermissions(manifest);
+      const optionalHostPermissions = collectOptionalHostPermissions(manifest);
+      const contentScriptMatches = collectContentScriptMatches(manifest);
 
       metadata.set(normalizedId, {
         extensionId: normalizedId,
         name: displayName,
         version,
         manifestVersion: manifest.manifest_version ?? null,
-        description: manifest.description ?? "",
-        disabled: entry.name.endsWith(DISABLED_SUFFIX)
+        description,
+        disabled: entry.name.endsWith(DISABLED_SUFFIX),
+        manifestSignals: {
+          hostPermissions: manifestHostPermissions,
+          optionalHostPermissions,
+          contentScriptMatches
+        }
       });
       break;
     }
@@ -367,6 +420,37 @@ function formatCompactBytes(bytes) {
     return "0 B";
   }
   return formatBytes(bytes);
+}
+
+async function exportProfileInventory({ out, profileDir }) {
+  if (!profileDir) {
+    throw new Error("profile-inventory requires --profile-dir <path>.");
+  }
+
+  const installedExtensions = await collectInstalledExtensions(profileDir);
+  const inventory = {
+    capturedAt: new Date().toISOString(),
+    profileDir,
+    installedExtensions: Object.fromEntries(installedExtensions),
+    notes: [
+      "This reads manifest metadata from a test/probe profile on disk.",
+      "Use it to inspect optional_host_permissions and content_scripts.matches that chrome.management does not expose in the stable popup API.",
+      "Do not run this against the default personal Chrome profile for EMS verification."
+    ]
+  };
+
+  const outputPath = out ?? path.join(process.cwd(), "snapshots", `profile-inventory-${Date.now()}.json`);
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, JSON.stringify(inventory, null, 2), "utf8");
+
+  console.log(`Saved profile inventory: ${outputPath}`);
+  console.log(`Extensions in profile: ${installedExtensions.size}`);
+  for (const extension of installedExtensions.values()) {
+    const signals = extension.manifestSignals ?? {};
+    console.log(
+      `- ${extension.name ?? extension.extensionId} (${extension.extensionId}) | hosts=${signals.hostPermissions?.length ?? 0} | optionalHosts=${signals.optionalHostPermissions?.length ?? 0} | contentScripts=${signals.contentScriptMatches?.length ?? 0}`
+    );
+  }
 }
 
 async function collectSnapshot({ host, port, out, profileDir }) {
@@ -875,6 +959,11 @@ async function main() {
 
   if (command === "snapshot") {
     await collectSnapshot(options);
+    return;
+  }
+
+  if (command === "profile-inventory") {
+    await exportProfileInventory(options);
     return;
   }
 

@@ -51,7 +51,7 @@ Use a separate Chrome instance when possible.
   --user-data-dir="$env:TEMP\ems-chrome-profile"
 ```
 
-If you want your real extension set, use a profile copy or intentionally point to the profile you want to inspect.
+For EMS verification, use a dedicated test profile or a copied probe profile. Do not use the default personal Chrome profile for manual testing.
 
 ## Snapshot example
 
@@ -131,6 +131,16 @@ node .\tools\ems-measure.mjs discover-scenarios `
 The command scans JSON files in the after-snapshot folder, keeps diffs where exactly one extension target disappeared, records the inferred extension id/name, and writes a stable spec file for `build-catalog`.
 
 Generated catalog entries include structured `metrics` such as `totalPrivateDropBytes`, `rendererPrivateDropBytes`, `extensionRendererPrivateDropBytes`, and `targetDelta`. The popup surfaces these as measured memory impact values. They are scenario A/B deltas, not exact live ownership totals.
+
+## Manifest-only profile inventory
+
+Use this when you need relevance metadata that stable `chrome.management.ExtensionInfo` does not expose in the popup, especially `optional_host_permissions` and `content_scripts.matches`:
+
+```powershell
+node .\tools\ems-measure.mjs profile-inventory --profile-dir "<TEST_PROFILE_DIR>" --out .\test-results\profile-inventory.json
+```
+
+This command reads only a test/probe profile on disk and does not launch or mutate Chrome. Treat the output as a development/probe enrichment source, not as runtime stable-extension API data.
 
 ## Current label mapping rule
 
