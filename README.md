@@ -65,6 +65,7 @@ The extension shell currently includes:
 - correct inventory-only handling for non-web tabs such as `chrome://extensions`
 - pinned extensions
 - protected-state and no-op messaging when Chrome will not allow a requested toggle
+- explicit browser-wide action banner and browser-wide/no-op status copy
 - lightweight help / trust explainer in the popup
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls
@@ -99,7 +100,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
+- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
 
 ## Shortcut note
 

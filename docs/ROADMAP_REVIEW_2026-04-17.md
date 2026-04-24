@@ -40,6 +40,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - basic Playwright popup verification path
 - verified inventory-only behavior on non-web tabs through Playwright and fixed `chrome://` opaque-origin handling
 - verified protected/unavailable extension handling through a test-only management fixture
+- added explicit browser-wide action banner and browser-wide/no-op status copy
 
 ### Partially done
 
@@ -68,7 +69,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - smoother scenario authoring for richer metadata beyond current selectors
 - end-to-end verification
   - manual verification happened on the real YouTube page
-  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips using mock extensions plus a test-only management fixture
+  - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips using mock extensions plus a test-only management fixture
   - broader regression coverage is still missing
 
 ### Not done yet
@@ -97,7 +98,6 @@ Close the remaining MVP-spec gaps:
 
 Make the extension safer and easier to trust:
 
-- make destructive-feeling actions more obvious about being browser-wide
 - broaden automated popup verification beyond the current smoke test
   - if useful, add one saved-setup conflict case on top of the current protected fixture coverage
 
@@ -115,5 +115,5 @@ Behavior work should stay ahead of UI polish.
 The next concrete implementation step should be:
 
 1. make scenario authoring and catalog generation less manual
-2. make the browser-wide consequences of actions even more explicit
+2. add one saved-setup conflict case on top of the current protected fixture coverage if it still closes a meaningful trust gap
 3. decide whether any deeper relevance inference needs a non-stable or profile-read path

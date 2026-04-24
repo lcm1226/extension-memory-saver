@@ -75,6 +75,31 @@ body {
   flex-shrink: 0;
 }
 
+.trust-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(246, 196, 83, 0.28);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(246, 196, 83, 0.08), rgba(90, 182, 255, 0.05));
+  flex-shrink: 0;
+}
+
+.trust-banner strong {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.trust-banner p {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 button {
   border: 1px solid var(--line);
   background: var(--panel-2);

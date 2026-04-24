@@ -58,6 +58,7 @@ test.describe("EMS popup", () => {
 
       await expect(page.locator("#tab-title")).toHaveText("EMS Playwright Test");
       await expect(page.locator("#tab-origin")).toHaveText("https://www.youtube.com");
+      await expect(page.locator("#action-scope-note")).toContainText("all tabs and windows");
       await expect(page.locator("#metric-installed")).toHaveText("2");
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#metric-relevant")).toHaveText("1");
@@ -71,6 +72,7 @@ test.describe("EMS popup", () => {
 
       await page.getByRole("button", { name: "Lighten This Site" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("1");
+      await expect(page.locator("#status")).toContainText("browser-wide extension state");
       await expect(page.locator("#status")).toContainText("Disabled 1: MockDocs Helper");
 
       await page.getByRole("button", { name: "Restore Previous State" }).click();
@@ -79,18 +81,20 @@ test.describe("EMS popup", () => {
 
       await docsRow.getByRole("button", { name: "Disable" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("1");
-      await expect(page.locator("#status")).toContainText("Disabled MockDocs Helper");
+      await expect(page.locator("#status")).toContainText("Disabled MockDocs Helper across this browser");
 
       await page.getByRole("button", { name: "Save Current Setup" }).click();
       await expect(page.locator("#status")).toContainText("Saved 1 enabled extension");
+      await expect(page.locator("#status")).toContainText("No browser-wide extension state changed");
 
       await docsRow.getByRole("button", { name: "Enable" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("2");
-      await expect(page.locator("#status")).toContainText("Enabled MockDocs Helper");
+      await expect(page.locator("#status")).toContainText("Enabled MockDocs Helper across this browser");
 
       await page.getByRole("button", { name: "Apply Saved Setup" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("1");
       await expect(page.locator("#status")).toContainText("Applied the saved setup");
+      await expect(page.locator("#status")).toContainText("across this browser");
       await expect(page.locator("#status")).toContainText("Disabled 1: MockDocs Helper");
 
       await page.getByRole("button", { name: "Restore Previous State" }).click();
@@ -128,6 +132,7 @@ test.describe("EMS popup", () => {
 
       await page.getByRole("button", { name: "Clear Saved Setup" }).click();
       await expect(page.locator("#status")).toContainText("Cleared the saved setup for https://www.youtube.com.");
+      await expect(page.locator("#status")).toContainText("No browser-wide extension state changed");
       await expect(page.locator("#site-profile-summary")).toContainText("No saved setup for this site yet");
       await expect(page.getByRole("button", { name: "Apply Saved Setup" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Clear Saved Setup" })).toBeDisabled();
@@ -157,6 +162,7 @@ test.describe("EMS popup", () => {
 
       await expect(page.locator("#tab-title")).toHaveText("Chrome Extensions");
       await expect(page.locator("#tab-origin")).toHaveText("chrome://extensions");
+      await expect(page.locator("#action-scope-note")).toContainText("inventory-only");
       await expect(page.locator("#site-profile-summary")).toContainText("does not expose a standard web origin");
       await expect(page.getByRole("button", { name: "Lighten This Site" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Save Current Setup" })).toBeDisabled();
@@ -205,6 +211,7 @@ test.describe("EMS popup", () => {
 
       await page.getByRole("button", { name: "Lighten This Site" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("2");
+      await expect(page.locator("#status")).toContainText("browser-wide extension state");
       await expect(page.locator("#status")).toContainText("Disabled 1: ToggleableDocs Helper");
       await expect(page.locator("#status")).toContainText("Could not disable 1: ProtectedDocs Helper");
       await expect(page.locator("#status")).toContainText("Could not enable 1: LockedOffTube Helper");

@@ -135,6 +135,7 @@ const ui = {
   metricRelevant: document.getElementById("metric-relevant"),
   list: document.getElementById("extension-list"),
   status: document.getElementById("status"),
+  actionScopeNote: document.getElementById("action-scope-note"),
   template: document.getElementById("extension-row-template"),
   lightenButton: document.getElementById("lighten-site"),
   restoreButton: document.getElementById("restore-state"),
@@ -195,7 +196,7 @@ function bindEvents() {
   ui.clearSavedSetupButton.addEventListener("click", () => runWithStatus("Clearing saved site setup...", async () => {
     await clearSavedSetupForSite();
     await refresh();
-    setStatus(`Cleared the saved setup for ${state.origin || "this site"}.`);
+    setStatus(`Cleared the saved setup for ${state.origin || "this site"}. No browser-wide extension state changed.`);
   }));
 
   ui.importBenchmarksButton.addEventListener("click", () => {
@@ -472,6 +473,7 @@ function render() {
   ui.metricInstalled.textContent = String(state.extensions.length);
   ui.metricEnabled.textContent = String(state.extensions.filter((extension) => extension.enabled).length);
   ui.metricRelevant.textContent = String(state.extensions.filter((extension) => extension.relevance.score >= 300).length);
+  renderActionScopeNote();
   renderSiteProfileCard();
   renderBenchmarkCard();
   disablePrimaryActions(false);
@@ -481,6 +483,15 @@ function render() {
   for (const extension of state.extensions) {
     ui.list.appendChild(renderExtension(extension));
   }
+}
+
+function renderActionScopeNote() {
+  if (!state.origin) {
+    ui.actionScopeNote.textContent = "This tab is inventory-only. Browser-wide actions are disabled here because the current tab does not expose a standard web origin.";
+    return;
+  }
+
+  ui.actionScopeNote.textContent = "Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save and Clear only change this site's saved profile.";
 }
 
 function renderSiteProfileCard() {
@@ -568,7 +579,7 @@ function renderExtension(extension) {
   stateToggle.addEventListener("click", () => runWithStatus(`${extension.enabled ? "Disabling" : "Enabling"} ${extension.name}...`, async () => {
     await setExtensionEnabled(extension.id, !extension.enabled);
     await refresh();
-    setStatus(`${extension.enabled ? "Disabled" : "Enabled"} ${extension.name}.`);
+    setStatus(`${extension.enabled ? "Disabled" : "Enabled"} ${extension.name} across this browser.`);
   }));
 
   row.dataset.extensionId = extension.id;
@@ -824,9 +835,9 @@ function isExtensionId(value) {
 function buildLightenStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
     if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
-      return `Lighten This Site could not finish fully. ${buildSkippedSummary(change)}`;
+      return `Lighten This Site could not finish fully across this browser. ${buildSkippedSummary(change)}`;
     }
-    return "Lighten This Site made no changes. The current enabled set already matches this site's lighter setup.";
+    return "Lighten This Site made no browser-wide changes. The current enabled set already matches this site's lighter setup.";
   }
 
   const parts = [];
@@ -840,15 +851,15 @@ function buildLightenStatus(change) {
   if (skippedSummary) {
     parts.push(skippedSummary);
   }
-  return `Lighten This Site updated this browser set. ${parts.join(" ")}`;
+  return `Lighten This Site updated browser-wide extension state. ${parts.join(" ")}`;
 }
 
 function buildRestoreStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
     if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
-      return `Restore Previous State could not finish fully. ${buildSkippedSummary(change)}`;
+      return `Restore Previous State could not finish fully across this browser. ${buildSkippedSummary(change)}`;
     }
-    return "Restore Previous State made no changes. The previous state was already active.";
+    return "Restore Previous State made no browser-wide changes. The previous state was already active.";
   }
 
   const parts = [];
@@ -873,18 +884,18 @@ function buildSaveStatus(result) {
     : state.extensions.filter((extension) => extension.enabled).map((extension) => extension.name);
 
   if (result && !result.changed) {
-    return `Saved setup already matched the current enabled set for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}.`;
+    return `Saved setup already matched the current enabled set for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}. No browser-wide extension state changed.`;
   }
 
-  return `Saved ${enabledExtensions.length} enabled extension(s) for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}.`;
+  return `Saved ${enabledExtensions.length} enabled extension(s) for ${state.origin || "this site"}: ${joinNames(enabledExtensions)}. No browser-wide extension state changed.`;
 }
 
 function buildApplySavedStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
     if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
-      return `Apply Saved Setup could not finish fully. ${buildSkippedSummary(change)}`;
+      return `Apply Saved Setup could not finish fully across this browser. ${buildSkippedSummary(change)}`;
     }
-    return `Apply Saved Setup made no changes. The saved setup for ${state.origin || "this site"} was already active.`;
+    return `Apply Saved Setup made no browser-wide changes. The saved setup for ${state.origin || "this site"} was already active.`;
   }
 
   const parts = [];
@@ -898,7 +909,7 @@ function buildApplySavedStatus(change) {
   if (skippedSummary) {
     parts.push(skippedSummary);
   }
-  return `Applied the saved setup for ${state.origin || "this site"}. ${parts.join(" ")}`;
+  return `Applied the saved setup for ${state.origin || "this site"} across this browser. ${parts.join(" ")}`;
 }
 
 function buildSkippedSummary(change) {

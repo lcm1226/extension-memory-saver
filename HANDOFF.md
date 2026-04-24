@@ -88,11 +88,12 @@ Operational lesson:
    - benchmark import/reset controls
    - status messages clearly explain which extensions changed or were skipped
     - protected/unavailable extensions are visibly non-toggleable
+   - browser-wide action banner stays visible and matches the current tab mode
    - popup help/trust explainer reflects the current benchmark-backed and browser-wide-action model
     - `docs/example-benchmark-labels.json` imports cleanly
 3. Run `npm run test:e2e` for the current Playwright smoke test.
    - this uses a test-only popup query override plus mock extensions and a test-only management fixture
-- current assertions cover inventory metrics, relevance labeling, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
+- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, and protected/unavailable bulk-action skips
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
