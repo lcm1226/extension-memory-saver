@@ -2,16 +2,34 @@ const DEFAULT_BENCHMARK_LABELS = {
   eimadpbcbfnmbkopoojfekhnkhdbieeh: {
     label: "medium",
     source: "youtube-3ext-scenario",
+    metrics: {
+      attribution: "scenario-ab-delta",
+      totalPrivateDropBytes: 56770560,
+      rendererPrivateDropBytes: 57294848,
+      targetDelta: -1
+    },
     notes: "YouTube benchmark: removing Dark Reader reduced renderer private memory."
   },
   cmedmhnddgokbjflbjhkbeakkpaeenkc: {
     label: "high",
     source: "youtube-3ext-scenario",
+    metrics: {
+      attribution: "scenario-ab-delta",
+      totalPrivateDropBytes: 76251136,
+      rendererPrivateDropBytes: 64585728,
+      targetDelta: -1
+    },
     notes: "YouTube benchmark: removing Bideo Max reduced total and renderer private memory."
   },
   bnomihfieiccainjcjblhegjgglakjdd: {
     label: "high",
     source: "youtube-3ext-scenario",
+    metrics: {
+      attribution: "scenario-ab-delta",
+      totalPrivateDropBytes: 76693504,
+      rendererPrivateDropBytes: 83185664,
+      targetDelta: -1
+    },
     notes: "YouTube benchmark: removing Improve YouTube reduced total and renderer private memory."
   }
 };

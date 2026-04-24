@@ -107,6 +107,12 @@ test.describe("EMS popup", () => {
           [youtubeExtensionId]: {
             label: "high",
             source: "playwright-import",
+            metrics: {
+              attribution: "scenario-ab-delta",
+              totalPrivateDropBytes: 15728640,
+              rendererPrivateDropBytes: 12582912,
+              targetDelta: -1
+            },
             notes: "Playwright import coverage for MockTube Helper."
           }
         }
@@ -124,6 +130,7 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#status")).toContainText("Imported 1 benchmark label");
       await expect(page.locator("#benchmark-summary")).toContainText("including 1 imported label");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: high");
+      await expect(youtubeRow.locator(".extension-meta")).toContainText("est. drop: renderer 12.00 MB / total 15.00 MB");
 
       await page.getByRole("button", { name: "Reset Defaults" }).click();
       await expect(page.locator("#status")).toContainText("Reset benchmark labels to the seeded defaults.");

@@ -604,6 +604,10 @@ function buildMetaLine(extension) {
   if (!extension.enabled && extension.mayEnable === false) {
     parts.push("cannot enable here");
   }
+  const benchmarkEstimate = formatBenchmarkEstimate(extension.benchmark?.metrics);
+  if (benchmarkEstimate) {
+    parts.push(benchmarkEstimate);
+  }
   if (extension.benchmark?.notes) {
     parts.push(extension.benchmark.notes);
   }
@@ -816,13 +820,86 @@ function normalizeBenchmarkEntry(entry) {
   }
 
   const label = normalizeBenchmarkLabel(entry.label ?? entry.impact ?? "unknown");
-  return {
+  const normalized = {
     label,
     source: entry.source ?? "imported-json",
     notes: entry.notes ?? entry.note ?? ""
   };
+  const metrics = normalizeBenchmarkMetrics(entry.metrics ?? entry.measurement ?? entry.impactMetrics);
+  if (metrics) {
+    normalized.metrics = metrics;
+  }
+  return normalized;
 }
 
+function normalizeBenchmarkMetrics(metrics) {
+  if (!metrics || typeof metrics !== "object") {
+    return null;
+  }
+
+  const normalized = {};
+  const numericKeys = [
+    "totalPrivateDropBytes",
+    "totalWorkingSetDropBytes",
+    "rendererPrivateDropBytes",
+    "rendererWorkingSetDropBytes",
+    "extensionRendererPrivateDropBytes",
+    "extensionRendererWorkingSetDropBytes",
+    "extensionOwnedPrivateDropBytes",
+    "extensionOwnedWorkingSetDropBytes",
+    "targetDelta",
+    "beforeTargets",
+    "afterTargets"
+  ];
+
+  for (const key of numericKeys) {
+    if (metrics[key] === undefined || metrics[key] === null || metrics[key] === "") {
+      continue;
+    }
+    const value = Number(metrics[key]);
+    if (Number.isFinite(value)) {
+      normalized[key] = value;
+    }
+  }
+
+  if (typeof metrics.attribution === "string") {
+    normalized.attribution = metrics.attribution;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : null;
+}
+
+function formatBenchmarkEstimate(metrics) {
+  if (!metrics || typeof metrics !== "object") {
+    return "";
+  }
+
+  const rendererDrop = Number(metrics.rendererPrivateDropBytes ?? 0);
+  const totalDrop = Number(metrics.totalPrivateDropBytes ?? 0);
+  const parts = [];
+  if (rendererDrop > 0) {
+    parts.push(`renderer ${formatBytesForUi(rendererDrop)}`);
+  }
+  if (totalDrop > 0) {
+    parts.push(`total ${formatBytesForUi(totalDrop)}`);
+  }
+
+  return parts.length > 0 ? `est. drop: ${parts.join(" / ")}` : "";
+}
+
+function formatBytesForUi(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "0 B";
+  }
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+}
 function normalizeBenchmarkLabel(label) {
   const normalized = String(label).toLowerCase();
   return ["low", "medium", "high", "unknown"].includes(normalized) ? normalized : "unknown";

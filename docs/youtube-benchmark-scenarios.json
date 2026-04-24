@@ -16,6 +16,20 @@
         "totalPrivateDropBytes": 76251136,
         "rendererPrivateDropBytes": 64585728,
         "targetDelta": -1
+      },
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 76251136,
+        "totalWorkingSetDropBytes": 144855040,
+        "rendererPrivateDropBytes": 64585728,
+        "rendererWorkingSetDropBytes": 157392896,
+        "extensionRendererPrivateDropBytes": 0,
+        "extensionRendererWorkingSetDropBytes": 0,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
       }
     },
     {
@@ -27,6 +41,20 @@
         "totalPrivateDropBytes": 56770560,
         "rendererPrivateDropBytes": 57294848,
         "targetDelta": -1
+      },
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 56770560,
+        "totalWorkingSetDropBytes": 104681472,
+        "rendererPrivateDropBytes": 57294848,
+        "rendererWorkingSetDropBytes": 127877120,
+        "extensionRendererPrivateDropBytes": 31780864,
+        "extensionRendererWorkingSetDropBytes": 62242816,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
       }
     },
     {
@@ -38,6 +66,20 @@
         "totalPrivateDropBytes": 76693504,
         "rendererPrivateDropBytes": 83185664,
         "targetDelta": -1
+      },
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 76693504,
+        "totalWorkingSetDropBytes": 150646784,
+        "rendererPrivateDropBytes": 83185664,
+        "rendererWorkingSetDropBytes": 183640064,
+        "extensionRendererPrivateDropBytes": 0,
+        "extensionRendererWorkingSetDropBytes": 0,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
       }
     }
   ]

@@ -561,11 +561,28 @@ function inferImpactLabel({ totalPrivateDrop, rendererPrivateDrop }) {
   return "unknown";
 }
 
-function buildExportNote({ source, extensionName, totalPrivateDrop, rendererPrivateDrop, targetDelta }) {
+function buildExportNote({ source, extensionName, metrics }) {
   const sourceLabel = source ?? "snapshot-diff-export";
   const safeName = String(extensionName).replace(/[^\x20-\x7E]+/g, " ").replace(/\s+/g, " ").trim();
-  const targetText = targetDelta < 0 ? "removed target observed" : "target removal not observed";
-  return `${sourceLabel}: ${safeName} scenario showed total private drop ${formatCompactBytes(totalPrivateDrop)} and renderer private drop ${formatCompactBytes(rendererPrivateDrop)}; ${targetText}.`;
+  const targetText = metrics.targetDelta < 0 ? "removed target observed" : "target removal not observed";
+  return `${sourceLabel}: ${safeName} scenario showed total private drop ${formatCompactBytes(metrics.totalPrivateDropBytes)} and renderer private drop ${formatCompactBytes(metrics.rendererPrivateDropBytes)}; ${targetText}.`;
+}
+
+function buildBenchmarkMetrics(diff, candidate) {
+  return {
+    attribution: "scenario-ab-delta",
+    totalPrivateDropBytes: Math.max(0, -diff.sessionDelta.totalPrivate),
+    totalWorkingSetDropBytes: Math.max(0, -diff.sessionDelta.totalWorkingSet),
+    rendererPrivateDropBytes: Math.max(0, -diff.sessionDelta.rendererPrivate),
+    rendererWorkingSetDropBytes: Math.max(0, -diff.sessionDelta.rendererWorkingSet),
+    extensionRendererPrivateDropBytes: Math.max(0, -diff.sessionDelta.extensionRendererPrivate),
+    extensionRendererWorkingSetDropBytes: Math.max(0, -diff.sessionDelta.extensionRendererWorkingSet),
+    extensionOwnedPrivateDropBytes: Math.max(0, -candidate.privateDelta),
+    extensionOwnedWorkingSetDropBytes: Math.max(0, -candidate.workingSetDelta),
+    targetDelta: candidate.targetDelta,
+    beforeTargets: candidate.beforeTargets,
+    afterTargets: candidate.afterTargets
+  };
 }
 
 function normalizeExportSource(source) {
@@ -655,15 +672,15 @@ function buildBenchmarkExport(diff, options = {}) {
 
   const extensions = {};
   for (const candidate of candidates) {
+    const metrics = buildBenchmarkMetrics(diff, candidate);
     extensions[candidate.extensionId] = {
       label: impactLabel,
       source: normalizedSource,
+      metrics,
       notes: buildExportNote({
         source: normalizedSource,
         extensionName: candidate.name ?? candidate.extensionId,
-        totalPrivateDrop,
-        rendererPrivateDrop,
-        targetDelta: candidate.targetDelta
+        metrics
       })
     };
   }
@@ -759,16 +776,18 @@ async function discoverCatalogScenarios(beforeFile, afterDir, options) {
       }
 
       const [candidate] = candidates;
+      const metrics = buildBenchmarkMetrics(diff, candidate);
       scenarios.push({
         before: toSpecPath(beforePath, specDir),
         after: toSpecPath(afterFile, specDir),
         extensionId: candidate.extensionId,
         extensionName: candidate.name ? sanitizeSpecText(candidate.name) : null,
         summary: {
-          totalPrivateDropBytes: Math.max(0, -diff.sessionDelta.totalPrivate),
-          rendererPrivateDropBytes: Math.max(0, -diff.sessionDelta.rendererPrivate),
-          targetDelta: candidate.targetDelta
-        }
+          totalPrivateDropBytes: metrics.totalPrivateDropBytes,
+          rendererPrivateDropBytes: metrics.rendererPrivateDropBytes,
+          targetDelta: metrics.targetDelta
+        },
+        metrics
       });
     } catch (error) {
       skipped.push({ after: toSpecPath(afterFile, specDir), reason: error.message });

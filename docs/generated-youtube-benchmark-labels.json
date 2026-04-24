@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-17T02:21:51.037Z",
+  "generatedAt": "2026-04-24T08:22:56.278Z",
   "source": "youtube-3ext-scenario",
   "thresholds": {
     "highAtOrAboveBytes": 62914560,
@@ -8,19 +8,61 @@
     "basedOn": "max(totalPrivateDrop, rendererPrivateDrop)"
   },
   "extensions": {
-    "eimadpbcbfnmbkopoojfekhnkhdbieeh": {
-      "label": "medium",
-      "source": "youtube-3ext-scenario",
-      "notes": "youtube-3ext-scenario: Dark Reader scenario showed total private drop 54.14 MB and renderer private drop 54.64 MB; removed target observed."
-    },
     "cmedmhnddgokbjflbjhkbeakkpaeenkc": {
       "label": "high",
       "source": "youtube-3ext-scenario",
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 76251136,
+        "totalWorkingSetDropBytes": 144855040,
+        "rendererPrivateDropBytes": 64585728,
+        "rendererWorkingSetDropBytes": 157392896,
+        "extensionRendererPrivateDropBytes": 0,
+        "extensionRendererWorkingSetDropBytes": 0,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
+      },
       "notes": "youtube-3ext-scenario: Bideo Max: Auto 8K/4K/HD for YouTube & More scenario showed total private drop 72.72 MB and renderer private drop 61.59 MB; removed target observed."
+    },
+    "eimadpbcbfnmbkopoojfekhnkhdbieeh": {
+      "label": "medium",
+      "source": "youtube-3ext-scenario",
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 56770560,
+        "totalWorkingSetDropBytes": 104681472,
+        "rendererPrivateDropBytes": 57294848,
+        "rendererWorkingSetDropBytes": 127877120,
+        "extensionRendererPrivateDropBytes": 31780864,
+        "extensionRendererWorkingSetDropBytes": 62242816,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
+      },
+      "notes": "youtube-3ext-scenario: Dark Reader scenario showed total private drop 54.14 MB and renderer private drop 54.64 MB; removed target observed."
     },
     "bnomihfieiccainjcjblhegjgglakjdd": {
       "label": "high",
       "source": "youtube-3ext-scenario",
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 76693504,
+        "totalWorkingSetDropBytes": 150646784,
+        "rendererPrivateDropBytes": 83185664,
+        "rendererWorkingSetDropBytes": 183640064,
+        "extensionRendererPrivateDropBytes": 0,
+        "extensionRendererWorkingSetDropBytes": 0,
+        "extensionOwnedPrivateDropBytes": 0,
+        "extensionOwnedWorkingSetDropBytes": 0,
+        "targetDelta": -1,
+        "beforeTargets": 1,
+        "afterTargets": 0
+      },
       "notes": "youtube-3ext-scenario: 'Improve YouTube!' (for YouTube & Videos) scenario showed total private drop 73.14 MB and renderer private drop 79.33 MB; removed target observed."
     }
   }

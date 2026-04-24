@@ -72,7 +72,7 @@ The extension shell currently includes:
 - explicit browser-wide action banner and browser-wide/no-op status copy
 - lightweight help / trust explainer in the popup
 - seeded benchmark labels for the validated YouTube scenario
-- benchmark label import/reset controls
+- benchmark label import/reset controls with structured scenario-delta memory metrics
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets

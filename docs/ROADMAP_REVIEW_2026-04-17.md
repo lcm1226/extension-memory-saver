@@ -45,6 +45,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added folder-move / new-thread handoff docs so the repo can move without losing working context
 - made `npm run test:e2e` resolve the repo-local Playwright browser after folder moves
 - added `discover-scenarios` to generate catalog scenario specs from one baseline and a folder of after snapshots
+- added structured scenario-delta memory metrics to benchmark catalog entries and popup display
 
 ### Partially done
 
@@ -79,6 +80,9 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 ### Not done yet
 
+- deeper memory attribution remains an R&D decision, not a stable-product guarantee
+  - closest candidate path: Dev/Canary `chrome.processes` + OS PID mapping + clean A/B renderer deltas
+  - do not present this as live per-extension truth unless separately validated
 - broader handling for remaining Chrome management edge cases
   - user-facing explanation for enterprise/managed-extension constraints
   - clearer separation between "saved setup changed nothing" and "Chrome refused part of the request"

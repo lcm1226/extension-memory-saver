@@ -3,11 +3,23 @@
     "eimadpbcbfnmbkopoojfekhnkhdbieeh": {
       "label": "medium",
       "source": "example-import",
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 56770560,
+        "rendererPrivateDropBytes": 57294848,
+        "targetDelta": -1
+      },
       "notes": "Example import: Dark Reader showed a medium impact in a prior scenario."
     },
     "bnomihfieiccainjcjblhegjgglakjdd": {
       "label": "high",
       "source": "example-import",
+      "metrics": {
+        "attribution": "scenario-ab-delta",
+        "totalPrivateDropBytes": 76693504,
+        "rendererPrivateDropBytes": 83185664,
+        "targetDelta": -1
+      },
       "notes": "Example import: Improve YouTube showed a high impact in a prior scenario."
     }
   }
