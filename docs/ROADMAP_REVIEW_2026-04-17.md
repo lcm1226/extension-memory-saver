@@ -43,6 +43,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added explicit browser-wide action banner and browser-wide/no-op status copy
 - verified saved-setup conflict handling when protected states block part of `Apply Saved Setup`
 - added folder-move / new-thread handoff docs so the repo can move without losing working context
+- made `npm run test:e2e` resolve the repo-local Playwright browser after folder moves
 
 ### Partially done
 

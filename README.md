@@ -96,7 +96,7 @@ It does not yet include:
 
 1. Install repo dependencies with `npm install`
 2. Install Playwright Chromium with `npx playwright install chromium`
-3. Run `npm run test:e2e`
+3. Run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` so it uses the repo-local Playwright browser
 
 Current automated coverage:
 

@@ -155,7 +155,7 @@ After moving it:
 2. if Git warns about ownership, run `git config --global --add safe.directory "<new-path>"`
 3. run `npm install`
 4. run `PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium`
-5. run `npm run test:e2e`
+5. run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` for repo-local browser resolution
 6. re-load the unpacked `ems-extension/` from the new path in Chrome because unpacked-extension paths are absolute
 7. read `HANDOFF.md`, `docs/FOLDER_MOVE_HANDOFF.md`, and `docs/ROADMAP_REVIEW_2026-04-17.md` before editing
 

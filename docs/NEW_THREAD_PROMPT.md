@@ -8,7 +8,7 @@ This repo is the transfer unit for EMS. Read `HANDOFF.md`, `docs/FOLDER_MOVE_HAN
 Before changing code:
 1. run `npm install`
 2. run `PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium`
-3. run `npm run test:e2e`
+3. run `npm run test:e2e`; the script sets `PLAYWRIGHT_BROWSERS_PATH=0`
 
 Project invariants:
 - stable Chrome still does not expose reliable live per-extension total memory

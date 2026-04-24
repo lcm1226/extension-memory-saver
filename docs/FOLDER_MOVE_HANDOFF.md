@@ -35,7 +35,7 @@ $env:PLAYWRIGHT_BROWSERS_PATH=0
 npx playwright install chromium
 ```
 
-5. Run the current regression suite:
+5. Run the current regression suite. The npm script sets `PLAYWRIGHT_BROWSERS_PATH=0`, so the run uses the repo-local Playwright browser:
 
 ```powershell
 npm run test:e2e
