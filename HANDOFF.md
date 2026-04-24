@@ -121,7 +121,7 @@ Operational lesson:
 - current product stance:
   - stable Chrome still cannot expose reliable live per-extension total memory
   - EMS should continue as a benchmark-backed control panel, not a live memory meter
-  - benchmark entries now carry structured scenario-delta metrics for estimated renderer and total private-memory drops
+  - benchmark entries now carry structured scenario-delta metrics and the popup shows row-level measured memory impact estimates
 
 ## Current next priorities
 

@@ -130,7 +130,9 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#status")).toContainText("Imported 1 benchmark label");
       await expect(page.locator("#benchmark-summary")).toContainText("including 1 imported label");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: high");
-      await expect(youtubeRow.locator(".extension-meta")).toContainText("est. drop: renderer 12.00 MB / total 15.00 MB");
+      await expect(youtubeRow.locator(".memory-impact")).toBeVisible();
+      await expect(youtubeRow.locator(".memory-impact-value")).toHaveText("15.00 MB");
+      await expect(youtubeRow.locator(".memory-impact-detail")).toContainText("renderer 12.00 MB / total 15.00 MB");
 
       await page.getByRole("button", { name: "Reset Defaults" }).click();
       await expect(page.locator("#status")).toContainText("Reset benchmark labels to the seeded defaults.");

@@ -130,7 +130,7 @@ node .\tools\ems-measure.mjs discover-scenarios `
 
 The command scans JSON files in the after-snapshot folder, keeps diffs where exactly one extension target disappeared, records the inferred extension id/name, and writes a stable spec file for `build-catalog`.
 
-Generated catalog entries include structured `metrics` such as `totalPrivateDropBytes`, `rendererPrivateDropBytes`, `extensionRendererPrivateDropBytes`, and `targetDelta`. These are scenario A/B deltas, not live per-extension totals.
+Generated catalog entries include structured `metrics` such as `totalPrivateDropBytes`, `rendererPrivateDropBytes`, `extensionRendererPrivateDropBytes`, and `targetDelta`. The popup surfaces these as measured memory impact values. They are scenario A/B deltas, not exact live ownership totals.
 
 ## Current label mapping rule
 

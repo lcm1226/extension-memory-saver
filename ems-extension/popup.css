@@ -335,6 +335,39 @@ button:disabled {
   font-size: 12px;
 }
 
+.memory-impact {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(246, 196, 83, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(246, 196, 83, 0.1), rgba(90, 182, 255, 0.06));
+}
+
+.memory-impact-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.memory-impact-value {
+  display: block;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.memory-impact-detail {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .pills {
   display: flex;
   flex-direction: column;

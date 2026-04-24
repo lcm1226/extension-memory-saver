@@ -45,7 +45,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added folder-move / new-thread handoff docs so the repo can move without losing working context
 - made `npm run test:e2e` resolve the repo-local Playwright browser after folder moves
 - added `discover-scenarios` to generate catalog scenario specs from one baseline and a folder of after snapshots
-- added structured scenario-delta memory metrics to benchmark catalog entries and popup display
+- added structured scenario-delta memory metrics to benchmark catalog entries and row-level popup memory-impact display
 
 ### Partially done
 

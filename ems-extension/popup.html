@@ -83,14 +83,14 @@
         <summary>How EMS decides and acts</summary>
         <ul class="help-list">
           <li><strong>Likely relevant</strong> comes from saved setup, host access, homepage match, and lightweight permission hints.</li>
-          <li><strong>Impact</strong> is benchmark guidance from probe runs, not live per-extension memory truth.</li>
+          <li><strong>Memory Impact</strong> is benchmark guidance measured from repeatable probe scenarios and should be read as a practical estimate, not exact live ownership.</li>
           <li><strong>Enable / Disable</strong> changes browser-wide extension state. Some extensions can be protected by Chrome.</li>
         </ul>
       </details>
 
       <footer class="footer-note">
         <p>
-          Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Impact labels are benchmark-backed or heuristic, not live memory truth.
+          Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Memory impact values are measured scenario deltas, not exact live ownership.
         </p>
       </footer>
     </main>
@@ -101,6 +101,11 @@
           <div class="name-wrap">
             <h3 class="extension-name"></h3>
             <p class="extension-meta"></p>
+            <div class="memory-impact" hidden>
+              <span class="memory-impact-label">Measured Memory Impact</span>
+              <strong class="memory-impact-value"></strong>
+              <span class="memory-impact-detail"></span>
+            </div>
           </div>
           <div class="pills">
             <span class="pill enabled-pill"></span>

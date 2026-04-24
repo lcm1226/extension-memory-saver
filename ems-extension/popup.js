@@ -536,6 +536,9 @@ function renderExtension(extension) {
   const enabledPill = fragment.querySelector(".enabled-pill");
   const relevancePill = fragment.querySelector(".relevance-pill");
   const impactPill = fragment.querySelector(".impact-pill");
+  const memoryImpact = fragment.querySelector(".memory-impact");
+  const memoryImpactValue = fragment.querySelector(".memory-impact-value");
+  const memoryImpactDetail = fragment.querySelector(".memory-impact-detail");
   const stateToggle = fragment.querySelector(".state-toggle");
   const pinToggle = fragment.querySelector(".pin-toggle");
 
@@ -555,6 +558,8 @@ function renderExtension(extension) {
   if (impact !== "unknown") {
     impactPill.classList.add(`impact-${impact}`);
   }
+
+  renderBenchmarkMemoryImpact(extension, memoryImpact, memoryImpactValue, memoryImpactDetail);
 
   pinToggle.textContent = extension.pinned ? "Unpin" : "Pin";
   pinToggle.addEventListener("click", () => runWithStatus("Updating pinned set...", async () => {
@@ -603,10 +608,6 @@ function buildMetaLine(extension) {
   }
   if (!extension.enabled && extension.mayEnable === false) {
     parts.push("cannot enable here");
-  }
-  const benchmarkEstimate = formatBenchmarkEstimate(extension.benchmark?.metrics);
-  if (benchmarkEstimate) {
-    parts.push(benchmarkEstimate);
   }
   if (extension.benchmark?.notes) {
     parts.push(extension.benchmark.notes);
@@ -869,22 +870,52 @@ function normalizeBenchmarkMetrics(metrics) {
   return Object.keys(normalized).length > 0 ? normalized : null;
 }
 
-function formatBenchmarkEstimate(metrics) {
+function renderBenchmarkMemoryImpact(extension, container, valueNode, detailNode) {
+  const impact = buildBenchmarkMemoryImpact(extension.benchmark?.metrics);
+  if (!impact) {
+    return;
+  }
+
+  container.hidden = false;
+  valueNode.textContent = impact.value;
+  detailNode.textContent = impact.detail;
+  container.title = impact.title;
+}
+
+function buildBenchmarkMemoryImpact(metrics) {
   if (!metrics || typeof metrics !== "object") {
-    return "";
+    return null;
   }
 
   const rendererDrop = Number(metrics.rendererPrivateDropBytes ?? 0);
   const totalDrop = Number(metrics.totalPrivateDropBytes ?? 0);
-  const parts = [];
-  if (rendererDrop > 0) {
-    parts.push(`renderer ${formatBytesForUi(rendererDrop)}`);
-  }
-  if (totalDrop > 0) {
-    parts.push(`total ${formatBytesForUi(totalDrop)}`);
+  const extensionRendererDrop = Number(metrics.extensionRendererPrivateDropBytes ?? 0);
+  const extensionOwnedDrop = Number(metrics.extensionOwnedPrivateDropBytes ?? 0);
+  const primaryDrop = Math.max(rendererDrop, totalDrop, extensionRendererDrop, extensionOwnedDrop);
+  if (!Number.isFinite(primaryDrop) || primaryDrop <= 0) {
+    return null;
   }
 
-  return parts.length > 0 ? `est. drop: ${parts.join(" / ")}` : "";
+  const detailParts = [];
+  if (rendererDrop > 0) {
+    detailParts.push(`renderer ${formatBytesForUi(rendererDrop)}`);
+  }
+  if (totalDrop > 0) {
+    detailParts.push(`total ${formatBytesForUi(totalDrop)}`);
+  }
+  if (extensionRendererDrop > 0) {
+    detailParts.push(`extension renderer ${formatBytesForUi(extensionRendererDrop)}`);
+  }
+  if (extensionOwnedDrop > 0) {
+    detailParts.push(`extension process ${formatBytesForUi(extensionOwnedDrop)}`);
+  }
+
+  const attribution = metrics.attribution === "scenario-ab-delta" ? "A/B scenario delta" : "probe measurement";
+  return {
+    value: formatBytesForUi(primaryDrop),
+    detail: `${detailParts.join(" / ")} · ${attribution}`,
+    title: "Measured by the EMS probe workflow. This is a practical memory impact estimate, not exact live memory ownership."
+  };
 }
 
 function formatBytesForUi(bytes) {
