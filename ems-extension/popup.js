@@ -587,6 +587,12 @@ function renderExtension(extension) {
   const stateToggle = fragment.querySelector(".state-toggle");
   const pinToggle = fragment.querySelector(".pin-toggle");
 
+  row.classList.toggle("is-disabled", !extension.enabled);
+  row.dataset.extensionState = extension.enabled ? "enabled" : "disabled";
+  row.title = extension.enabled
+    ? "This extension is currently enabled browser-wide."
+    : "This extension is currently disabled browser-wide.";
+
   name.textContent = extension.name;
   meta.textContent = buildMetaLine(extension);
 

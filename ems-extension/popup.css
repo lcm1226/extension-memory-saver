@@ -16,8 +16,8 @@
 html,
 body {
   width: 460px;
-  height: 940px;
-  max-height: 940px;
+  height: 970px;
+  max-height: 970px;
   overflow: hidden;
 }
 
@@ -223,8 +223,8 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
-  flex: 1 1 360px;
-  min-height: 360px;
+  flex: 1 1 390px;
+  min-height: 390px;
   display: flex;
   flex-direction: column;
 }
@@ -308,6 +308,17 @@ button:disabled {
 .extension-row {
   padding: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 120ms ease, opacity 120ms ease;
+}
+
+.extension-row.is-disabled {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.extension-row.is-disabled .extension-name,
+.extension-row.is-disabled .extension-meta,
+.extension-row.is-disabled .memory-impact {
+  opacity: 0.68;
 }
 
 .extension-row:first-child {

@@ -64,7 +64,7 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-relevant")).toHaveText("1");
 
       const listShellHeight = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
-      expect(listShellHeight).toBeGreaterThanOrEqual(360);
+      expect(listShellHeight).toBeGreaterThanOrEqual(390);
 
       const youtubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockTube Helper" }) });
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
@@ -85,6 +85,8 @@ test.describe("EMS popup", () => {
       await docsRow.getByRole("button", { name: "Disable" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("1");
       await expect(page.locator("#status")).toContainText("Disabled MockDocs Helper across this browser");
+      await expect(docsRow).toHaveClass(/is-disabled/);
+      await expect(docsRow).toHaveAttribute("data-extension-state", "disabled");
 
       await page.getByRole("button", { name: "Save Current Setup" }).click();
       await expect(page.locator("#status")).toContainText("Saved 1 enabled extension");
@@ -93,6 +95,7 @@ test.describe("EMS popup", () => {
       await docsRow.getByRole("button", { name: "Enable" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#status")).toContainText("Enabled MockDocs Helper across this browser");
+      await expect(docsRow).toHaveAttribute("data-extension-state", "enabled");
 
       await page.getByRole("button", { name: "Apply Saved Setup" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("1");
@@ -169,7 +172,7 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-relevant")).toHaveText("1");
 
       const listShellHeightAfterReset = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
-      expect(listShellHeightAfterReset).toBeGreaterThanOrEqual(360);
+      expect(listShellHeightAfterReset).toBeGreaterThanOrEqual(390);
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not benchmarked");
       await expect(docsRow.locator(".relevance-pill")).toContainText("host access declared");
 
