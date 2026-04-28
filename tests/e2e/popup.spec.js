@@ -63,8 +63,18 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#metric-relevant")).toHaveText("1");
 
-      const listShellHeight = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
-      expect(listShellHeight).toBeGreaterThanOrEqual(390);
+      const layout = await page.evaluate(() => {
+        const listShell = document.querySelector(".list-shell").getBoundingClientRect();
+        const extensionList = document.querySelector(".extension-list");
+        return {
+          bodyOverflowY: getComputedStyle(document.body).overflowY,
+          extensionListOverflowY: getComputedStyle(extensionList).overflowY,
+          listShellHeight: Math.round(listShell.height)
+        };
+      });
+      expect(layout.bodyOverflowY).toBe("auto");
+      expect(layout.extensionListOverflowY).toBe("visible");
+      expect(layout.listShellHeight).toBeGreaterThanOrEqual(390);
 
       const youtubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockTube Helper" }) });
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
@@ -254,6 +264,10 @@ test.describe("EMS popup", () => {
       await expect(lockedOffTubeRow.locator(".state-toggle")).toHaveText("Unavailable");
       await expect(lockedOffTubeRow.locator(".state-toggle")).toBeDisabled();
       await expect(lockedOffTubeRow.locator(".extension-meta")).toContainText("cannot enable here");
+      await page.locator(".extension-row").last().scrollIntoViewIfNeeded();
+      await expect(page.locator(".extension-row").last()).toBeInViewport();
+      const bodyScrollTop = await page.evaluate(() => document.scrollingElement.scrollTop);
+      expect(bodyScrollTop).toBeGreaterThan(0);
 
       await page.getByRole("button", { name: "Lighten This Site" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("2");
