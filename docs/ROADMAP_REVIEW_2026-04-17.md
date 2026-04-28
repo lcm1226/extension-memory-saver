@@ -70,7 +70,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - benchmark workflow integration
   - implemented:
     - import UI
-    - seeded local catalog
+    - seeded local catalog for the measured YouTube 3-extension scenario only: Dark Reader, Bideo Max, and Improve YouTube
     - compact benchmark export command from the probe workflow
     - documented mapping rule from measured deltas to `low/medium/high`
     - multi-scenario catalog build command with JSON scenario spec
@@ -78,7 +78,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - auto-selection when a scenario removes exactly one extension target
     - optional `extensionName` / `extensionNameContains` selectors for ambiguous scenarios
   - still missing:
+    - broader benchmark catalog coverage for newly installed or user-specific extensions
     - smoother scenario authoring for richer metadata beyond current discovered baseline/after datasets
+  - current constraint:
+    - new extensions do not receive measured memory values automatically; they need a measured benchmark JSON import or a future catalog update
 - end-to-end verification
   - manual verification happened on the real YouTube page
   - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states using mock extensions plus a test-only management fixture
@@ -93,11 +96,12 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
   - user-facing explanation for enterprise/managed-extension constraints
   - clearer separation between "saved setup changed nothing" and "Chrome refused part of the request"
   - more explicit treatment of tabs that should be inventory-only, not actionable
-- packaged icons and store-ready metadata
-- release-oriented UI pass
-  - current UI works, but layout density and section sizing still need a deliberate cleanup pass
-- docs for non-technical use
-  - right now the product is understandable for a builder, not yet for a normal end user
+- Store Release final prep
+  - packaged icons and store-ready metadata
+  - Chrome Web Store listing copy, screenshots, permission/privacy explanation, and package/ZIP checklist
+  - release UI polish for layout density, section sizing, and normal-user readability
+  - UX improvements such as search/filter, disabled-only view, pinned-only view, and clearer saved-profile controls
+  - non-technical docs that explain browser-wide actions, benchmark-backed memory estimates, and profile-inventory import without developer assumptions
 
 ## Recommended next priorities
 
@@ -110,11 +114,14 @@ Close the remaining MVP-spec gaps:
 
 ### Priority 2
 
-Prepare for a cleaner handoff/release cycle:
+Store Release final prep:
 
 - preserve and maintain the current popup verification breadth as behavior changes
-- add icons and basic metadata
-- do one deliberate UI polish pass after behavior stabilizes
+- add packaged icons and store-ready manifest metadata
+- write Chrome Web Store listing copy, screenshots, and permission/privacy explanation
+- do one deliberate release UI polish pass for normal-user readability
+- add user-facing docs for the benchmark-backed control model
+- consider UX improvements such as search/filter, disabled-only view, pinned-only view, and clearer saved-profile controls
 
 ### Priority 3
 
@@ -130,5 +137,5 @@ Behavior work should stay ahead of UI polish.
 The next concrete implementation step should be:
 
 1. keep the lightweight profile-inventory export/import flow unless manual use shows it is still too clunky
-2. prepare icons/basic metadata once behavior work stops moving
-3. add non-technical docs for the benchmark-backed control model
+2. execute Store Release final prep once behavior work stops moving
+3. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring

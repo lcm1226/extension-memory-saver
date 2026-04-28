@@ -126,6 +126,8 @@ Operational lesson:
   - stable Chrome still cannot expose reliable live per-extension total memory
   - EMS should continue as a benchmark-backed control panel, not a live memory meter
   - benchmark entries now carry structured scenario-delta metrics and the popup shows row-level measured memory impact estimates
+  - seeded benchmark labels currently cover only the measured YouTube 3-extension scenario: Dark Reader, Bideo Max, and Improve YouTube
+  - newly installed or user-specific extensions need a measured benchmark JSON import or a future catalog update before memory impact values appear
   - profile inventory can now read manifest-only relevance signals from test/probe profiles
   - popup import can use those manifest signals to improve relevance labels and site-relevant counts
 
@@ -133,8 +135,8 @@ Operational lesson:
 
 1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
 2. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
-3. prepare icons/basic metadata and a release UI pass once behavior stops moving
-4. expand non-technical docs when the interaction model is stable
+3. execute Store Release final prep: packaged icons, store-ready metadata, Web Store listing copy, permission/privacy explanation, release UI polish, normal-user docs, and optional UX improvements such as search/filter or disabled-only view
+4. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring
 
 ## Notion context
 
