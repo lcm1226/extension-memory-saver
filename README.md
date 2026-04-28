@@ -75,6 +75,7 @@ The extension shell currently includes:
 - lightweight help / trust explainer in the popup
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls with row-level measured memory impact display
+- profile-inventory JSON import for manifest-signal relevance enrichment
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets
@@ -85,7 +86,7 @@ The extension shell currently includes:
 
 It does not yet include:
 
-- explicit use of more metadata for relevance inference beyond the current heuristic inputs
+- automatic runtime access to `optional_host_permissions` or `content_scripts.matches` without imported profile inventory
 - packaged icons or store-ready metadata
 
 ## Local test
@@ -96,8 +97,9 @@ Use only a dedicated Chrome test profile for manual EMS verification. Do not val
 2. Enable Developer mode
 3. Click `Load unpacked`
 4. Select the `ems-extension` folder
-5. Open a normal website and test the popup
-6. If you want a custom shortcut, open `chrome://extensions/shortcuts`
+5. Open a normal website in the same test profile and test the popup
+6. To enrich relevance with profile manifest signals, import a `profile-inventory` JSON through the popup `Import JSON` button
+7. If you want a custom shortcut, open `chrome://extensions/shortcuts`
 
 ## Automated verification
 
@@ -110,7 +112,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
+- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 
 ## Folder move / thread handoff
 

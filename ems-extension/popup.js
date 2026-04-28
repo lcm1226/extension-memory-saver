@@ -2,7 +2,8 @@ const STORAGE_KEYS = {
   siteProfiles: "siteProfiles",
   restoreSnapshot: "restoreSnapshot",
   pinnedExtensionIds: "pinnedExtensionIds",
-  benchmarkLabels: "benchmarkLabels"
+  benchmarkLabels: "benchmarkLabels",
+  manifestSignals: "manifestSignals"
 };
 
 const SITE_RELEVANCE_HEURISTICS = [
@@ -56,7 +57,8 @@ const state = {
     siteProfiles: {},
     restoreSnapshot: null,
     pinnedExtensionIds: [],
-    benchmarkLabels: {}
+    benchmarkLabels: {},
+    manifestSignals: {}
   }
 };
 
@@ -204,11 +206,14 @@ function bindEvents() {
     ui.benchmarkFileInput.click();
   });
 
-  ui.resetBenchmarksButton.addEventListener("click", () => runWithStatus("Resetting benchmark labels...", async () => {
+  ui.resetBenchmarksButton.addEventListener("click", () => runWithStatus("Resetting probe data...", async () => {
     const defaults = await getDefaultBenchmarkLabels();
-    await chrome.storage.local.set({ [STORAGE_KEYS.benchmarkLabels]: defaults });
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.benchmarkLabels]: defaults,
+      [STORAGE_KEYS.manifestSignals]: {}
+    });
     await refresh();
-    setStatus("Reset benchmark labels to the seeded defaults.");
+    setStatus("Reset benchmark labels to the seeded defaults. Cleared imported manifest signals.");
   }));
 
   ui.benchmarkFileInput.addEventListener("change", async (event) => {
@@ -217,16 +222,28 @@ function bindEvents() {
       return;
     }
 
-    await runWithStatus("Importing benchmark labels...", async () => {
-      const importedLabels = await importBenchmarkFile(file);
-      await chrome.storage.local.set({
-        [STORAGE_KEYS.benchmarkLabels]: {
+    await runWithStatus("Importing probe data...", async () => {
+      const importedData = await importProbeDataFile(file);
+      const benchmarkCount = Object.keys(importedData.benchmarkLabels).length;
+      const signalCount = Object.keys(importedData.manifestSignals).length;
+      const storageUpdate = {};
+
+      if (benchmarkCount > 0) {
+        storageUpdate[STORAGE_KEYS.benchmarkLabels] = {
           ...state.storage.benchmarkLabels,
-          ...importedLabels
-        }
-      });
+          ...importedData.benchmarkLabels
+        };
+      }
+      if (signalCount > 0) {
+        storageUpdate[STORAGE_KEYS.manifestSignals] = {
+          ...state.storage.manifestSignals,
+          ...importedData.manifestSignals
+        };
+      }
+
+      await chrome.storage.local.set(storageUpdate);
       await refresh();
-      setStatus(`Imported ${Object.keys(importedLabels).length} benchmark label(s) from ${file.name}.`);
+      setStatus(buildImportProbeDataStatus(file.name, benchmarkCount, signalCount));
     });
   });
 }
@@ -248,7 +265,8 @@ async function refresh() {
     siteProfiles: storage[STORAGE_KEYS.siteProfiles] ?? {},
     restoreSnapshot: storage[STORAGE_KEYS.restoreSnapshot] ?? null,
     pinnedExtensionIds: storage[STORAGE_KEYS.pinnedExtensionIds] ?? [],
-    benchmarkLabels: storage[STORAGE_KEYS.benchmarkLabels] ?? {}
+    benchmarkLabels: storage[STORAGE_KEYS.benchmarkLabels] ?? {},
+    manifestSignals: storage[STORAGE_KEYS.manifestSignals] ?? {}
   };
   state.currentSiteProfile = state.origin ? state.storage.siteProfiles[state.origin] ?? null : null;
   state.extensions = allExtensions
@@ -336,7 +354,8 @@ function decorateExtension(extension) {
   const siteProfile = state.origin ? state.storage.siteProfiles[state.origin] : null;
   const pinned = state.storage.pinnedExtensionIds.includes(extension.id);
   const savedForSite = Boolean(siteProfile?.allowedExtensionIds?.includes(extension.id));
-  const relevance = inferRelevance(extension, pinned, savedForSite);
+  const manifestSignals = state.storage.manifestSignals[extension.id] ?? null;
+  const relevance = inferRelevance(extension, pinned, savedForSite, manifestSignals);
   const benchmark = state.storage.benchmarkLabels[extension.id] ?? null;
 
   return {
@@ -344,15 +363,22 @@ function decorateExtension(extension) {
     pinned,
     savedForSite,
     relevance,
-    benchmark
+    benchmark,
+    manifestSignals
   };
 }
 
-function inferRelevance(extension, pinned, savedForSite) {
+function inferRelevance(extension, pinned, savedForSite, manifestSignals) {
   const hostPermissions = extension.hostPermissions ?? [];
   const permissions = extension.permissions ?? [];
-  const matchesCurrentSite = Boolean(state.tab?.url) && hostPermissions.some((pattern) => matchPattern(pattern, state.tab.url));
-  const allSitesAccess = hostPermissions.includes("<all_urls>");
+  const profileHostPermissions = manifestSignals?.hostPermissions ?? [];
+  const optionalHostPermissions = manifestSignals?.optionalHostPermissions ?? [];
+  const contentScriptMatches = manifestSignals?.contentScriptMatches ?? [];
+  const matchesCurrentSite = patternsMatchCurrentUrl(hostPermissions);
+  const profileHostMatch = patternsMatchCurrentUrl(profileHostPermissions);
+  const optionalHostMatch = patternsMatchCurrentUrl(optionalHostPermissions);
+  const contentScriptMatch = patternsMatchCurrentUrl(contentScriptMatches);
+  const allSitesAccess = [...hostPermissions, ...profileHostPermissions, ...contentScriptMatches].includes("<all_urls>");
   const heuristicMatch = inferHeuristicSiteMatch(extension);
   const homepageMatch = inferHomepageSiteMatch(extension);
   const browserWidePermissionHint = permissions.some((permission) => BROWSER_WIDE_PERMISSION_HINTS.includes(permission));
@@ -361,8 +387,14 @@ function inferRelevance(extension, pinned, savedForSite) {
   if (savedForSite) {
     return { score: 400, label: "saved for this site", className: "relevance-high" };
   }
+  if (contentScriptMatch) {
+    return { score: 330, label: "content script match", className: "relevance-high" };
+  }
   if (matchesCurrentSite) {
     return { score: 300, label: "matches this site", className: "relevance-high" };
+  }
+  if (profileHostMatch) {
+    return { score: 300, label: "profile host match", className: "relevance-high" };
   }
   if (homepageMatch) {
     return { score: 300, label: "homepage matches this site", className: "relevance-high" };
@@ -370,13 +402,16 @@ function inferRelevance(extension, pinned, savedForSite) {
   if (pinned) {
     return { score: 250, label: "pinned by you", className: "relevance-mid" };
   }
+  if (optionalHostMatch) {
+    return { score: 240, label: "optional host match", className: "relevance-mid" };
+  }
   if (heuristicMatch) {
     return { score: 300, label: "likely for this site", className: "relevance-high" };
   }
   if (allSitesAccess) {
     return { score: 200, label: "all sites access", className: "relevance-mid" };
   }
-  if (hostPermissions.length > 0) {
+  if (hostPermissions.length > 0 || profileHostPermissions.length > 0 || optionalHostPermissions.length > 0) {
     return { score: 100, label: "host access declared", className: "relevance-mid" };
   }
   if (browserWidePermissionHint) {
@@ -386,6 +421,10 @@ function inferRelevance(extension, pinned, savedForSite) {
     return { score: 130, label: "tab-level capability", className: "relevance-mid" };
   }
   return { score: 0, label: "unknown", className: "" };
+}
+
+function patternsMatchCurrentUrl(patterns) {
+  return Boolean(state.tab?.url) && patterns.some((pattern) => matchPattern(pattern, state.tab.url));
 }
 
 function inferHeuristicSiteMatch(extension) {
@@ -516,16 +555,22 @@ function renderBenchmarkCard() {
   const labels = Object.values(state.storage.benchmarkLabels);
   const benchmarkedCount = labels.length;
   const importedCount = labels.filter((label) => label?.source && label.source !== "youtube-3ext-scenario").length;
+  const signalCount = Object.keys(state.storage.manifestSignals).length;
+  const signalText = signalCount
+    ? `${signalCount} manifest signal set(s) loaded.`
+    : "No manifest signal sets loaded.";
 
-  if (!benchmarkedCount) {
-    ui.benchmarkSummary.textContent = "No benchmark labels loaded.";
+  if (!benchmarkedCount && !signalCount) {
+    ui.benchmarkSummary.textContent = "No probe data loaded.";
+  } else if (!benchmarkedCount) {
+    ui.benchmarkSummary.textContent = `No benchmark labels loaded. ${signalText}`;
   } else if (!importedCount) {
-    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded from the seeded catalog.`;
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded from the seeded catalog. ${signalText}`;
   } else {
-    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded, including ${importedCount} imported label(s).`;
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded, including ${importedCount} imported label(s). ${signalText}`;
   }
 
-  ui.resetBenchmarksButton.disabled = !benchmarkedCount;
+  ui.resetBenchmarksButton.disabled = !benchmarkedCount && !signalCount;
 }
 
 function renderExtension(extension) {
@@ -750,16 +795,28 @@ async function getDefaultBenchmarkLabels() {
   return response.benchmarkLabels;
 }
 
-async function importBenchmarkFile(file) {
+async function importProbeDataFile(file) {
   const text = await file.text();
   const payload = JSON.parse(text);
-  const importedLabels = normalizeBenchmarkPayload(payload);
+  const benchmarkLabels = normalizeBenchmarkPayload(payload);
+  const manifestSignals = normalizeManifestSignalPayload(payload);
 
-  if (!Object.keys(importedLabels).length) {
-    throw new Error("The JSON file did not contain any usable benchmark labels.");
+  if (!Object.keys(benchmarkLabels).length && !Object.keys(manifestSignals).length) {
+    throw new Error("The JSON file did not contain usable benchmark labels or manifest signals.");
   }
 
-  return importedLabels;
+  return { benchmarkLabels, manifestSignals };
+}
+
+function buildImportProbeDataStatus(fileName, benchmarkCount, signalCount) {
+  const parts = [];
+  if (benchmarkCount > 0) {
+    parts.push(`${benchmarkCount} benchmark label(s)`);
+  }
+  if (signalCount > 0) {
+    parts.push(`${signalCount} manifest signal set(s)`);
+  }
+  return `Imported ${parts.join(" and ")} from ${fileName}.`;
 }
 
 function normalizeBenchmarkPayload(payload) {
@@ -913,7 +970,7 @@ function buildBenchmarkMemoryImpact(metrics) {
   const attribution = metrics.attribution === "scenario-ab-delta" ? "A/B scenario delta" : "probe measurement";
   return {
     value: formatBytesForUi(primaryDrop),
-    detail: `${detailParts.join(" / ")} · ${attribution}`,
+    detail: `${detailParts.join(" / ")} - ${attribution}`,
     title: "Measured by the EMS probe workflow. This is a practical memory impact estimate, not exact live memory ownership."
   };
 }
@@ -931,6 +988,74 @@ function formatBytesForUi(bytes) {
   }
   return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
 }
+function normalizeManifestSignalPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+
+  if (payload.installedExtensions && typeof payload.installedExtensions === "object") {
+    return normalizeManifestSignalMap(payload.installedExtensions, payload.source ?? "profile-inventory");
+  }
+  if (payload.manifestSignals && typeof payload.manifestSignals === "object") {
+    return normalizeManifestSignalMap(payload.manifestSignals, payload.source ?? "manifest-signals");
+  }
+  if (Array.isArray(payload.extensions)) {
+    return normalizeManifestSignalEntries(payload.extensions, payload.source ?? "probe-json");
+  }
+  if (payload.extensions && typeof payload.extensions === "object") {
+    return normalizeManifestSignalMap(payload.extensions, payload.source ?? "probe-json");
+  }
+
+  return normalizeManifestSignalMap(payload, payload.source ?? "manifest-signals");
+}
+
+function normalizeManifestSignalEntries(entries, source) {
+  const normalized = {};
+  for (const entry of entries) {
+    const extensionId = entry?.extensionId;
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+    const signals = normalizeManifestSignals(entry.manifestSignals ?? entry.signals ?? entry);
+    if (signals) {
+      normalized[extensionId] = { ...signals, source };
+    }
+  }
+  return normalized;
+}
+
+function normalizeManifestSignalMap(map, source) {
+  const normalized = {};
+  for (const [extensionId, entry] of Object.entries(map)) {
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+    const signals = normalizeManifestSignals(entry?.manifestSignals ?? entry?.signals ?? entry);
+    if (signals) {
+      normalized[extensionId] = { ...signals, source: entry?.source ?? source };
+    }
+  }
+  return normalized;
+}
+
+function normalizeManifestSignals(signals) {
+  if (!signals || typeof signals !== "object") {
+    return null;
+  }
+
+  const normalized = {
+    hostPermissions: normalizeStringList(signals.hostPermissions ?? signals.host_permissions),
+    optionalHostPermissions: normalizeStringList(signals.optionalHostPermissions ?? signals.optional_host_permissions),
+    contentScriptMatches: normalizeStringList(signals.contentScriptMatches ?? signals.content_scripts_matches ?? signals.contentScripts)
+  };
+
+  return Object.values(normalized).some((values) => values.length > 0) ? normalized : null;
+}
+
+function normalizeStringList(value) {
+  return Array.isArray(value) ? [...new Set(value.filter((item) => typeof item === "string" && item.length > 0))] : [];
+}
+
 function normalizeBenchmarkLabel(label) {
   const normalized = String(label).toLowerCase();
   return ["low", "medium", "high", "unknown"].includes(normalized) ? normalized : "unknown";
@@ -1056,6 +1181,7 @@ function disablePrimaryActions(disabled) {
   const hasOrigin = Boolean(state.origin);
   const hasSavedSetup = Boolean(state.currentSiteProfile?.allowedExtensionIds?.length);
   const hasBenchmarks = Boolean(Object.keys(state.storage.benchmarkLabels).length);
+  const hasManifestSignals = Boolean(Object.keys(state.storage.manifestSignals).length);
 
   ui.lightenButton.disabled = disabled || !hasOrigin;
   ui.restoreButton.disabled = disabled || !state.storage.restoreSnapshot;
@@ -1063,7 +1189,7 @@ function disablePrimaryActions(disabled) {
   ui.applySavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
   ui.clearSavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
   ui.importBenchmarksButton.disabled = disabled;
-  ui.resetBenchmarksButton.disabled = disabled || !hasBenchmarks;
+  ui.resetBenchmarksButton.disabled = disabled || (!hasBenchmarks && !hasManifestSignals);
   ui.benchmarkFileInput.disabled = disabled;
 }
 

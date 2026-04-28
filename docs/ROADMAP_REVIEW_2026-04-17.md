@@ -47,6 +47,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added `discover-scenarios` to generate catalog scenario specs from one baseline and a folder of after snapshots
 - added structured scenario-delta memory metrics to benchmark catalog entries and row-level popup memory-impact display
 - added `profile-inventory` for test/probe profile manifest signals (`optional_host_permissions`, `content_scripts.matches`)
+- wired profile-inventory JSON import into popup relevance scoring
 
 ### Partially done
 
@@ -57,12 +58,14 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - hostname/name/description heuristics
     - homepage host matching
     - permission-based hints for browser-wide or tab-level capability
+    - imported test/probe profile manifest signals for `content_scripts.matches` and `optional_host_permissions`
   - still missing from the original spec:
-    - wiring test/probe profile manifest signals into popup relevance as an optional import/enrichment path
+    - automatic runtime access to these manifest-only fields without explicit profile-inventory import
   - current constraint:
     - `chrome.management.ExtensionInfo` documents `hostPermissions`, `permissions`, and `homepageUrl`, but does not expose `optional_host_permissions` or `content_scripts.matches`, so stable public metadata still leaves a hard ceiling inside the runtime popup
   - latest probe-side progress:
     - `profile-inventory` can read `optional_host_permissions` and `content_scripts.matches` from a test/probe profile on disk
+    - popup `Import JSON` can store those signals and use them for relevance scoring
 - benchmark workflow integration
   - implemented:
     - import UI
@@ -101,8 +104,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 Close the remaining MVP-spec gaps:
 
-- decide whether to add a popup import/enrichment path for `profile-inventory` manifest signals
-- support `optional_host_permissions` and `content_scripts.matches` in relevance scoring only when imported/enriched data is available
+- decide whether to automate profile-inventory generation/import further or keep it as an explicit probe step
 - keep reducing manual scenario authoring only when richer datasets need metadata beyond current discovery
 
 ### Priority 2

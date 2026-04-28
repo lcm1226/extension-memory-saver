@@ -58,11 +58,11 @@
 
         <article class="info-card">
           <div class="card-header">
-            <h2>Benchmark Labels</h2>
-            <span class="caption">Imported or seeded</span>
+            <h2>Probe Data</h2>
+            <span class="caption">Benchmarks + signals</span>
           </div>
-          <p id="benchmark-summary" class="card-copy">No benchmark labels loaded.</p>
-          <p class="card-note">Optional. Import a benchmark JSON from the probe workflow. Reset restores the seeded YouTube defaults.</p>
+          <p id="benchmark-summary" class="card-copy">No probe data loaded.</p>
+          <p class="card-note">Optional. Import benchmark labels or profile-inventory JSON from the test/probe workflow. Reset restores seeded benchmarks and clears imported manifest signals.</p>
           <div class="card-actions">
             <button id="import-benchmarks" type="button">Import JSON</button>
             <button id="reset-benchmarks" type="button">Reset Defaults</button>
@@ -82,7 +82,7 @@
       <details class="help-shell">
         <summary>How EMS decides and acts</summary>
         <ul class="help-list">
-          <li><strong>Likely relevant</strong> comes from saved setup, host access, homepage match, and lightweight permission hints.</li>
+          <li><strong>Likely relevant</strong> comes from saved setup, host access, homepage match, imported manifest signals, and lightweight permission hints.</li>
           <li><strong>Memory Impact</strong> is benchmark guidance measured from repeatable probe scenarios and should be read as a practical estimate, not exact live ownership.</li>
           <li><strong>Enable / Disable</strong> changes browser-wide extension state. Some extensions can be protected by Chrome.</li>
         </ul>

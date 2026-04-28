@@ -87,6 +87,7 @@ Operational lesson:
    - save/restore site setup
    - apply/clear saved site setup
    - benchmark import/reset controls
+   - profile-inventory JSON import for manifest-signal relevance enrichment
    - status messages clearly explain which extensions changed or were skipped
     - protected/unavailable extensions are visibly non-toggleable
    - browser-wide action banner stays visible and matches the current tab mode
@@ -94,7 +95,7 @@ Operational lesson:
     - `docs/example-benchmark-labels.json` imports cleanly
 3. Run `npm run test:e2e` for the current Playwright smoke test.
    - this uses a test-only popup query override plus mock extensions and a test-only management fixture
-- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
+- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
 6. Use `node .\tools\ems-measure.mjs profile-inventory --profile-dir <TEST_PROFILE_DIR> --out .\test-results\profile-inventory.json` to read manifest-only relevance signals from a test/probe profile.
@@ -125,11 +126,12 @@ Operational lesson:
   - EMS should continue as a benchmark-backed control panel, not a live memory meter
   - benchmark entries now carry structured scenario-delta metrics and the popup shows row-level measured memory impact estimates
   - profile inventory can now read manifest-only relevance signals from test/probe profiles
+  - popup import can use those manifest signals to improve relevance labels and site-relevant counts
 
 ## Current next priorities
 
-1. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
-2. decide whether any deeper relevance inference needs a non-stable or profile-read path
+1. decide whether profile-inventory generation/import should be automated further or kept as an explicit probe step
+2. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
 3. prepare icons/basic metadata and a release UI pass once behavior stops moving
 4. expand non-technical docs when the interaction model is stable
 

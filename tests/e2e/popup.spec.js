@@ -102,6 +102,7 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#status")).toContainText("Re-enabled 1: MockDocs Helper");
 
       const youtubeExtensionId = await youtubeRow.evaluate((node) => node.dataset.extensionId);
+      const docsExtensionId = await docsRow.evaluate((node) => node.dataset.extensionId);
       const importPayload = {
         extensions: {
           [youtubeExtensionId]: {
@@ -134,10 +135,37 @@ test.describe("EMS popup", () => {
       await expect(youtubeRow.locator(".memory-impact-value")).toHaveText("15.00 MB");
       await expect(youtubeRow.locator(".memory-impact-detail")).toContainText("renderer 12.00 MB / total 15.00 MB");
 
+      const manifestSignalPayload = {
+        installedExtensions: {
+          [docsExtensionId]: {
+            manifestSignals: {
+              contentScriptMatches: ["https://www.youtube.com/*"]
+            }
+          }
+        }
+      };
+
+      const signalFileChooserPromise = page.waitForEvent("filechooser");
+      await page.getByRole("button", { name: "Import JSON" }).click();
+      const signalFileChooser = await signalFileChooserPromise;
+      await signalFileChooser.setFiles({
+        name: "playwright-profile-inventory.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(manifestSignalPayload), "utf8")
+      });
+
+      await expect(page.locator("#status")).toContainText("Imported 1 manifest signal set");
+      await expect(page.locator("#benchmark-summary")).toContainText("1 manifest signal set");
+      await expect(page.locator("#metric-relevant")).toHaveText("2");
+      await expect(docsRow.locator(".relevance-pill")).toContainText("content script match");
+
       await page.getByRole("button", { name: "Reset Defaults" }).click();
       await expect(page.locator("#status")).toContainText("Reset benchmark labels to the seeded defaults.");
       await expect(page.locator("#benchmark-summary")).toContainText("loaded from the seeded catalog");
+      await expect(page.locator("#benchmark-summary")).toContainText("No manifest signal sets loaded");
+      await expect(page.locator("#metric-relevant")).toHaveText("1");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not benchmarked");
+      await expect(docsRow.locator(".relevance-pill")).toContainText("host access declared");
 
       await page.getByRole("button", { name: "Clear Saved Setup" }).click();
       await expect(page.locator("#status")).toContainText("Cleared the saved setup for https://www.youtube.com.");

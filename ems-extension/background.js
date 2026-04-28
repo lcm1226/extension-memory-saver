@@ -39,7 +39,8 @@ const DEFAULT_STATE = {
   siteProfiles: {},
   restoreSnapshot: null,
   pinnedExtensionIds: [],
-  benchmarkLabels: DEFAULT_BENCHMARK_LABELS
+  benchmarkLabels: DEFAULT_BENCHMARK_LABELS,
+  manifestSignals: {}
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -85,6 +86,10 @@ async function ensureDefaultState() {
 
   if (current.pinnedExtensionIds === undefined) {
     nextState.pinnedExtensionIds = DEFAULT_STATE.pinnedExtensionIds;
+  }
+
+  if (current.manifestSignals === undefined) {
+    nextState.manifestSignals = DEFAULT_STATE.manifestSignals;
   }
 
   const mergedBenchmarkLabels = {

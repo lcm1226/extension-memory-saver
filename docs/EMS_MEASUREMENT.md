@@ -142,6 +142,8 @@ node .\tools\ems-measure.mjs profile-inventory --profile-dir "<TEST_PROFILE_DIR>
 
 This command reads only a test/probe profile on disk and does not launch or mutate Chrome. Treat the output as a development/probe enrichment source, not as runtime stable-extension API data.
 
+The popup `Import JSON` button accepts this output and stores the manifest signals separately from benchmark labels. Imported `content_scripts.matches` can upgrade a row to `content script match`; imported `optional_host_permissions` can show `optional host match` when it matches the current site.
+
 ## Current label mapping rule
 
 `export-labels` maps a scenario to `low` / `medium` / `high` using:
