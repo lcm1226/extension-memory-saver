@@ -63,6 +63,9 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#metric-relevant")).toHaveText("1");
 
+      const listShellHeight = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
+      expect(listShellHeight).toBeGreaterThanOrEqual(360);
+
       const youtubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockTube Helper" }) });
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
 
@@ -164,6 +167,9 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#benchmark-summary")).toContainText("loaded from the seeded catalog");
       await expect(page.locator("#benchmark-summary")).toContainText("No manifest signal sets loaded");
       await expect(page.locator("#metric-relevant")).toHaveText("1");
+
+      const listShellHeightAfterReset = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
+      expect(listShellHeightAfterReset).toBeGreaterThanOrEqual(360);
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not benchmarked");
       await expect(docsRow.locator(".relevance-pill")).toContainText("host access declared");
 

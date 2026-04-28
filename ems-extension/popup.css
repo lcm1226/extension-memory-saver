@@ -16,8 +16,8 @@
 html,
 body {
   width: 460px;
-  height: 820px;
-  max-height: 820px;
+  height: 940px;
+  max-height: 940px;
   overflow: hidden;
 }
 
@@ -223,8 +223,8 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
-  flex: 1 1 240px;
-  min-height: 240px;
+  flex: 1 1 360px;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
 }
@@ -285,6 +285,7 @@ button:disabled {
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
+  padding-bottom: 8px;
 }
 
 .extension-list::-webkit-scrollbar {
