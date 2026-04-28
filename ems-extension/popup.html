@@ -74,7 +74,20 @@
       <section class="list-shell">
         <div class="list-header">
           <h2>Extensions</h2>
-          <span class="caption">Likely relevant on this site</span>
+          <span id="list-summary" class="caption">Showing all extensions</span>
+        </div>
+        <div class="list-controls" aria-label="Extension list controls">
+          <label class="search-wrap">
+            <span class="sr-only">Search extensions</span>
+            <input id="extension-search" type="search" placeholder="Search extensions" autocomplete="off">
+          </label>
+          <div class="filter-tabs" role="group" aria-label="Extension filters">
+            <button class="filter-chip is-active" type="button" data-extension-filter="all" aria-pressed="true">All</button>
+            <button class="filter-chip" type="button" data-extension-filter="relevant" aria-pressed="false">Relevant</button>
+            <button class="filter-chip" type="button" data-extension-filter="enabled" aria-pressed="false">Enabled</button>
+            <button class="filter-chip" type="button" data-extension-filter="disabled" aria-pressed="false">Disabled</button>
+            <button class="filter-chip" type="button" data-extension-filter="pinned" aria-pressed="false">Pinned</button>
+          </div>
         </div>
         <div id="extension-list" class="extension-list"></div>
       </section>
@@ -105,6 +118,7 @@
               <span class="memory-impact-label">Measured Memory Impact</span>
               <strong class="memory-impact-value"></strong>
               <span class="memory-impact-detail"></span>
+              <span class="memory-impact-confidence"></span>
             </div>
           </div>
           <div class="pills">

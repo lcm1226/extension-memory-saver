@@ -49,6 +49,8 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added `profile-inventory` for test/probe profile manifest signals (`optional_host_permissions`, `content_scripts.matches`)
 - wired profile-inventory JSON import into popup relevance scoring
 - added a lightweight `Export-EMSProfileInventory.ps1` wrapper and Korean/English how-to docs for the simplified development flow
+- added extension list search and All/Relevant/Enabled/Disabled/Pinned filters
+- added benchmark confidence metadata display for measured memory-impact rows
 
 ### Partially done
 
@@ -100,7 +102,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
   - packaged icons and store-ready metadata
   - Chrome Web Store listing copy, screenshots, permission/privacy explanation, and package/ZIP checklist
   - release UI polish for layout density, section sizing, and normal-user readability
-  - UX improvements such as search/filter, disabled-only view, pinned-only view, and clearer saved-profile controls
+  - remaining UX improvements such as clearer saved-profile controls and additional release polish beyond the current search/filter baseline
   - non-technical docs that explain browser-wide actions, benchmark-backed memory estimates, and profile-inventory import without developer assumptions
 
 ## Recommended next priorities
@@ -121,7 +123,7 @@ Store Release final prep:
 - write Chrome Web Store listing copy, screenshots, and permission/privacy explanation
 - do one deliberate release UI polish pass for normal-user readability
 - add user-facing docs for the benchmark-backed control model
-- consider UX improvements such as search/filter, disabled-only view, pinned-only view, and clearer saved-profile controls
+- consider remaining UX improvements such as clearer saved-profile controls and additional release polish beyond the current search/filter baseline
 
 ### Priority 3
 

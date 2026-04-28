@@ -79,6 +79,8 @@ The extension shell currently includes:
 - seeded benchmark labels for the validated YouTube scenario
 - benchmark label import/reset controls with row-level measured memory impact display
 - profile-inventory JSON import for manifest-signal relevance enrichment
+- extension list search and All/Relevant/Enabled/Disabled/Pinned filters
+- row-level benchmark confidence metadata display
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets
@@ -119,7 +121,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
+- verifies inventory metrics, relevance labeling, extension search/filter controls, row-level confidence metadata, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 
 ## Folder move / thread handoff
 

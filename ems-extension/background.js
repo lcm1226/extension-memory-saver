@@ -8,6 +8,10 @@ const DEFAULT_BENCHMARK_LABELS = {
       rendererPrivateDropBytes: 57294848,
       targetDelta: -1
     },
+    confidence: "medium",
+    measuredAt: "2026-04-24",
+    targetUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+    repeatCount: 1,
     notes: "YouTube benchmark: removing Dark Reader reduced renderer private memory."
   },
   cmedmhnddgokbjflbjhkbeakkpaeenkc: {
@@ -19,6 +23,10 @@ const DEFAULT_BENCHMARK_LABELS = {
       rendererPrivateDropBytes: 64585728,
       targetDelta: -1
     },
+    confidence: "medium",
+    measuredAt: "2026-04-24",
+    targetUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+    repeatCount: 1,
     notes: "YouTube benchmark: removing Bideo Max reduced total and renderer private memory."
   },
   bnomihfieiccainjcjblhegjgglakjdd: {
@@ -30,6 +38,10 @@ const DEFAULT_BENCHMARK_LABELS = {
       rendererPrivateDropBytes: 83185664,
       targetDelta: -1
     },
+    confidence: "medium",
+    measuredAt: "2026-04-24",
+    targetUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+    repeatCount: 1,
     notes: "YouTube benchmark: removing Improve YouTube reduced total and renderer private memory."
   }
 };
@@ -92,14 +104,11 @@ async function ensureDefaultState() {
     nextState.manifestSignals = DEFAULT_STATE.manifestSignals;
   }
 
-  const mergedBenchmarkLabels = {
-    ...DEFAULT_BENCHMARK_LABELS,
-    ...(current.benchmarkLabels ?? {})
-  };
+  const mergedBenchmarkLabels = mergeBenchmarkLabels(current.benchmarkLabels ?? {});
 
   const benchmarkNeedsUpdate =
     current.benchmarkLabels === undefined ||
-    Object.keys(mergedBenchmarkLabels).length !== Object.keys(current.benchmarkLabels ?? {}).length;
+    JSON.stringify(mergedBenchmarkLabels) !== JSON.stringify(current.benchmarkLabels ?? {});
 
   if (benchmarkNeedsUpdate) {
     nextState.benchmarkLabels = mergedBenchmarkLabels;
@@ -108,4 +117,18 @@ async function ensureDefaultState() {
   if (Object.keys(nextState).length > 0) {
     await chrome.storage.local.set(nextState);
   }
+}
+
+function mergeBenchmarkLabels(existingLabels) {
+  const merged = { ...DEFAULT_BENCHMARK_LABELS };
+
+  for (const [extensionId, label] of Object.entries(existingLabels)) {
+    const defaultLabel = DEFAULT_BENCHMARK_LABELS[extensionId];
+    const canBackfillSeedMetadata = defaultLabel && (!label.source || label.source === defaultLabel.source);
+    merged[extensionId] = canBackfillSeedMetadata
+      ? { ...defaultLabel, ...label }
+      : label;
+  }
+
+  return merged;
 }

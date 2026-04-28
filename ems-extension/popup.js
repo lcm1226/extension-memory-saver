@@ -59,6 +59,10 @@ const state = {
     pinnedExtensionIds: [],
     benchmarkLabels: {},
     manifestSignals: {}
+  },
+  view: {
+    searchQuery: "",
+    extensionFilter: "all"
   }
 };
 
@@ -136,6 +140,9 @@ const ui = {
   metricEnabled: document.getElementById("metric-enabled"),
   metricRelevant: document.getElementById("metric-relevant"),
   list: document.getElementById("extension-list"),
+  listSummary: document.getElementById("list-summary"),
+  extensionSearch: document.getElementById("extension-search"),
+  filterButtons: [...document.querySelectorAll("[data-extension-filter]")],
   status: document.getElementById("status"),
   actionScopeNote: document.getElementById("action-scope-note"),
   template: document.getElementById("extension-row-template"),
@@ -215,6 +222,18 @@ function bindEvents() {
     await refresh();
     setStatus("Reset benchmark labels to the seeded defaults. Cleared imported manifest signals.");
   }));
+
+  ui.extensionSearch.addEventListener("input", () => {
+    state.view.searchQuery = ui.extensionSearch.value.trim().toLowerCase();
+    renderExtensionList();
+  });
+
+  for (const button of ui.filterButtons) {
+    button.addEventListener("click", () => {
+      state.view.extensionFilter = button.dataset.extensionFilter || "all";
+      renderExtensionList();
+    });
+  }
 
   ui.benchmarkFileInput.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
@@ -517,11 +536,67 @@ function render() {
   renderBenchmarkCard();
   disablePrimaryActions(false);
 
-  ui.list.replaceChildren();
+  renderExtensionList();
+}
 
-  for (const extension of state.extensions) {
+function renderExtensionList() {
+  const visibleExtensions = state.extensions.filter((extension) => matchesExtensionViewFilter(extension));
+
+  ui.list.replaceChildren();
+  for (const extension of visibleExtensions) {
     ui.list.appendChild(renderExtension(extension));
   }
+
+  ui.listSummary.textContent = visibleExtensions.length === state.extensions.length
+    ? `Showing all ${state.extensions.length}`
+    : `Showing ${visibleExtensions.length} of ${state.extensions.length}`;
+
+  for (const button of ui.filterButtons) {
+    const active = button.dataset.extensionFilter === state.view.extensionFilter;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  }
+}
+
+function matchesExtensionViewFilter(extension) {
+  if (!matchesExtensionSearch(extension)) {
+    return false;
+  }
+
+  switch (state.view.extensionFilter) {
+    case "relevant":
+      return extension.relevance.score >= 300;
+    case "enabled":
+      return extension.enabled;
+    case "disabled":
+      return !extension.enabled;
+    case "pinned":
+      return extension.pinned;
+    case "all":
+    default:
+      return true;
+  }
+}
+
+function matchesExtensionSearch(extension) {
+  if (!state.view.searchQuery) {
+    return true;
+  }
+
+  const haystack = [
+    extension.name,
+    extension.shortName,
+    extension.description,
+    extension.relevance.label,
+    extension.enabled ? "enabled" : "disabled",
+    extension.pinned ? "pinned" : "",
+    extension.savedForSite ? "saved" : ""
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(state.view.searchQuery);
 }
 
 function renderActionScopeNote() {
@@ -584,6 +659,7 @@ function renderExtension(extension) {
   const memoryImpact = fragment.querySelector(".memory-impact");
   const memoryImpactValue = fragment.querySelector(".memory-impact-value");
   const memoryImpactDetail = fragment.querySelector(".memory-impact-detail");
+  const memoryImpactConfidence = fragment.querySelector(".memory-impact-confidence");
   const stateToggle = fragment.querySelector(".state-toggle");
   const pinToggle = fragment.querySelector(".pin-toggle");
 
@@ -610,7 +686,7 @@ function renderExtension(extension) {
     impactPill.classList.add(`impact-${impact}`);
   }
 
-  renderBenchmarkMemoryImpact(extension, memoryImpact, memoryImpactValue, memoryImpactDetail);
+  renderBenchmarkMemoryImpact(extension, memoryImpact, memoryImpactValue, memoryImpactDetail, memoryImpactConfidence);
 
   pinToggle.textContent = extension.pinned ? "Unpin" : "Pin";
   pinToggle.addEventListener("click", () => runWithStatus("Updating pinned set...", async () => {
@@ -889,11 +965,28 @@ function normalizeBenchmarkEntry(entry) {
     source: entry.source ?? "imported-json",
     notes: entry.notes ?? entry.note ?? ""
   };
+  copyOptionalString(normalized, "confidence", entry.confidence ?? entry.confidenceLabel ?? entry.trust);
+  copyOptionalString(normalized, "measuredAt", entry.measuredAt ?? entry.generatedAt ?? entry.capturedAt ?? entry.date);
+  copyOptionalString(normalized, "targetUrl", entry.targetUrl ?? entry.scenarioUrl ?? entry.siteUrl ?? entry.pageUrl ?? entry.url);
+  copyOptionalPositiveInteger(normalized, "repeatCount", entry.repeatCount ?? entry.runs ?? entry.runCount);
   const metrics = normalizeBenchmarkMetrics(entry.metrics ?? entry.measurement ?? entry.impactMetrics);
   if (metrics) {
     normalized.metrics = metrics;
   }
   return normalized;
+}
+
+function copyOptionalString(target, key, value) {
+  if (typeof value === "string" && value.trim()) {
+    target[key] = value.trim();
+  }
+}
+
+function copyOptionalPositiveInteger(target, key, value) {
+  const number = Number(value);
+  if (Number.isInteger(number) && number > 0) {
+    target[key] = number;
+  }
 }
 
 function normalizeBenchmarkMetrics(metrics) {
@@ -933,8 +1026,8 @@ function normalizeBenchmarkMetrics(metrics) {
   return Object.keys(normalized).length > 0 ? normalized : null;
 }
 
-function renderBenchmarkMemoryImpact(extension, container, valueNode, detailNode) {
-  const impact = buildBenchmarkMemoryImpact(extension.benchmark?.metrics);
+function renderBenchmarkMemoryImpact(extension, container, valueNode, detailNode, confidenceNode) {
+  const impact = buildBenchmarkMemoryImpact(extension.benchmark);
   if (!impact) {
     return;
   }
@@ -942,10 +1035,13 @@ function renderBenchmarkMemoryImpact(extension, container, valueNode, detailNode
   container.hidden = false;
   valueNode.textContent = impact.value;
   detailNode.textContent = impact.detail;
+  confidenceNode.textContent = impact.confidence;
+  confidenceNode.hidden = !impact.confidence;
   container.title = impact.title;
 }
 
-function buildBenchmarkMemoryImpact(metrics) {
+function buildBenchmarkMemoryImpact(benchmark) {
+  const metrics = benchmark?.metrics;
   if (!metrics || typeof metrics !== "object") {
     return null;
   }
@@ -974,11 +1070,57 @@ function buildBenchmarkMemoryImpact(metrics) {
   }
 
   const attribution = metrics.attribution === "scenario-ab-delta" ? "A/B scenario delta" : "probe measurement";
+  const confidence = buildBenchmarkConfidence(benchmark);
   return {
     value: formatBytesForUi(primaryDrop),
     detail: `${detailParts.join(" / ")} - ${attribution}`,
-    title: "Measured by the EMS probe workflow. This is a practical memory impact estimate, not exact live memory ownership."
+    confidence,
+    title: confidence
+      ? `Measured by the EMS probe workflow. ${confidence}. This is a practical memory impact estimate, not exact live memory ownership.`
+      : "Measured by the EMS probe workflow. This is a practical memory impact estimate, not exact live memory ownership."
   };
+}
+
+function buildBenchmarkConfidence(benchmark) {
+  if (!benchmark || typeof benchmark !== "object") {
+    return "";
+  }
+
+  const parts = [];
+  if (benchmark.confidence) {
+    parts.push(`Confidence: ${benchmark.confidence}`);
+  }
+  if (benchmark.measuredAt) {
+    parts.push(formatShortDate(benchmark.measuredAt));
+  }
+  if (benchmark.repeatCount) {
+    parts.push(`${benchmark.repeatCount} run${benchmark.repeatCount === 1 ? "" : "s"}`);
+  }
+  const host = extractHost(benchmark.targetUrl);
+  if (host) {
+    parts.push(host);
+  }
+
+  return parts.join(" - ");
+}
+
+function formatShortDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+function extractHost(value) {
+  if (!value) {
+    return "";
+  }
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "";
+  }
 }
 
 function formatBytesForUi(bytes) {

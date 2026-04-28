@@ -127,6 +127,37 @@ button:disabled {
   cursor: not-allowed;
 }
 
+input[type="search"] {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+input[type="search"]:focus {
+  border-color: var(--accent-2);
+}
+
+input[type="search"]::placeholder {
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -271,6 +302,33 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.list-controls {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.filter-chip.is-active {
+  border-color: var(--accent-2);
+  background: rgba(90, 182, 255, 0.12);
+  color: var(--text);
+}
+
 .list-header h2 {
   margin: 0;
   font-size: 14px;
@@ -373,12 +431,17 @@ button:disabled {
   line-height: 1.1;
 }
 
-.memory-impact-detail {
+.memory-impact-detail,
+.memory-impact-confidence {
   display: block;
   margin-top: 4px;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.35;
+}
+
+.memory-impact-confidence {
+  color: var(--accent-2);
 }
 
 .pills {

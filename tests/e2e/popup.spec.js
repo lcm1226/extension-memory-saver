@@ -75,6 +75,18 @@ test.describe("EMS popup", () => {
       expect(layout.bodyOverflowY).toBe("auto");
       expect(layout.extensionListOverflowY).toBe("visible");
       expect(layout.listShellHeight).toBeGreaterThanOrEqual(390);
+      await expect(page.locator("#list-summary")).toHaveText("Showing all 2");
+
+      await page.locator("#extension-search").fill("docs");
+      await expect(page.locator("#list-summary")).toHaveText("Showing 1 of 2");
+      await expect(page.locator(".extension-row")).toHaveCount(1);
+      await expect(page.locator(".extension-row")).toContainText("MockDocs Helper");
+      await page.locator("#extension-search").fill("");
+      await page.locator('[data-extension-filter="relevant"]').click();
+      await expect(page.locator("#list-summary")).toHaveText("Showing 1 of 2");
+      await expect(page.locator(".extension-row")).toContainText("MockTube Helper");
+      await page.locator('[data-extension-filter="all"]').click();
+      await expect(page.locator("#list-summary")).toHaveText("Showing all 2");
 
       const youtubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockTube Helper" }) });
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
@@ -97,6 +109,10 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#status")).toContainText("Disabled MockDocs Helper across this browser");
       await expect(docsRow).toHaveClass(/is-disabled/);
       await expect(docsRow).toHaveAttribute("data-extension-state", "disabled");
+      await page.locator('[data-extension-filter="disabled"]').click();
+      await expect(page.locator("#list-summary")).toHaveText("Showing 1 of 2");
+      await expect(page.locator(".extension-row")).toContainText("MockDocs Helper");
+      await page.locator('[data-extension-filter="all"]').click();
 
       await page.getByRole("button", { name: "Save Current Setup" }).click();
       await expect(page.locator("#status")).toContainText("Saved 1 enabled extension");
@@ -130,6 +146,10 @@ test.describe("EMS popup", () => {
               rendererPrivateDropBytes: 12582912,
               targetDelta: -1
             },
+            confidence: "medium",
+            measuredAt: "2026-04-24",
+            targetUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+            repeatCount: 1,
             notes: "Playwright import coverage for MockTube Helper."
           }
         }
@@ -150,6 +170,10 @@ test.describe("EMS popup", () => {
       await expect(youtubeRow.locator(".memory-impact")).toBeVisible();
       await expect(youtubeRow.locator(".memory-impact-value")).toHaveText("15.00 MB");
       await expect(youtubeRow.locator(".memory-impact-detail")).toContainText("renderer 12.00 MB / total 15.00 MB");
+      await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("Confidence: medium");
+      await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("2026-04-24");
+      await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("1 run");
+      await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("www.youtube.com");
 
       const manifestSignalPayload = {
         installedExtensions: {
