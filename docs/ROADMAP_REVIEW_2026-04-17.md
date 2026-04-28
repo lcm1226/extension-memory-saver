@@ -48,6 +48,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added structured scenario-delta memory metrics to benchmark catalog entries and row-level popup memory-impact display
 - added `profile-inventory` for test/probe profile manifest signals (`optional_host_permissions`, `content_scripts.matches`)
 - wired profile-inventory JSON import into popup relevance scoring
+- added a lightweight `Export-EMSProfileInventory.ps1` wrapper and Korean/English how-to docs for the simplified development flow
 
 ### Partially done
 
@@ -104,7 +105,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 Close the remaining MVP-spec gaps:
 
-- decide whether to automate profile-inventory generation/import further or keep it as an explicit probe step
+- keep profile-inventory generation as an explicit test-profile-only step, now simplified through `Export-EMSProfileInventory.ps1`
 - keep reducing manual scenario authoring only when richer datasets need metadata beyond current discovery
 
 ### Priority 2
@@ -128,6 +129,6 @@ Behavior work should stay ahead of UI polish.
 
 The next concrete implementation step should be:
 
-1. decide whether any deeper relevance inference needs a non-stable or profile-read path
+1. keep the lightweight profile-inventory export/import flow unless manual use shows it is still too clunky
 2. prepare icons/basic metadata once behavior work stops moving
 3. add non-technical docs for the benchmark-backed control model

@@ -137,10 +137,10 @@ Generated catalog entries include structured `metrics` such as `totalPrivateDrop
 Use this when you need relevance metadata that stable `chrome.management.ExtensionInfo` does not expose in the popup, especially `optional_host_permissions` and `content_scripts.matches`:
 
 ```powershell
-node .\tools\ems-measure.mjs profile-inventory --profile-dir "<TEST_PROFILE_DIR>" --out .\test-results\profile-inventory.json
+.\tools\Export-EMSProfileInventory.ps1 -ProfileDir "<TEST_PROFILE_DIR>"
 ```
 
-This command reads only a test/probe profile on disk and does not launch or mutate Chrome. Treat the output as a development/probe enrichment source, not as runtime stable-extension API data.
+This wrapper writes `test-results\profile-inventory.json` by default and calls `profile-inventory` underneath. The underlying command reads only a test/probe profile on disk and does not launch or mutate Chrome. Treat the output as a development/probe enrichment source, not as runtime stable-extension API data.
 
 The popup `Import JSON` button accepts this output and stores the manifest signals separately from benchmark labels. Imported `content_scripts.matches` can upgrade a row to `content script match`; imported `optional_host_permissions` can show `optional host match` when it matches the current site.
 

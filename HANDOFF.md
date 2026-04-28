@@ -22,6 +22,7 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 - `ems-extension/popup.css`
 - `tools/ems-measure.mjs`
 - `tools/Start-EMSProbeChrome.ps1`
+- `tools/Export-EMSProfileInventory.ps1`
 - `docs/EMS_MEASUREMENT.md`
 
 ## What has been learned
@@ -98,7 +99,7 @@ Operational lesson:
 - current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
 5. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
-6. Use `node .\tools\ems-measure.mjs profile-inventory --profile-dir <TEST_PROFILE_DIR> --out .\test-results\profile-inventory.json` to read manifest-only relevance signals from a test/probe profile.
+6. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to write `test-results\profile-inventory.json` with manifest-only relevance signals from a test/probe profile.
 7. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
    - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
@@ -130,7 +131,7 @@ Operational lesson:
 
 ## Current next priorities
 
-1. decide whether profile-inventory generation/import should be automated further or kept as an explicit probe step
+1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
 2. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
 3. prepare icons/basic metadata and a release UI pass once behavior stops moving
 4. expand non-technical docs when the interaction model is stable

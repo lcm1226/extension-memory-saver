@@ -14,6 +14,9 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `ems-extension/`: Chrome extension MVP shell
 - `tools/ems-measure.mjs`: snapshot, profile inventory, and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
+- `tools/Export-EMSProfileInventory.ps1`: lightweight wrapper that writes popup-importable profile inventory JSON
+- `docs/HOW_TO_USE.ko.md`: Korean development usage guide
+- `docs/HOW_TO_USE.en.md`: English development usage guide
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
 - `docs/EXPERIMENT_SUMMARY.md`: latest real-world run and its interpretation
 - `docs/EMS_MVP_SPEC.md`: buildable EMS product definition based on measurement findings
@@ -50,7 +53,7 @@ Stable Chrome cannot yet support:
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
 6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
 7. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
-8. Use `node .\tools\ems-measure.mjs profile-inventory --profile-dir <TEST_PROFILE_DIR> --out .\test-results\profile-inventory.json` to inspect manifest-only relevance signals from a test/probe profile.
+8. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to inspect manifest-only relevance signals from a test/probe profile and write `test-results\profile-inventory.json`.
 9. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
 10. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
 11. Use `npm run test:e2e` for the current Playwright popup smoke test.
@@ -79,6 +82,7 @@ The extension shell currently includes:
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets
+- probe-side lightweight profile inventory export wrapper
 - probe-side profile inventory command for manifest-only relevance signals
 - less-manual scenario specs for one-target removal runs
 - basic Playwright popup verification with mock extensions
@@ -98,8 +102,11 @@ Use only a dedicated Chrome test profile for manual EMS verification. Do not val
 3. Click `Load unpacked`
 4. Select the `ems-extension` folder
 5. Open a normal website in the same test profile and test the popup
-6. To enrich relevance with profile manifest signals, import a `profile-inventory` JSON through the popup `Import JSON` button
-7. If you want a custom shortcut, open `chrome://extensions/shortcuts`
+6. To enrich relevance with profile manifest signals, run `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir "<TEST_PROFILE_DIR>"`
+7. In the popup, click `Import JSON` and select `test-results\profile-inventory.json`
+8. If you want a custom shortcut, open `chrome://extensions/shortcuts`
+
+See `docs/HOW_TO_USE.ko.md` or `docs/HOW_TO_USE.en.md` for the shorter user-facing flow.
 
 ## Automated verification
 

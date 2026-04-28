@@ -40,7 +40,7 @@ Command pattern:
 
 ```powershell
 node .\tools\ems-measure.mjs snapshot --port 9222 --profile-dir "<TEST_PROFILE_DIR>" --out .\snapshots\test-profile-inventory.json
-node .\tools\ems-measure.mjs profile-inventory --profile-dir "<TEST_PROFILE_DIR>" --out .\test-results\profile-inventory.json
+.\tools\Export-EMSProfileInventory.ps1 -ProfileDir "<TEST_PROFILE_DIR>"
 ```
 
 Pass condition:
