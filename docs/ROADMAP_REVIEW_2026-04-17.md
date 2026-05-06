@@ -51,6 +51,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - added a lightweight `Export-EMSProfileInventory.ps1` wrapper and Korean/English how-to docs for the simplified development flow
 - added extension list search and All/Relevant/Enabled/Disabled/Pinned filters
 - added benchmark confidence metadata display for measured memory-impact rows
+- added advanced `live-estimates` probe export for near-live per-extension memory estimates
+- popup import/rendering now supports `memoryEstimates` with confidence and attribution metadata
+- `live-estimates` scopes Windows Chrome processes to the provided probe profile when possible
+- `live-estimates` adds low-confidence manifest site-match estimates for newly installed all-sites/site-specific extensions when direct targets are not observed
 
 ### Partially done
 
@@ -80,10 +84,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
     - auto-selection when a scenario removes exactly one extension target
     - optional `extensionName` / `extensionNameContains` selectors for ambiguous scenarios
   - still missing:
-    - broader benchmark catalog coverage for newly installed or user-specific extensions
+    - broader benchmark catalog coverage for newly installed or user-specific extensions beyond near-live low-confidence probe estimates
     - smoother scenario authoring for richer metadata beyond current discovered baseline/after datasets
   - current constraint:
-    - new extensions do not receive measured memory values automatically; they need a measured benchmark JSON import or a future catalog update
+    - new extensions can now receive near-live low-confidence estimates through `live-estimates`; higher-confidence measured impact still needs a clean benchmark JSON import or future catalog update
 - end-to-end verification
   - manual verification happened on the real YouTube page
   - one Playwright smoke test now covers popup inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states using mock extensions plus a test-only management fixture
@@ -91,9 +95,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 
 ### Not done yet
 
-- deeper memory attribution remains an R&D decision, not a stable-product guarantee
-  - closest candidate path: Dev/Canary `chrome.processes` + OS PID mapping + clean A/B renderer deltas
-  - do not present this as live per-extension truth unless separately validated
+- exact live memory ownership remains unavailable on stable Chrome
+  - current implemented R&D path: external debug-port `live-estimates` + Windows process memory + profile manifest heuristics
+  - future R&D could still explore Dev/Canary `chrome.processes`, stronger PID mapping, and automated A/B calibration
+  - do not present low-confidence shared/heuristic estimates as exact renderer ownership
 - broader handling for remaining Chrome management edge cases
   - user-facing explanation for enterprise/managed-extension constraints
   - clearer separation between "saved setup changed nothing" and "Chrome refused part of the request"
@@ -112,6 +117,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 Close the remaining MVP-spec gaps:
 
 - keep profile-inventory generation as an explicit test-profile-only step, now simplified through `Export-EMSProfileInventory.ps1`
+- keep `live-estimates` as an explicit external probe step for near-live values until a safer packaged workflow exists
 - keep reducing manual scenario authoring only when richer datasets need metadata beyond current discovery
 
 ### Priority 2

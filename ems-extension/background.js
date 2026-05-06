@@ -46,13 +46,16 @@ const DEFAULT_BENCHMARK_LABELS = {
   }
 };
 
+const DEFAULT_MEMORY_ESTIMATES = {};
+
 const DEFAULT_STATE = {
   schemaVersion: 2,
   siteProfiles: {},
   restoreSnapshot: null,
   pinnedExtensionIds: [],
   benchmarkLabels: DEFAULT_BENCHMARK_LABELS,
-  manifestSignals: {}
+  manifestSignals: {},
+  memoryEstimates: DEFAULT_MEMORY_ESTIMATES
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -102,6 +105,10 @@ async function ensureDefaultState() {
 
   if (current.manifestSignals === undefined) {
     nextState.manifestSignals = DEFAULT_STATE.manifestSignals;
+  }
+
+  if (current.memoryEstimates === undefined) {
+    nextState.memoryEstimates = DEFAULT_STATE.memoryEstimates;
   }
 
   const mergedBenchmarkLabels = mergeBenchmarkLabels(current.benchmarkLabels ?? {});

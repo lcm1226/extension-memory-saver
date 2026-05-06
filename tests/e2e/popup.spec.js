@@ -92,7 +92,7 @@ test.describe("EMS popup", () => {
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
 
       await expect(youtubeRow.locator(".relevance-pill")).toContainText("matches this site");
-      await expect(youtubeRow.locator(".impact-pill")).toContainText("not benchmarked");
+      await expect(youtubeRow.locator(".impact-pill")).toContainText("not measured");
       await expect(docsRow.locator(".relevance-pill")).toContainText("host access declared");
 
       await page.getByRole("button", { name: "Lighten This Site" }).click();
@@ -152,6 +152,20 @@ test.describe("EMS popup", () => {
             repeatCount: 1,
             notes: "Playwright import coverage for MockTube Helper."
           }
+        },
+        memoryEstimates: {
+          [docsExtensionId]: {
+            privateBytes: 9437184,
+            workingSetBytes: 11534336,
+            source: "playwright-live-process-snapshot",
+            attribution: "direct-process-match",
+            confidence: "high",
+            capturedAt: "2026-04-28T00:00:00.000Z",
+            targetUrl: "https://www.youtube.com/watch?v=pa4Xo-LQe54",
+            processCount: 1,
+            targetCount: 1,
+            notes: "Playwright coverage for advanced live estimates."
+          }
         }
       };
 
@@ -165,7 +179,9 @@ test.describe("EMS popup", () => {
       });
 
       await expect(page.locator("#status")).toContainText("Imported 1 benchmark label");
+      await expect(page.locator("#status")).toContainText("1 live memory estimate");
       await expect(page.locator("#benchmark-summary")).toContainText("including 1 imported label");
+      await expect(page.locator("#benchmark-summary")).toContainText("1 live memory estimate");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: high");
       await expect(youtubeRow.locator(".memory-impact")).toBeVisible();
       await expect(youtubeRow.locator(".memory-impact-value")).toHaveText("15.00 MB");
@@ -174,6 +190,13 @@ test.describe("EMS popup", () => {
       await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("2026-04-24");
       await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("1 run");
       await expect(youtubeRow.locator(".memory-impact-confidence")).toContainText("www.youtube.com");
+      await expect(docsRow.locator(".impact-pill")).toContainText("~9.00 MB");
+      await expect(docsRow.locator(".memory-impact")).toBeVisible();
+      await expect(docsRow.locator(".memory-impact-label")).toHaveText("Advanced Memory Estimate");
+      await expect(docsRow.locator(".memory-impact-value")).toHaveText("~9.00 MB");
+      await expect(docsRow.locator(".memory-impact-detail")).toContainText("direct extension process");
+      await expect(docsRow.locator(".memory-impact-confidence")).toContainText("Confidence: high");
+      await expect(docsRow.locator(".memory-impact-confidence")).toContainText("1 process");
 
       const manifestSignalPayload = {
         installedExtensions: {
@@ -202,12 +225,13 @@ test.describe("EMS popup", () => {
       await page.getByRole("button", { name: "Reset Defaults" }).click();
       await expect(page.locator("#status")).toContainText("Reset benchmark labels to the seeded defaults.");
       await expect(page.locator("#benchmark-summary")).toContainText("loaded from the seeded catalog");
+      await expect(page.locator("#benchmark-summary")).toContainText("No live memory estimates loaded");
       await expect(page.locator("#benchmark-summary")).toContainText("No manifest signal sets loaded");
       await expect(page.locator("#metric-relevant")).toHaveText("1");
 
       const listShellHeightAfterReset = await page.locator(".list-shell").evaluate((node) => Math.round(node.getBoundingClientRect().height));
       expect(listShellHeightAfterReset).toBeGreaterThanOrEqual(390);
-      await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not benchmarked");
+      await expect(youtubeRow.locator(".impact-pill")).toContainText("impact: not measured");
       await expect(docsRow.locator(".relevance-pill")).toContainText("host access declared");
 
       await page.getByRole("button", { name: "Clear Saved Setup" }).click();
@@ -218,7 +242,7 @@ test.describe("EMS popup", () => {
       await expect(page.getByRole("button", { name: "Clear Saved Setup" })).toBeDisabled();
 
       await page.locator(".help-shell summary").click();
-      await expect(page.locator(".help-shell")).toContainText("benchmark guidance");
+      await expect(page.locator(".help-shell")).toContainText("practical guidance");
       await expect(page.locator(".help-shell")).toContainText("browser-wide extension state");
     } finally {
       await context.close();

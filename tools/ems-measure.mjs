@@ -14,6 +14,7 @@ function printHelp() {
 
 Usage:
   node ems-measure.mjs snapshot [--host 127.0.0.1] [--port 9222] [--profile-dir "C:\\...\\Profile 4"] [--out snapshots\\ems-snapshot.json]
+  node ems-measure.mjs live-estimates [--host 127.0.0.1] [--port 9222] [--profile-dir "C:\\...\\Profile 4"] [--target-url https://example.com] [--out test-results\\live-memory-estimates.json] [--apply-to-ems]
   node ems-measure.mjs profile-inventory --profile-dir "C:\\...\\Profile 4" [--out snapshots\\profile-inventory.json]
   node ems-measure.mjs diff <before.json> <after.json>
   node ems-measure.mjs export-labels <before.json> <after.json> [--source youtube-3ext-scenario] [--extension-id <id>] [--out docs\\generated-benchmark-labels.json]
@@ -22,6 +23,7 @@ Usage:
 
 Commands:
   snapshot   Capture CDP targets plus Windows chrome.exe process memory.
+  live-estimates  Export near-real-time per-extension memory estimates from the current Chrome process snapshot.
   profile-inventory  Read installed extension manifest metadata from a test/probe profile without launching Chrome.
   diff       Compare two snapshot files and summarize deltas.
   export-labels  Convert a validated A/B diff into popup import JSON.
@@ -51,6 +53,12 @@ function parseArgs(argv) {
       options.extensionId = rest[++i];
     } else if (token === "--after-prefix") {
       options.afterPrefix = rest[++i];
+    } else if (token === "--target-url") {
+      options.targetUrl = rest[++i];
+    } else if (token === "--ems-extension-id") {
+      options.emsExtensionId = rest[++i];
+    } else if (token === "--apply-to-ems") {
+      options.applyToEms = true;
     } else {
       positionals.push(token);
     }
@@ -236,9 +244,12 @@ class CdpConnection {
     pending.resolve(message.result ?? {});
   }
 
-  send(method, params = {}) {
+  send(method, params = {}, sessionId = null) {
     const id = this.nextId++;
     const payload = { id, method, params };
+    if (sessionId) {
+      payload.sessionId = sessionId;
+    }
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
       this.socket.send(JSON.stringify(payload));
@@ -325,6 +336,48 @@ function guessProcessType(commandLine) {
     return "browser";
   }
   return "unknown";
+}
+
+function normalizePathForCommandLine(value) {
+  return String(value ?? "")
+    .replaceAll("/", "\\")
+    .replaceAll('"', "")
+    .toLowerCase();
+}
+
+function filterChromeProcessesByProfileDir(processes, profileDir) {
+  if (!profileDir) {
+    return processes;
+  }
+
+  const normalizedProfileDir = normalizePathForCommandLine(path.resolve(profileDir));
+  const roots = processes.filter((row) => normalizePathForCommandLine(row.commandLine).includes(normalizedProfileDir));
+  if (!roots.length) {
+    return processes;
+  }
+
+  const childrenByParent = new Map();
+  for (const row of processes) {
+    const parentId = Number(row.parentProcessId);
+    if (!childrenByParent.has(parentId)) {
+      childrenByParent.set(parentId, []);
+    }
+    childrenByParent.get(parentId).push(row);
+  }
+
+  const included = new Map();
+  const stack = [...roots];
+  while (stack.length) {
+    const row = stack.pop();
+    const processId = Number(row.processId);
+    if (included.has(processId)) {
+      continue;
+    }
+    included.set(processId, row);
+    stack.push(...(childrenByParent.get(processId) ?? []));
+  }
+
+  return [...included.values()];
 }
 
 function formatBytes(bytes) {
@@ -453,7 +506,7 @@ async function exportProfileInventory({ out, profileDir }) {
   }
 }
 
-async function collectSnapshot({ host, port, out, profileDir }) {
+async function captureSnapshotData({ host, port, profileDir }) {
   const baseHttpUrl = `http://${host}:${port}`;
   const version = await httpJson(`${baseHttpUrl}/json/version`);
   const list = await httpJson(`${baseHttpUrl}/json/list`);
@@ -475,7 +528,7 @@ async function collectSnapshot({ host, port, out, profileDir }) {
     cdp.close();
   }
 
-  const chromeProcesses = await getWindowsChromeProcesses();
+  const chromeProcesses = filterChromeProcessesByProfileDir(await getWindowsChromeProcesses(), profileDir);
   const enrichedProcesses = chromeProcesses.map((row) => ({
     ...row,
     guessedType: guessProcessType(row.commandLine),
@@ -492,7 +545,7 @@ async function collectSnapshot({ host, port, out, profileDir }) {
       attached: target.attached
     }));
 
-  const snapshot = {
+  return {
     capturedAt: new Date().toISOString(),
     host,
     port,
@@ -512,20 +565,288 @@ async function collectSnapshot({ host, port, out, profileDir }) {
       "Use A/B diff snapshots with the same tab set to estimate renderer-side extension impact."
     ]
   };
+}
 
-  const outputPath = out ?? path.join(process.cwd(), "snapshots", `ems-snapshot-${Date.now()}.json`);
+async function writeJsonFile(outputPath, payload) {
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, JSON.stringify(snapshot, null, 2), "utf8");
+  await fs.writeFile(outputPath, JSON.stringify(payload, null, 2), "utf8");
+}
+
+async function collectSnapshot({ host, port, out, profileDir }) {
+  const snapshot = await captureSnapshotData({ host, port, profileDir });
+  const outputPath = out ?? path.join(process.cwd(), "snapshots", `ems-snapshot-${Date.now()}.json`);
+  await writeJsonFile(outputPath, snapshot);
 
   console.log(`Saved snapshot: ${outputPath}`);
-  console.log(`Browser: ${version.Browser}`);
-  console.log(`Extension targets: ${extensionTargets.length}`);
-  console.log(`Chrome processes: ${enrichedProcesses.length}`);
+  printSnapshotSummary(snapshot);
+  return snapshot;
+}
+
+function printSnapshotSummary(snapshot) {
+  console.log(`Browser: ${snapshot.version.Browser}`);
+  console.log(`Extension targets: ${snapshot.extensionTargets.length}`);
+  console.log(`Chrome processes: ${snapshot.chromeProcesses.length}`);
   console.log("Top extension summaries:");
   for (const summary of snapshot.extensionSummaries.slice(0, 10)) {
     console.log(
       `- ${summary.name ?? summary.extensionId} (${summary.extensionId}) | private=${formatBytes(summary.ownedPrivateBytes)} | ws=${formatBytes(summary.ownedWorkingSet)} | targets=${summary.targetCount} | attribution=${summary.attribution}`
     );
+  }
+}
+
+function inferSnapshotTargetUrl(snapshot, explicitTargetUrl) {
+  if (explicitTargetUrl) {
+    return explicitTargetUrl;
+  }
+  const pageTarget = (snapshot.listTargets ?? []).find((target) => /^https?:\/\//.test(target?.url ?? ""));
+  return pageTarget?.url ?? "";
+}
+
+function patternMatchesUrl(pattern, urlString) {
+  if (!pattern || !urlString) {
+    return false;
+  }
+  if (pattern === "<all_urls>") {
+    return /^https?:\/\//.test(urlString);
+  }
+
+  let url;
+  try {
+    url = new URL(urlString);
+  } catch {
+    return false;
+  }
+
+  const match = pattern.match(/^(\*|http|https|file|ftp):\/\/([^/]+)(\/.*)$/);
+  if (!match) {
+    return false;
+  }
+
+  const [, schemePattern, hostPattern] = match;
+  if (schemePattern === "*") {
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return false;
+    }
+  } else if (url.protocol !== `${schemePattern}:`) {
+    return false;
+  }
+
+  if (hostPattern === "*") {
+    return true;
+  }
+  if (hostPattern.startsWith("*.")) {
+    const suffix = hostPattern.slice(2);
+    return url.hostname === suffix || url.hostname.endsWith(`.${suffix}`);
+  }
+  return url.hostname === hostPattern;
+}
+
+function installedExtensionMatchesTargetUrl(extension, targetUrl) {
+  if (!targetUrl || extension?.disabled) {
+    return false;
+  }
+  const signals = extension.manifestSignals ?? {};
+  const patterns = [
+    ...(signals.hostPermissions ?? []),
+    ...(signals.optionalHostPermissions ?? []),
+    ...(signals.contentScriptMatches ?? [])
+  ];
+  return patterns.some((pattern) => patternMatchesUrl(pattern, targetUrl));
+}
+
+function addInstalledHeuristicEstimates(payload, snapshot, aggregate, targetUrl) {
+  if (!targetUrl || aggregate.extensionRendererPrivate <= 0) {
+    return;
+  }
+
+  const installedEntries = Object.entries(snapshot.installedExtensions ?? {});
+  const candidates = installedEntries.filter(([extensionId, extension]) => (
+    !payload.memoryEstimates[extensionId] && installedExtensionMatchesTargetUrl(extension, targetUrl)
+  ));
+  if (!candidates.length) {
+    return;
+  }
+
+  const denominator = Math.max(aggregate.extensionTargetCount + candidates.length, 1);
+  const privateBytes = Math.max(1, Math.round(aggregate.extensionRendererPrivate / denominator));
+  const workingSetBytes = Math.max(1, Math.round(aggregate.extensionRendererWorkingSet / denominator));
+
+  for (const [extensionId, extension] of candidates) {
+    payload.memoryEstimates[extensionId] = {
+      privateBytes,
+      workingSetBytes,
+      attribution: "profile-installed-site-heuristic",
+      confidence: "low",
+      processCount: 0,
+      targetCount: 0,
+      notes: "No live extension target was observed. EMS assigned a low-confidence estimate because the installed manifest declares access to this site.",
+      source: payload.source,
+      capturedAt: snapshot.capturedAt,
+      targetUrl,
+      name: extension.name,
+      version: extension.version
+    };
+  }
+}
+
+function buildLiveMemoryEstimatePayload(snapshot, options = {}) {
+  const aggregate = aggregateSnapshot(snapshot);
+  const targetUrl = inferSnapshotTargetUrl(snapshot, options.targetUrl);
+  const payload = {
+    capturedAt: snapshot.capturedAt,
+    source: options.source ?? "live-process-snapshot",
+    targetUrl,
+    aggregate: {
+      extensionRendererPrivate: aggregate.extensionRendererPrivate,
+      extensionRendererWorkingSet: aggregate.extensionRendererWorkingSet,
+      extensionTargetCount: aggregate.extensionTargetCount,
+      processCount: aggregate.processCount
+    },
+    memoryEstimates: {},
+    notes: [
+      "High confidence means a Chrome process command line exposed the extension id and EMS summed that process memory.",
+      "Low confidence means EMS apportioned shared extension renderer memory across observed extension targets.",
+      "Content-script memory inside a normal page renderer is still not directly attributable from stable public APIs."
+    ]
+  };
+
+  const sharedPrivateBytesPerTarget = aggregate.extensionTargetCount > 0
+    ? aggregate.extensionRendererPrivate / aggregate.extensionTargetCount
+    : 0;
+  const sharedWorkingSetPerTarget = aggregate.extensionTargetCount > 0
+    ? aggregate.extensionRendererWorkingSet / aggregate.extensionTargetCount
+    : 0;
+
+  for (const summary of snapshot.extensionSummaries) {
+    if (!summary.extensionId) {
+      continue;
+    }
+
+    let estimate = null;
+    if (summary.ownedPrivateBytes > 0) {
+      estimate = {
+        privateBytes: summary.ownedPrivateBytes,
+        workingSetBytes: summary.ownedWorkingSet,
+        attribution: "direct-process-match",
+        confidence: "high",
+        processCount: summary.ownedProcessCount,
+        processIds: summary.ownedProcessIds,
+        targetCount: summary.targetCount,
+        notes: "Direct extension-owned Chrome process memory. This does not include content-script memory mixed into page renderers."
+      };
+    } else if (summary.targetCount > 0 && sharedPrivateBytesPerTarget > 0) {
+      estimate = {
+        privateBytes: Math.round(sharedPrivateBytesPerTarget * summary.targetCount),
+        workingSetBytes: Math.round(sharedWorkingSetPerTarget * summary.targetCount),
+        attribution: "shared-extension-renderer-apportionment",
+        confidence: "low",
+        processCount: 0,
+        targetCount: summary.targetCount,
+        notes: "No extension-owned process id was exposed. EMS apportioned shared extension renderer memory across observed extension targets."
+      };
+    }
+
+    if (!estimate?.privateBytes || estimate.privateBytes <= 0) {
+      continue;
+    }
+
+    payload.memoryEstimates[summary.extensionId] = {
+      ...estimate,
+      source: payload.source,
+      capturedAt: snapshot.capturedAt,
+      targetUrl,
+      name: summary.name,
+      version: summary.version
+    };
+  }
+
+  addInstalledHeuristicEstimates(payload, snapshot, aggregate, targetUrl);
+  return payload;
+}
+
+function extractExtensionIdFromUrl(url) {
+  const match = String(url ?? "").match(/^chrome-extension:\/\/([a-p]{32})\//);
+  return match?.[1] ?? null;
+}
+
+async function findEmsServiceWorkerSession(cdp, emsExtensionId) {
+  const targetsResult = await cdp.send("Target.getTargets");
+  const candidates = (targetsResult.targetInfos ?? []).filter((target) => {
+    const targetExtensionId = extractExtensionIdFromUrl(target.url);
+    if (!targetExtensionId) {
+      return false;
+    }
+    if (emsExtensionId && targetExtensionId !== emsExtensionId) {
+      return false;
+    }
+    return target.type === "service_worker" || target.url.endsWith("/background.js");
+  });
+
+  for (const target of candidates) {
+    const attached = await cdp.send("Target.attachToTarget", { targetId: target.targetId, flatten: true });
+    const sessionId = attached.sessionId;
+    try {
+      const manifestResult = await cdp.send(
+        "Runtime.evaluate",
+        { expression: "chrome.runtime.getManifest().name", returnByValue: true },
+        sessionId
+      );
+      if (manifestResult.result?.value === "EMS MVP") {
+        return { sessionId, extensionId: extractExtensionIdFromUrl(target.url) };
+      }
+    } catch {
+      // Keep trying other extension service workers.
+    }
+  }
+
+  return null;
+}
+
+async function applyLiveEstimatesToEms({ host, port, emsExtensionId }, payload) {
+  const version = await httpJson(`http://${host}:${port}/json/version`);
+  const cdp = new CdpConnection(version.webSocketDebuggerUrl);
+  await cdp.connect();
+  try {
+    const session = await findEmsServiceWorkerSession(cdp, emsExtensionId);
+    if (!session) {
+      throw new Error("Could not find the EMS MVP service worker. Open or reload the EMS popup once, then rerun with --apply-to-ems.");
+    }
+
+    const expression = `(() => new Promise((resolve, reject) => {
+      chrome.storage.local.set({ memoryEstimates: ${JSON.stringify(payload.memoryEstimates)} }, () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve(true);
+      });
+    }))()`;
+
+    await cdp.send("Runtime.evaluate", { expression, awaitPromise: true }, session.sessionId);
+    return session.extensionId;
+  } finally {
+    cdp.close();
+  }
+}
+
+async function exportLiveEstimates(options) {
+  const snapshot = await captureSnapshotData(options);
+  const payload = buildLiveMemoryEstimatePayload(snapshot, options);
+  const outputPath = options.out ?? path.join(process.cwd(), "test-results", `live-memory-estimates-${Date.now()}.json`);
+  await writeJsonFile(outputPath, payload);
+
+  console.log(`Saved live memory estimates: ${outputPath}`);
+  console.log(`Estimates exported: ${Object.keys(payload.memoryEstimates).length}`);
+  for (const [extensionId, estimate] of Object.entries(payload.memoryEstimates).slice(0, 10)) {
+    console.log(
+      `- ${estimate.name ?? extensionId} (${extensionId}) | private=${formatBytes(estimate.privateBytes)} | confidence=${estimate.confidence} | attribution=${estimate.attribution}`
+    );
+  }
+
+  if (options.applyToEms) {
+    const emsExtensionId = await applyLiveEstimatesToEms(options, payload);
+    console.log(`Applied estimates to EMS storage for extension ${emsExtensionId}. Reopen or refresh the EMS popup to render the latest values.`);
   }
 }
 
@@ -959,6 +1280,11 @@ async function main() {
 
   if (command === "snapshot") {
     await collectSnapshot(options);
+    return;
+  }
+
+  if (command === "live-estimates") {
+    await exportLiveEstimates(options);
     return;
   }
 

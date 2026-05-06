@@ -9,6 +9,7 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 ## What has been built
 
 - CDP + Windows process-memory snapshot tool
+- Near-live `live-estimates` exporter for popup-importable memory estimates
 - Snapshot diff summarizer
 - Chrome launcher for probe profiles
 - Profile-based extension metadata resolution
@@ -97,15 +98,16 @@ Operational lesson:
 3. Run `npm run test:e2e` for the current Playwright smoke test.
    - this uses a test-only popup query override plus mock extensions and a test-only management fixture
 - current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
-4. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
-5. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
-6. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to write `test-results\profile-inventory.json` with manifest-only relevance signals from a test/probe profile.
-7. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
+4. Use `node .\tools\ems-measure.mjs live-estimates --port 9222 --profile-dir <TEST_PROFILE_DIR> --target-url <URL> --out .\test-results\live-memory-estimates.json` to generate near-live popup-importable memory estimates. Use `--apply-to-ems` only after the EMS service worker has been opened once.
+5. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
+6. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
+7. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to write `test-results\profile-inventory.json` with manifest-only relevance signals from a test/probe profile.
+8. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
    - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
    - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
-8. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
-9. Only return to deeper measurement work when it unblocks a concrete product decision.
-10. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
+9. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
+10. Only return to deeper measurement work when it unblocks a concrete product decision.
+11. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
 
 ## Latest verified checkpoint
 
@@ -123,21 +125,23 @@ Operational lesson:
   - protected/unavailable bulk-action skips
   - saved-setup conflict handling when protected states block part of `Apply Saved Setup`
 - current product stance:
-  - stable Chrome still cannot expose reliable live per-extension total memory
-  - EMS should continue as a benchmark-backed control panel, not a live memory meter
+  - stable Chrome still cannot expose exact live per-extension total memory
+  - EMS now supports near-live external probe estimates, but the shipped extension itself is still not a standalone live memory meter
   - benchmark entries now carry structured scenario-delta metrics and the popup shows row-level measured memory impact estimates plus confidence metadata when available
   - seeded benchmark labels currently cover only the measured YouTube 3-extension scenario: Dark Reader, Bideo Max, and Improve YouTube
-  - newly installed or user-specific extensions need a measured benchmark JSON import or a future catalog update before memory impact values appear
+  - newly installed or user-specific extensions can show low-confidence near-live estimates through `live-estimates`; higher-confidence measured impact still needs benchmark JSON import or catalog coverage
   - profile inventory can now read manifest-only relevance signals from test/probe profiles
   - popup import can use those manifest signals to improve relevance labels and site-relevant counts
   - popup now includes extension search plus All/Relevant/Enabled/Disabled/Pinned filters
+  - latest verification also generated `test-results\live-memory-estimates-fixture.json` from an isolated throwaway Chromium profile; the output is ignored by git
 
 ## Current next priorities
 
 1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
-2. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
-3. execute Store Release final prep: packaged icons, store-ready metadata, Web Store listing copy, permission/privacy explanation, release UI polish, normal-user docs, and optional UX improvements beyond the current search/filter baseline
-4. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring
+2. keep `live-estimates` as the practical near-live path for newly installed extensions, while preserving confidence labels and exact-ownership warnings
+3. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
+4. execute Store Release final prep: packaged icons, store-ready metadata, Web Store listing copy, permission/privacy explanation, release UI polish, normal-user docs, and optional UX improvements beyond the current search/filter baseline
+5. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring
 
 ## Notion context
 

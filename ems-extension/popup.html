@@ -62,7 +62,7 @@
             <span class="caption">Benchmarks + signals</span>
           </div>
           <p id="benchmark-summary" class="card-copy">No probe data loaded.</p>
-          <p class="card-note">Optional. Import benchmark labels or profile-inventory JSON from the test/probe workflow. Reset restores seeded benchmarks and clears imported manifest signals.</p>
+          <p class="card-note">Optional. Import benchmark labels, live memory estimates, or profile-inventory JSON from the test/probe workflow. Reset restores seeded benchmarks and clears imported estimates/signals.</p>
           <div class="card-actions">
             <button id="import-benchmarks" type="button">Import JSON</button>
             <button id="reset-benchmarks" type="button">Reset Defaults</button>
@@ -96,14 +96,14 @@
         <summary>How EMS decides and acts</summary>
         <ul class="help-list">
           <li><strong>Likely relevant</strong> comes from saved setup, host access, homepage match, imported manifest signals, and lightweight permission hints.</li>
-          <li><strong>Memory Impact</strong> is benchmark guidance measured from repeatable probe scenarios and should be read as a practical estimate, not exact live ownership.</li>
+          <li><strong>Memory Impact</strong> combines imported live process estimates and repeatable benchmark scenarios. Treat it as practical guidance, not exact renderer ownership.</li>
           <li><strong>Enable / Disable</strong> changes browser-wide extension state. Some extensions can be protected by Chrome.</li>
         </ul>
       </details>
 
       <footer class="footer-note">
         <p>
-          Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Memory impact values are measured scenario deltas, not exact live ownership.
+          Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Memory impact values are imported live estimates or measured scenario deltas, not exact renderer ownership.
         </p>
       </footer>
     </main>

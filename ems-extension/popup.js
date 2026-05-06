@@ -3,7 +3,8 @@ const STORAGE_KEYS = {
   restoreSnapshot: "restoreSnapshot",
   pinnedExtensionIds: "pinnedExtensionIds",
   benchmarkLabels: "benchmarkLabels",
-  manifestSignals: "manifestSignals"
+  manifestSignals: "manifestSignals",
+  memoryEstimates: "memoryEstimates"
 };
 
 const SITE_RELEVANCE_HEURISTICS = [
@@ -58,7 +59,8 @@ const state = {
     restoreSnapshot: null,
     pinnedExtensionIds: [],
     benchmarkLabels: {},
-    manifestSignals: {}
+    manifestSignals: {},
+    memoryEstimates: {}
   },
   view: {
     searchQuery: "",
@@ -217,10 +219,11 @@ function bindEvents() {
     const defaults = await getDefaultBenchmarkLabels();
     await chrome.storage.local.set({
       [STORAGE_KEYS.benchmarkLabels]: defaults,
-      [STORAGE_KEYS.manifestSignals]: {}
+      [STORAGE_KEYS.manifestSignals]: {},
+      [STORAGE_KEYS.memoryEstimates]: {}
     });
     await refresh();
-    setStatus("Reset benchmark labels to the seeded defaults. Cleared imported manifest signals.");
+    setStatus("Reset benchmark labels to the seeded defaults. Cleared imported manifest signals and live memory estimates.");
   }));
 
   ui.extensionSearch.addEventListener("input", () => {
@@ -245,6 +248,7 @@ function bindEvents() {
       const importedData = await importProbeDataFile(file);
       const benchmarkCount = Object.keys(importedData.benchmarkLabels).length;
       const signalCount = Object.keys(importedData.manifestSignals).length;
+      const estimateCount = Object.keys(importedData.memoryEstimates).length;
       const storageUpdate = {};
 
       if (benchmarkCount > 0) {
@@ -259,10 +263,16 @@ function bindEvents() {
           ...importedData.manifestSignals
         };
       }
+      if (estimateCount > 0) {
+        storageUpdate[STORAGE_KEYS.memoryEstimates] = {
+          ...state.storage.memoryEstimates,
+          ...importedData.memoryEstimates
+        };
+      }
 
       await chrome.storage.local.set(storageUpdate);
       await refresh();
-      setStatus(buildImportProbeDataStatus(file.name, benchmarkCount, signalCount));
+      setStatus(buildImportProbeDataStatus(file.name, benchmarkCount, signalCount, estimateCount));
     });
   });
 }
@@ -285,7 +295,8 @@ async function refresh() {
     restoreSnapshot: storage[STORAGE_KEYS.restoreSnapshot] ?? null,
     pinnedExtensionIds: storage[STORAGE_KEYS.pinnedExtensionIds] ?? [],
     benchmarkLabels: storage[STORAGE_KEYS.benchmarkLabels] ?? {},
-    manifestSignals: storage[STORAGE_KEYS.manifestSignals] ?? {}
+    manifestSignals: storage[STORAGE_KEYS.manifestSignals] ?? {},
+    memoryEstimates: storage[STORAGE_KEYS.memoryEstimates] ?? {}
   };
   state.currentSiteProfile = state.origin ? state.storage.siteProfiles[state.origin] ?? null : null;
   state.extensions = allExtensions
@@ -376,6 +387,7 @@ function decorateExtension(extension) {
   const manifestSignals = state.storage.manifestSignals[extension.id] ?? null;
   const relevance = inferRelevance(extension, pinned, savedForSite, manifestSignals);
   const benchmark = state.storage.benchmarkLabels[extension.id] ?? null;
+  const memoryEstimate = state.storage.memoryEstimates[extension.id] ?? null;
 
   return {
     ...extension,
@@ -383,6 +395,7 @@ function decorateExtension(extension) {
     savedForSite,
     relevance,
     benchmark,
+    memoryEstimate,
     manifestSignals
   };
 }
@@ -590,7 +603,8 @@ function matchesExtensionSearch(extension) {
     extension.relevance.label,
     extension.enabled ? "enabled" : "disabled",
     extension.pinned ? "pinned" : "",
-    extension.savedForSite ? "saved" : ""
+    extension.savedForSite ? "saved" : "",
+    extension.memoryEstimate ? "memory estimate" : ""
   ]
     .filter(Boolean)
     .join(" ")
@@ -631,21 +645,25 @@ function renderBenchmarkCard() {
   const benchmarkedCount = labels.length;
   const importedCount = labels.filter((label) => label?.source && label.source !== "youtube-3ext-scenario").length;
   const signalCount = Object.keys(state.storage.manifestSignals).length;
+  const estimateCount = Object.keys(state.storage.memoryEstimates).length;
   const signalText = signalCount
     ? `${signalCount} manifest signal set(s) loaded.`
     : "No manifest signal sets loaded.";
+  const estimateText = estimateCount
+    ? `${estimateCount} live memory estimate(s) loaded.`
+    : "No live memory estimates loaded.";
 
-  if (!benchmarkedCount && !signalCount) {
+  if (!benchmarkedCount && !signalCount && !estimateCount) {
     ui.benchmarkSummary.textContent = "No probe data loaded.";
   } else if (!benchmarkedCount) {
-    ui.benchmarkSummary.textContent = `No benchmark labels loaded. ${signalText}`;
+    ui.benchmarkSummary.textContent = `No benchmark labels loaded. ${estimateText} ${signalText}`;
   } else if (!importedCount) {
-    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded from the seeded catalog. ${signalText}`;
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded from the seeded catalog. ${estimateText} ${signalText}`;
   } else {
-    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded, including ${importedCount} imported label(s). ${signalText}`;
+    ui.benchmarkSummary.textContent = `${benchmarkedCount} benchmark label(s) loaded, including ${importedCount} imported label(s). ${estimateText} ${signalText}`;
   }
 
-  ui.resetBenchmarksButton.disabled = !benchmarkedCount && !signalCount;
+  ui.resetBenchmarksButton.disabled = !benchmarkedCount && !signalCount && !estimateCount;
 }
 
 function renderExtension(extension) {
@@ -657,6 +675,7 @@ function renderExtension(extension) {
   const relevancePill = fragment.querySelector(".relevance-pill");
   const impactPill = fragment.querySelector(".impact-pill");
   const memoryImpact = fragment.querySelector(".memory-impact");
+  const memoryImpactLabel = fragment.querySelector(".memory-impact-label");
   const memoryImpactValue = fragment.querySelector(".memory-impact-value");
   const memoryImpactDetail = fragment.querySelector(".memory-impact-detail");
   const memoryImpactConfidence = fragment.querySelector(".memory-impact-confidence");
@@ -680,13 +699,11 @@ function renderExtension(extension) {
     relevancePill.classList.add(extension.relevance.className);
   }
 
-  const impact = extension.benchmark?.label ?? "unknown";
-  impactPill.textContent = extension.benchmark ? `impact: ${impact}` : "impact: not benchmarked";
-  if (impact !== "unknown") {
-    impactPill.classList.add(`impact-${impact}`);
+  const memoryImpactInfo = renderExtensionMemoryImpact(extension, memoryImpact, memoryImpactLabel, memoryImpactValue, memoryImpactDetail, memoryImpactConfidence);
+  impactPill.textContent = memoryImpactInfo?.pillText ?? "impact: not measured";
+  if (memoryImpactInfo?.pillClass) {
+    impactPill.classList.add(memoryImpactInfo.pillClass);
   }
-
-  renderBenchmarkMemoryImpact(extension, memoryImpact, memoryImpactValue, memoryImpactDetail, memoryImpactConfidence);
 
   pinToggle.textContent = extension.pinned ? "Unpin" : "Pin";
   pinToggle.addEventListener("click", () => runWithStatus("Updating pinned set...", async () => {
@@ -882,18 +899,22 @@ async function importProbeDataFile(file) {
   const payload = JSON.parse(text);
   const benchmarkLabels = normalizeBenchmarkPayload(payload);
   const manifestSignals = normalizeManifestSignalPayload(payload);
+  const memoryEstimates = normalizeMemoryEstimatePayload(payload);
 
-  if (!Object.keys(benchmarkLabels).length && !Object.keys(manifestSignals).length) {
-    throw new Error("The JSON file did not contain usable benchmark labels or manifest signals.");
+  if (!Object.keys(benchmarkLabels).length && !Object.keys(manifestSignals).length && !Object.keys(memoryEstimates).length) {
+    throw new Error("The JSON file did not contain usable benchmark labels, live memory estimates, or manifest signals.");
   }
 
-  return { benchmarkLabels, manifestSignals };
+  return { benchmarkLabels, manifestSignals, memoryEstimates };
 }
 
-function buildImportProbeDataStatus(fileName, benchmarkCount, signalCount) {
+function buildImportProbeDataStatus(fileName, benchmarkCount, signalCount, estimateCount) {
   const parts = [];
   if (benchmarkCount > 0) {
     parts.push(`${benchmarkCount} benchmark label(s)`);
+  }
+  if (estimateCount > 0) {
+    parts.push(`${estimateCount} live memory estimate(s)`);
   }
   if (signalCount > 0) {
     parts.push(`${signalCount} manifest signal set(s)`);
@@ -1026,18 +1047,25 @@ function normalizeBenchmarkMetrics(metrics) {
   return Object.keys(normalized).length > 0 ? normalized : null;
 }
 
-function renderBenchmarkMemoryImpact(extension, container, valueNode, detailNode, confidenceNode) {
-  const impact = buildBenchmarkMemoryImpact(extension.benchmark);
+function renderExtensionMemoryImpact(extension, container, labelNode, valueNode, detailNode, confidenceNode) {
+  const impact = buildExtensionMemoryImpact(extension);
   if (!impact) {
-    return;
+    return null;
   }
 
   container.hidden = false;
+  labelNode.textContent = impact.heading;
   valueNode.textContent = impact.value;
   detailNode.textContent = impact.detail;
   confidenceNode.textContent = impact.confidence;
   confidenceNode.hidden = !impact.confidence;
   container.title = impact.title;
+  container.dataset.memorySource = impact.sourceType;
+  return impact;
+}
+
+function buildExtensionMemoryImpact(extension) {
+  return buildAdvancedMemoryEstimateImpact(extension.memoryEstimate) ?? buildBenchmarkMemoryImpact(extension.benchmark);
 }
 
 function buildBenchmarkMemoryImpact(benchmark) {
@@ -1071,14 +1099,96 @@ function buildBenchmarkMemoryImpact(benchmark) {
 
   const attribution = metrics.attribution === "scenario-ab-delta" ? "A/B scenario delta" : "probe measurement";
   const confidence = buildBenchmarkConfidence(benchmark);
+  const label = benchmark?.label ?? inferImpactLabelFromBytes(primaryDrop);
   return {
+    heading: "Measured Memory Impact",
     value: formatBytesForUi(primaryDrop),
     detail: `${detailParts.join(" / ")} - ${attribution}`,
     confidence,
+    sourceType: "benchmark",
+    pillText: `impact: ${label}`,
+    pillClass: label !== "unknown" ? `impact-${label}` : "",
     title: confidence
       ? `Measured by the EMS probe workflow. ${confidence}. This is a practical memory impact estimate, not exact live memory ownership.`
       : "Measured by the EMS probe workflow. This is a practical memory impact estimate, not exact live memory ownership."
   };
+}
+
+function buildAdvancedMemoryEstimateImpact(estimate) {
+  if (!estimate || typeof estimate !== "object") {
+    return null;
+  }
+
+  const privateBytes = Number(estimate.privateBytes ?? 0);
+  if (!Number.isFinite(privateBytes) || privateBytes <= 0) {
+    return null;
+  }
+
+  const workingSetBytes = Number(estimate.workingSetBytes ?? 0);
+  const detailParts = [`private ${formatBytesForUi(privateBytes)}`];
+  if (Number.isFinite(workingSetBytes) && workingSetBytes > 0) {
+    detailParts.push(`working set ${formatBytesForUi(workingSetBytes)}`);
+  }
+  detailParts.push(formatEstimateAttribution(estimate.attribution));
+
+  const confidence = buildEstimateConfidence(estimate);
+  const label = inferImpactLabelFromBytes(privateBytes);
+  return {
+    heading: "Advanced Memory Estimate",
+    value: `~${formatBytesForUi(privateBytes)}`,
+    detail: detailParts.join(" / "),
+    confidence,
+    sourceType: "live-estimate",
+    pillText: `~${formatBytesForUi(privateBytes)}`,
+    pillClass: label !== "unknown" ? `impact-${label}` : "",
+    title: confidence
+      ? `Imported from the EMS advanced probe. ${confidence}. This is a near-real-time estimate, not exact renderer memory ownership.`
+      : "Imported from the EMS advanced probe. This is a near-real-time estimate, not exact renderer memory ownership."
+  };
+}
+
+function formatEstimateAttribution(attribution) {
+  if (attribution === "direct-process-match") {
+    return "direct extension process";
+  }
+  if (attribution === "shared-extension-renderer-apportionment") {
+    return "shared extension renderer estimate";
+  }
+  return attribution || "live process estimate";
+}
+
+function buildEstimateConfidence(estimate) {
+  const parts = [];
+  if (estimate.confidence) {
+    parts.push(`Confidence: ${estimate.confidence}`);
+  }
+  if (estimate.capturedAt) {
+    parts.push(formatShortDate(estimate.capturedAt));
+  }
+  const host = extractHost(estimate.targetUrl);
+  if (host) {
+    parts.push(host);
+  }
+  if (estimate.processCount) {
+    parts.push(`${estimate.processCount} process${estimate.processCount === 1 ? "" : "es"}`);
+  }
+  if (estimate.targetCount) {
+    parts.push(`${estimate.targetCount} target${estimate.targetCount === 1 ? "" : "s"}`);
+  }
+  return parts.join(" - ");
+}
+
+function inferImpactLabelFromBytes(bytes) {
+  if (bytes >= 60 * 1024 * 1024) {
+    return "high";
+  }
+  if (bytes >= 25 * 1024 * 1024) {
+    return "medium";
+  }
+  if (bytes >= 8 * 1024 * 1024) {
+    return "low";
+  }
+  return "unknown";
 }
 
 function buildBenchmarkConfidence(benchmark) {
@@ -1136,6 +1246,186 @@ function formatBytesForUi(bytes) {
   }
   return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
 }
+
+function normalizeMemoryEstimatePayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+
+  if (payload.memoryEstimates && typeof payload.memoryEstimates === "object") {
+    return normalizeMemoryEstimateMap(payload.memoryEstimates, payload.source ?? "live-memory-estimates");
+  }
+  if (payload.liveMemoryEstimates && typeof payload.liveMemoryEstimates === "object") {
+    return normalizeMemoryEstimateMap(payload.liveMemoryEstimates, payload.source ?? "live-memory-estimates");
+  }
+  if (Array.isArray(payload.extensionSummaries)) {
+    return normalizeSnapshotExtensionSummaries(payload);
+  }
+  if (Array.isArray(payload.extensions)) {
+    return normalizeMemoryEstimateEntries(payload.extensions, payload.source ?? "probe-json");
+  }
+
+  return {};
+}
+
+function normalizeSnapshotExtensionSummaries(payload) {
+  const normalized = {};
+  const aggregate = aggregateSnapshotLikePayload(payload);
+  const summaries = payload.extensionSummaries ?? [];
+  const targetUrl = inferPayloadTargetUrl(payload);
+
+  for (const summary of summaries) {
+    const extensionId = summary?.extensionId;
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+
+    const privateBytes = Number(summary.ownedPrivateBytes ?? 0);
+    const workingSetBytes = Number(summary.ownedWorkingSet ?? 0);
+    let estimate = null;
+
+    if (privateBytes > 0) {
+      estimate = {
+        privateBytes,
+        workingSetBytes: workingSetBytes > 0 ? workingSetBytes : undefined,
+        attribution: "direct-process-match",
+        confidence: "high",
+        notes: "Chrome process command line exposed this extension id. This is direct extension-owned process memory, not content-script renderer ownership."
+      };
+    } else if ((summary.targetCount ?? 0) > 0 && aggregate.extensionRendererPrivate > 0 && aggregate.extensionTargetCount > 0) {
+      const apportionedPrivateBytes = Math.round((aggregate.extensionRendererPrivate / aggregate.extensionTargetCount) * summary.targetCount);
+      estimate = {
+        privateBytes: apportionedPrivateBytes,
+        attribution: "shared-extension-renderer-apportionment",
+        confidence: "low",
+        notes: "No extension-owned process id was exposed. EMS apportioned shared extension renderer memory across observed extension targets."
+      };
+    }
+
+    if (!estimate?.privateBytes || estimate.privateBytes <= 0) {
+      continue;
+    }
+
+    normalized[extensionId] = normalizeMemoryEstimateEntry({
+      ...estimate,
+      source: payload.source ?? "snapshot-live-estimate",
+      capturedAt: payload.capturedAt,
+      targetUrl,
+      targetCount: summary.targetCount,
+      processCount: summary.ownedProcessCount,
+      processIds: summary.ownedProcessIds
+    });
+  }
+
+  return normalized;
+}
+
+function normalizeMemoryEstimateEntries(entries, source) {
+  const normalized = {};
+  for (const entry of entries) {
+    const extensionId = entry?.extensionId;
+    const estimateEntry = entry?.memoryEstimate ?? entry?.liveMemoryEstimate ?? entry;
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+    const estimate = normalizeMemoryEstimateEntry({ ...estimateEntry, source: estimateEntry?.source ?? source });
+    if (estimate) {
+      normalized[extensionId] = estimate;
+    }
+  }
+  return normalized;
+}
+
+function normalizeMemoryEstimateMap(map, source) {
+  const normalized = {};
+  for (const [extensionId, entry] of Object.entries(map)) {
+    if (!isExtensionId(extensionId)) {
+      continue;
+    }
+    const estimate = normalizeMemoryEstimateEntry({ ...entry, source: entry?.source ?? source });
+    if (estimate) {
+      normalized[extensionId] = estimate;
+    }
+  }
+  return normalized;
+}
+
+function normalizeMemoryEstimateEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const privateBytes = Number(
+    entry.privateBytes ??
+    entry.valueBytes ??
+    entry.estimatedPrivateBytes ??
+    entry.ownedPrivateBytes ??
+    entry.metrics?.privateBytes ??
+    entry.metrics?.directPrivateBytes ??
+    0
+  );
+  if (!Number.isFinite(privateBytes) || privateBytes <= 0) {
+    return null;
+  }
+
+  const normalized = {
+    privateBytes,
+    source: entry.source ?? "live-memory-estimate",
+    attribution: entry.attribution ?? entry.metrics?.attribution ?? "live-process-estimate",
+    confidence: normalizeConfidence(entry.confidence ?? entry.trust ?? "low")
+  };
+
+  const workingSetBytes = Number(entry.workingSetBytes ?? entry.ownedWorkingSet ?? entry.metrics?.workingSetBytes ?? 0);
+  if (Number.isFinite(workingSetBytes) && workingSetBytes > 0) {
+    normalized.workingSetBytes = workingSetBytes;
+  }
+
+  copyOptionalString(normalized, "capturedAt", entry.capturedAt ?? entry.measuredAt ?? entry.generatedAt ?? entry.date);
+  copyOptionalString(normalized, "targetUrl", entry.targetUrl ?? entry.pageUrl ?? entry.url);
+  copyOptionalString(normalized, "notes", entry.notes ?? entry.note);
+  copyOptionalPositiveInteger(normalized, "targetCount", entry.targetCount ?? entry.targets);
+  copyOptionalPositiveInteger(normalized, "processCount", entry.processCount ?? entry.processes);
+  if (Array.isArray(entry.processIds)) {
+    normalized.processIds = entry.processIds.filter((id) => Number.isInteger(Number(id))).map((id) => Number(id));
+  }
+
+  return normalized;
+}
+
+function aggregateSnapshotLikePayload(payload) {
+  if (payload?.chromeProcesses) {
+    return aggregateChromeProcessRows(payload.chromeProcesses, payload.extensionTargets ?? []);
+  }
+  return {
+    extensionRendererPrivate: Number(payload?.aggregate?.extensionRendererPrivate ?? 0),
+    extensionTargetCount: Number(payload?.aggregate?.extensionTargetCount ?? payload?.extensionTargets?.length ?? 0)
+  };
+}
+
+function aggregateChromeProcessRows(processes, extensionTargets) {
+  const extensionRendererRows = processes.filter(
+    (row) => row.guessedType === "renderer" && (row.commandLine ?? "").includes("--extension-process")
+  );
+  return {
+    extensionRendererPrivate: extensionRendererRows.reduce((sum, row) => sum + (Number(row.privateBytes) || 0), 0),
+    extensionTargetCount: extensionTargets.length
+  };
+}
+
+function inferPayloadTargetUrl(payload) {
+  if (payload.targetUrl) {
+    return payload.targetUrl;
+  }
+  const listTargets = Array.isArray(payload.listTargets) ? payload.listTargets : [];
+  const pageTarget = listTargets.find((target) => /^https?:\/\//.test(target?.url ?? ""));
+  return pageTarget?.url ?? "";
+}
+
+function normalizeConfidence(value) {
+  const normalized = String(value ?? "").toLowerCase();
+  return ["high", "medium", "low"].includes(normalized) ? normalized : "low";
+}
+
 function normalizeManifestSignalPayload(payload) {
   if (!payload || typeof payload !== "object") {
     return {};
@@ -1330,6 +1620,7 @@ function disablePrimaryActions(disabled) {
   const hasSavedSetup = Boolean(state.currentSiteProfile?.allowedExtensionIds?.length);
   const hasBenchmarks = Boolean(Object.keys(state.storage.benchmarkLabels).length);
   const hasManifestSignals = Boolean(Object.keys(state.storage.manifestSignals).length);
+  const hasMemoryEstimates = Boolean(Object.keys(state.storage.memoryEstimates).length);
 
   ui.lightenButton.disabled = disabled || !hasOrigin;
   ui.restoreButton.disabled = disabled || !state.storage.restoreSnapshot;
@@ -1337,7 +1628,7 @@ function disablePrimaryActions(disabled) {
   ui.applySavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
   ui.clearSavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;
   ui.importBenchmarksButton.disabled = disabled;
-  ui.resetBenchmarksButton.disabled = disabled || (!hasBenchmarks && !hasManifestSignals);
+  ui.resetBenchmarksButton.disabled = disabled || (!hasBenchmarks && !hasManifestSignals && !hasMemoryEstimates);
   ui.benchmarkFileInput.disabled = disabled;
 }
 

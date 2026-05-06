@@ -6,6 +6,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 
 - Capture Chrome DevTools Protocol targets from a remote debugging port
 - Capture live `chrome.exe` memory from Windows
+- Export near-live per-extension memory estimates with confidence labels from the current Chrome process snapshot
 - Resolve extension ids to profile-installed extension names, versions, and manifest relevance signals
 - Compare two snapshots and summarize session-level deltas
 
@@ -36,12 +37,14 @@ Stable Chrome can support:
 - extension target discovery
 - session-level A/B memory comparison
 - renderer delta analysis
+- near-live direct-process estimates from an external probe when Chrome exposes extension process ids
+- low-confidence estimates for site-matching installed extensions when only shared extension renderer memory is available
 - test/probe profile manifest inventory for `optional_host_permissions` and `content_scripts.matches`
 
 Stable Chrome cannot yet support:
 
-- reliable per-extension owned memory totals
-- clean attribution of content-script memory
+- exact per-extension owned memory totals
+- clean attribution of content-script memory inside normal page renderers
 - tab-scoped extension disable control
 
 ## Immediate next steps
@@ -51,13 +54,14 @@ Stable Chrome cannot yet support:
 3. Validate site profile actions and benchmark import/reset flow in the popup.
 4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
 5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
-6. Use `node .\tools\ems-measure.mjs export-labels ...` when you want probe results in popup-import format.
-7. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
-8. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to inspect manifest-only relevance signals from a test/probe profile and write `test-results\profile-inventory.json`.
-9. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
-10. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
-11. Use `npm run test:e2e` for the current Playwright popup smoke test.
-12. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
+6. Use `node .\tools\ems-measure.mjs live-estimates --port 9222 --profile-dir <TEST_PROFILE_DIR> --target-url <URL> --out .\test-results\live-memory-estimates.json` when you want near-live popup-importable memory estimates.
+7. Use `node .\tools\ems-measure.mjs export-labels ...` when you want A/B probe results in popup-import format.
+8. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
+9. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to inspect manifest-only relevance signals from a test/probe profile and write `test-results\profile-inventory.json`.
+10. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
+11. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
+12. Use `npm run test:e2e` for the current Playwright popup smoke test.
+13. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
 ## Current MVP shell
 
@@ -77,10 +81,11 @@ The extension shell currently includes:
 - explicit browser-wide action banner and browser-wide/no-op status copy
 - lightweight help / trust explainer in the popup
 - seeded benchmark labels for the validated YouTube scenario
-- benchmark label import/reset controls with row-level measured memory impact display
+- benchmark label and live memory estimate import/reset controls with row-level memory impact display
 - profile-inventory JSON import for manifest-signal relevance enrichment
 - extension list search and All/Relevant/Enabled/Disabled/Pinned filters
-- row-level benchmark confidence metadata display
+- row-level benchmark and live-estimate confidence metadata display
+- probe-side near-live `live-estimates` export command with direct/shared/heuristic attribution
 - probe-side compact benchmark export command
 - probe-side multi-scenario catalog build command
 - probe-side scenario discovery command for one-baseline/many-after snapshot sets
@@ -92,6 +97,7 @@ The extension shell currently includes:
 
 It does not yet include:
 
+- in-extension automatic memory access without the external probe workflow
 - automatic runtime access to `optional_host_permissions` or `content_scripts.matches` without imported profile inventory
 - packaged icons or store-ready metadata
 
@@ -121,7 +127,7 @@ Current automated coverage:
 - loads EMS plus a mock YouTube helper extension
 - loads an additional irrelevant mock extension to exercise site filtering
 - opens `popup.html` with a test tab override
-- verifies inventory metrics, relevance labeling, extension search/filter controls, row-level confidence metadata, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
+- verifies inventory metrics, relevance labeling, extension search/filter controls, row-level benchmark and live-estimate confidence metadata, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark/live-estimate import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
 
 ## Folder move / thread handoff
 

@@ -8,6 +8,7 @@ This workspace contains a first-pass Chrome extension memory probe for Windows.
 - Reads browser-level process metadata through CDP.
 - Reads live `chrome.exe` process memory from Windows.
 - Tries to match extension ids to OS processes when Chrome exposes the id in process command lines.
+- Exports popup-importable near-live memory estimates through `live-estimates`.
 - Resolves extension names and versions from a Chrome profile when `--profile-dir` is provided.
 - Saves a JSON snapshot for later diffing.
 
@@ -31,7 +32,10 @@ Extension service worker/background processes that can be tied to an extension i
 2. Renderer delta
 Run the same tab set with an extension enabled and disabled, then diff snapshots.
 
-The direct-process number is hard evidence. The renderer delta is an estimate.
+3. Near-live estimate
+Use the current Chrome process snapshot to export direct process matches, shared extension-renderer apportionment, and low-confidence manifest site-match heuristics.
+
+The direct-process number is hard evidence. Renderer deltas and near-live apportionment are estimates.
 
 ## Recommended workflow
 
@@ -64,6 +68,29 @@ node .\ems-measure.mjs snapshot --port 9222 --profile-dir "C:\Users\...\Profile 
 ```powershell
 node .\ems-measure.mjs diff .\snapshots\baseline.json .\snapshots\after.json
 ```
+
+## Near-live estimate example
+
+Use `live-estimates` when you want the popup to show approximate MB values for the current Chrome session without doing a full A/B run first.
+
+```powershell
+node .\tools\ems-measure.mjs live-estimates `
+  --host 127.0.0.1 `
+  --port 9222 `
+  --profile-dir "<TEST_PROFILE_DIR>" `
+  --target-url "https://www.youtube.com/watch?v=pa4Xo-LQe54" `
+  --out .\test-results\live-memory-estimates.json
+```
+
+The output has a `memoryEstimates` map that the popup `Import JSON` button accepts directly. If the EMS service worker is awake, `--apply-to-ems` can write the estimates into EMS storage without manual import.
+
+Attribution tiers:
+
+- `direct-process-match` with `confidence: high`: Chrome exposed the extension id in a process command line.
+- `shared-extension-renderer-apportionment` with `confidence: low`: EMS divided shared extension-renderer memory across observed extension targets.
+- `profile-installed-site-heuristic` with `confidence: low`: no live target was observed, but the installed manifest declares access to the target site.
+
+These values are useful for quick visibility on newly installed extensions, including all-sites extensions such as ad blockers. They still do not prove exact content-script ownership inside the page renderer.
 
 ## Benchmark export example
 
@@ -170,6 +197,8 @@ This is still scenario guidance, not live truth.
 
 - Content scripts live inside renderer processes and are not directly attributable on stable Chrome.
 - Process command lines do not always expose extension ids.
+- `live-estimates` needs an external debug-port probe; the store extension cannot collect these values by itself on stable Chrome.
+- Low-confidence live estimates can be useful immediately, but they can over- or under-attribute shared renderer memory.
 - Shared renderer processes can blur ownership.
 - Mutating a copied profile to disable one extension can cause other extension targets to disappear too, so A/B isolation must be verified on every run.
 - The best final estimate usually comes from:
