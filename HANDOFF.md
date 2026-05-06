@@ -28,6 +28,7 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 - `tools/Build-EMSReleasePackage.ps1`
 - `docs/EMS_MEASUREMENT.md`
 - `docs/STORE_RELEASE_PREP.md`
+- `docs/notion-legacy/EMS_NOTION_MIGRATION_INDEX.md`
 
 ## What has been learned
 
@@ -148,12 +149,7 @@ Operational lesson:
 
 ## Notion context
 
-Project artifacts already exist in Notion under:
-
-- `EMS - Chromium Extension Control Panel`
-- `EMS Stage 0 - API Feasibility Spike`
-- `EMS Stage 5 - Advanced Measurement R&D`
-- `EMS Windows OS-level 측정 워크플로 설계`
+EMS Notion artifacts were migrated into `docs/notion-legacy/` on 2026-05-06. Original Notion items are retained only as reviewable legacy records and should have a `####` title prefix. Current execution should use repo docs, not Notion, as the source of truth.
 
 ## Best cloud handoff path
 

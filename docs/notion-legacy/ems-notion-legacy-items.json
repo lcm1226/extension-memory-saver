@@ -1,0 +1,204 @@
+{
+  "migratedAt": "2026-05-06",
+  "items": [
+    {
+      "kind": "hub-page",
+      "id": "3444e350-008b-811d-b369-e6e1f5b0a123",
+      "titleProperty": "title",
+      "title": "EMS",
+      "url": "https://www.notion.so/3444e350008b811db369e6e1f5b0a123",
+      "localStatus": "Archived in EMS_NOTION_LEGACY_ARCHIVE.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS"
+    },
+    {
+      "kind": "draft-container-page",
+      "id": "3444e350-008b-8006-a9ff-e72ebc18f8f1",
+      "titleProperty": "title",
+      "title": "Draft",
+      "url": "https://www.notion.so/3444e350008b8006a9ffe72ebc18f8f1",
+      "localStatus": "Archived in EMS_NOTION_LEGACY_ARCHIVE.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### Draft"
+    },
+    {
+      "kind": "draft-page",
+      "id": "2f09376a-5081-4af2-b2d9-e8b0b1df5e9c",
+      "titleProperty": "title",
+      "title": "Extension Memory Saver (EMS) Draft",
+      "url": "https://www.notion.so/2f09376a50814af2b2d9e8b0b1df5e9c",
+      "localStatus": "Superseded by docs/EMS_MVP_SPEC.md, docs/EMS_MEASUREMENT.md, and docs/ROADMAP_REVIEW_2026-04-17.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### Extension Memory Saver (EMS) Draft"
+    },
+    {
+      "kind": "handoff-page",
+      "id": "3454e350-008b-809e-9110-ded562223e88",
+      "titleProperty": "title",
+      "title": "작업 이어서 - EMS",
+      "url": "https://www.notion.so/3454e350008b809e9110ded562223e88",
+      "localStatus": "Superseded by HANDOFF.md, docs/FOLDER_MOVE_HANDOFF.md, docs/NEW_THREAD_PROMPT.md, and this archive",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### 작업 이어서 - EMS"
+    },
+    {
+      "kind": "roadmap-project",
+      "id": "3444e350-008b-81f8-92d4-cb1c2895b75e",
+      "titleProperty": "Project",
+      "title": "EMS - Chromium Extension Control Panel",
+      "url": "https://www.notion.so/3444e350008b81f892d4cb1c2895b75e",
+      "localStatus": "Superseded by docs/ROADMAP_REVIEW_2026-04-17.md and docs/STORE_RELEASE_PREP.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS - Chromium Extension Control Panel"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-816b-8ca1-e7f1d3e201aa",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 0 - API Feasibility Spike",
+      "url": "https://www.notion.so/3444e350008b816b8ca1e7f1d3e201aa",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 0 - API Feasibility Spike"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-813e-83f1-c7aeaf4d33c2",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 1 - Inventory UI MVP",
+      "url": "https://www.notion.so/3444e350008b813e83f1c7aeaf4d33c2",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 1 - Inventory UI MVP"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-81a8-97cb-dbbdf594efcf",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 2 - Toggle and Restore",
+      "url": "https://www.notion.so/3444e350008b81a897cbdbbdf594efcf",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 2 - Toggle and Restore"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-813a-9353-f42be672efb0",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 3 - Presets",
+      "url": "https://www.notion.so/3444e350008b813a9353f42be672efb0",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 3 - Presets"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-811d-a894-c3ac320e69f0",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 4 - Validation",
+      "url": "https://www.notion.so/3444e350008b811da894c3ac320e69f0",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 4 - Validation"
+    },
+    {
+      "kind": "roadmap-stage",
+      "id": "3444e350-008b-813f-b13c-dc82b52240f9",
+      "titleProperty": "Stage",
+      "title": "EMS Stage 5 - Advanced Measurement R&D",
+      "url": "https://www.notion.so/3444e350008b813fb13cdc82b52240f9",
+      "localStatus": "Archived as legacy roadmap stage",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Stage 5 - Advanced Measurement R&D"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-81f8-b6b4-ce5fb443bb8a",
+      "titleProperty": "Task",
+      "title": "EMS capability matrix 작성",
+      "url": "https://www.notion.so/3444e350008b81f8b6b4ce5fb443bb8a",
+      "localStatus": "Archived as legacy todo",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS capability matrix 작성"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-8182-9a22-f3a963ddc0f5",
+      "titleProperty": "Task",
+      "title": "EMS Dev/Canary 측정 경로 조사",
+      "url": "https://www.notion.so/3444e350008b81829a22f3a963ddc0f5",
+      "localStatus": "Archived as legacy todo",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Dev/Canary 측정 경로 조사"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-81e4-a2f0-c90ae949db9d",
+      "titleProperty": "Task",
+      "title": "EMS Windows OS-level 측정 워크플로 설계",
+      "url": "https://www.notion.so/3444e350008b81e4a2f0c90ae949db9d",
+      "localStatus": "Archived as legacy todo; current implementation lives in tools/ems-measure.mjs and docs/EMS_MEASUREMENT.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Windows OS-level 측정 워크플로 설계"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-8161-a994-c2a6d8cd691c",
+      "titleProperty": "Task",
+      "title": "EMS Lite MVP 범위 고정",
+      "url": "https://www.notion.so/3444e350008b8161a994c2a6d8cd691c",
+      "localStatus": "Archived as legacy todo; current product stance lives in README.md and docs/EMS_MVP_SPEC.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Lite MVP 범위 고정"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-8147-a963-dcd158b1d5cb",
+      "titleProperty": "Task",
+      "title": "EMS Inventory UI 초안 설계",
+      "url": "https://www.notion.so/3444e350008b8147a963dcd158b1d5cb",
+      "localStatus": "Archived as legacy todo; current implementation lives in ems-extension/",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Inventory UI 초안 설계"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-8177-919b-ea20198ec6f8",
+      "titleProperty": "Task",
+      "title": "EMS Snapshot/Restore 데이터 모델 설계",
+      "url": "https://www.notion.so/3444e350008b8177919bea20198ec6f8",
+      "localStatus": "Archived as legacy todo; current behavior covered by popup and e2e tests",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS Snapshot/Restore 데이터 모델 설계"
+    },
+    {
+      "kind": "todo",
+      "id": "3444e350-008b-8168-89d1-d68376438c41",
+      "titleProperty": "Task",
+      "title": "EMS 검증 시나리오 및 로그 포맷 작성",
+      "url": "https://www.notion.so/3444e350008b816889d1d68376438c41",
+      "localStatus": "Archived as legacy todo; current verification lives in tests/e2e and docs/TEST_PROFILE_SCENARIO.md",
+      "prefixPlanned": false,
+      "prefixApplied": true,
+      "legacyTitle": "#### EMS 검증 시나리오 및 로그 포맷 작성"
+    }
+  ],
+  "prefixAppliedAt": "2026-05-06T16:55:00+09:00"
+}

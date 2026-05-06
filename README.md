@@ -26,6 +26,7 @@ Windows-first measurement harness and extension MVP for Chromium extension memor
 - `docs/FOLDER_MOVE_HANDOFF.md`: checklist for moving this repo to a new folder or machine
 - `docs/NEW_THREAD_PROMPT.md`: ready-to-paste prompt for starting a new Codex thread
 - `docs/STORE_RELEASE_PREP.md`: Chrome Web Store release checklist, draft listing copy, and package instructions
+- `docs/notion-legacy/`: migrated EMS Notion planning archive and legacy-marking inventory
 - `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
 - `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
