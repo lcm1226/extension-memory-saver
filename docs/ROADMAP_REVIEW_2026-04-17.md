@@ -55,6 +55,7 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
 - popup import/rendering now supports `memoryEstimates` with confidence and attribution metadata
 - `live-estimates` scopes Windows Chrome processes to the provided probe profile when possible
 - `live-estimates` adds low-confidence manifest site-match estimates for newly installed all-sites/site-specific extensions when direct targets are not observed
+- added Store Release prep baseline: packaged icons, store-ready manifest metadata, release ZIP builder, listing copy draft, and permission/privacy rationale
 
 ### Partially done
 
@@ -104,11 +105,10 @@ The remaining work is no longer about basic feasibility. It is mostly about clos
   - clearer separation between "saved setup changed nothing" and "Chrome refused part of the request"
   - more explicit treatment of tabs that should be inventory-only, not actionable
 - Store Release final prep
-  - packaged icons and store-ready metadata
-  - Chrome Web Store listing copy, screenshots, permission/privacy explanation, and package/ZIP checklist
-  - release UI polish for layout density, section sizing, and normal-user readability
-  - remaining UX improvements such as clearer saved-profile controls and additional release polish beyond the current search/filter baseline
-  - non-technical docs that explain browser-wide actions, benchmark-backed memory estimates, and profile-inventory import without developer assumptions
+  - done: packaged icons, store-ready manifest metadata, release ZIP builder, draft listing copy, permission/privacy explanation, and package checklist
+  - remaining: Chrome Web Store screenshots, optional promo tiles, dashboard submission review, and Korean/English localization decision
+  - remaining: one final release UI polish pass only if screenshot review exposes normal-user readability problems
+  - remaining: non-technical docs can be expanded after the listing copy is finalized
 
 ## Recommended next priorities
 
@@ -125,11 +125,11 @@ Close the remaining MVP-spec gaps:
 Store Release final prep:
 
 - preserve and maintain the current popup verification breadth as behavior changes
-- add packaged icons and store-ready manifest metadata
-- write Chrome Web Store listing copy, screenshots, and permission/privacy explanation
-- do one deliberate release UI polish pass for normal-user readability
-- add user-facing docs for the benchmark-backed control model
-- consider remaining UX improvements such as clearer saved-profile controls and additional release polish beyond the current search/filter baseline
+- use `npm run package:extension` to verify the release ZIP whenever release-facing files change
+- capture Chrome Web Store screenshots from the dedicated test profile
+- create optional promo tiles only if the first submission needs them
+- review final dashboard copy, permission/privacy text, and localization choice before submission
+- do one deliberate release UI polish pass only if screenshot review shows readability problems
 
 ### Priority 3
 
@@ -145,5 +145,5 @@ Behavior work should stay ahead of UI polish.
 The next concrete implementation step should be:
 
 1. keep the lightweight profile-inventory export/import flow unless manual use shows it is still too clunky
-2. execute Store Release final prep once behavior work stops moving
+2. finish the remaining Store Release manual assets and dashboard review now that packaged icons/metadata/ZIP tooling exist
 3. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring

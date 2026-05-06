@@ -1,6 +1,6 @@
 # EMS Memory Probe
 
-Windows-first measurement harness for Chromium extension memory experiments.
+Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
 
 ## Current scope
 
@@ -16,6 +16,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `tools/ems-measure.mjs`: snapshot, profile inventory, and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
 - `tools/Export-EMSProfileInventory.ps1`: lightweight wrapper that writes popup-importable profile inventory JSON
+- `tools/Build-EMSReleasePackage.ps1`: release ZIP builder for the unpacked extension package
 - `docs/HOW_TO_USE.ko.md`: Korean development usage guide
 - `docs/HOW_TO_USE.en.md`: English development usage guide
 - `docs/EMS_MEASUREMENT.md`: operating notes and limitations
@@ -24,6 +25,7 @@ Windows-first measurement harness for Chromium extension memory experiments.
 - `docs/ROADMAP_REVIEW_2026-04-17.md`: implemented vs missing roadmap audit
 - `docs/FOLDER_MOVE_HANDOFF.md`: checklist for moving this repo to a new folder or machine
 - `docs/NEW_THREAD_PROMPT.md`: ready-to-paste prompt for starting a new Codex thread
+- `docs/STORE_RELEASE_PREP.md`: Chrome Web Store release checklist, draft listing copy, and package instructions
 - `docs/example-benchmark-labels.json`: sample benchmark import payload for popup testing
 - `docs/generated-youtube-benchmark-labels.json`: probe-generated import payload from the validated YouTube scenario
 - `docs/youtube-benchmark-scenarios.json`: scenario-spec input for multi-run catalog generation
@@ -61,7 +63,9 @@ Stable Chrome cannot yet support:
 10. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
 11. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
 12. Use `npm run test:e2e` for the current Playwright popup smoke test.
-13. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
+13. Use `npm run package:extension` to create `dist\extension-memory-saver-0.2.0.zip` for Chrome Web Store upload testing.
+14. Use `docs/STORE_RELEASE_PREP.md` for listing copy, permission/privacy rationale, screenshot requirements, and the remaining manual release checklist.
+15. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
 ## Current MVP shell
 
@@ -94,12 +98,13 @@ The extension shell currently includes:
 - less-manual scenario specs for one-target removal runs
 - basic Playwright popup verification with mock extensions
 - test-only management fixture support for protected/unavailable scenarios
+- packaged icons, store-ready manifest metadata, release checklist, and a release ZIP builder
 
 It does not yet include:
 
 - in-extension automatic memory access without the external probe workflow
 - automatic runtime access to `optional_host_permissions` or `content_scripts.matches` without imported profile inventory
-- packaged icons or store-ready metadata
+- final Chrome Web Store screenshots, optional promo tiles, and dashboard submission review
 
 ## Local test
 
@@ -121,6 +126,7 @@ See `docs/HOW_TO_USE.ko.md` or `docs/HOW_TO_USE.en.md` for the shorter user-faci
 1. Install repo dependencies with `npm install`
 2. Install Playwright Chromium with `npx playwright install chromium`
 3. Run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` so it uses the repo-local Playwright browser
+4. Run `npm run package:extension` when release package output needs to be verified
 
 Current automated coverage:
 
@@ -149,5 +155,6 @@ The default popup shortcut is still `Ctrl+Shift+E`.
 ## User actions for cloud handoff
 
 1. Put this repo on a remote Git host if you want Cloud Codex to resume with full history.
-2. If a remote is not available, carry `HANDOFF.md` and `docs/EXPERIMENT_SUMMARY.md` into the next session.
+2. If a remote is not available, carry `HANDOFF.md`, `docs/ROADMAP_REVIEW_2026-04-17.md`, and `docs/STORE_RELEASE_PREP.md` into the next session.
 3. If you want more measurement runs, prepare one or two target extensions you care about most so the next experiments stay narrow.
+4. If you want to publish, capture store screenshots from the dedicated test profile and review `docs/STORE_RELEASE_PREP.md` before submitting.

@@ -788,10 +788,11 @@ async function findEmsServiceWorkerSession(cdp, emsExtensionId) {
     try {
       const manifestResult = await cdp.send(
         "Runtime.evaluate",
-        { expression: "chrome.runtime.getManifest().name", returnByValue: true },
+        { expression: "chrome.runtime.getManifest()", returnByValue: true },
         sessionId
       );
-      if (manifestResult.result?.value === "EMS MVP") {
+      const manifest = manifestResult.result?.value ?? {};
+      if (manifest.name === "Extension Memory Saver" || manifest.short_name === "EMS" || manifest.name === "EMS MVP") {
         return { sessionId, extensionId: extractExtensionIdFromUrl(target.url) };
       }
     } catch {
@@ -809,7 +810,7 @@ async function applyLiveEstimatesToEms({ host, port, emsExtensionId }, payload) 
   try {
     const session = await findEmsServiceWorkerSession(cdp, emsExtensionId);
     if (!session) {
-      throw new Error("Could not find the EMS MVP service worker. Open or reload the EMS popup once, then rerun with --apply-to-ems.");
+      throw new Error("Could not find the Extension Memory Saver service worker. Open or reload the EMS popup once, then rerun with --apply-to-ems.");
     }
 
     const expression = `(() => new Promise((resolve, reject) => {

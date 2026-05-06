@@ -41,6 +41,19 @@ async function openPopupPage(context, extensionId, options) {
   return page;
 }
 
+async function setExtensionStorage(page, values) {
+  await page.evaluate((storageValues) => new Promise((resolve, reject) => {
+    chrome.storage.local.set(storageValues, () => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve();
+    });
+  }), values);
+}
+
 test.describe("EMS popup", () => {
   test("covers inventory, save/apply/restore/clear flow, import/reset, and trust copy", async () => {
     test.setTimeout(90_000);
@@ -351,19 +364,18 @@ test.describe("EMS popup", () => {
         }
       );
 
-      await page.evaluate(async () => {
-        await chrome.storage.local.set({
-          siteProfiles: {
-            "https://www.youtube.com": {
-              origin: "https://www.youtube.com",
-              allowedExtensionIds: [
-                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-                "cccccccccccccccccccccccccccccccc"
-              ],
-              updatedAt: new Date().toISOString()
-            }
+      await expect(page.locator("#metric-installed")).toHaveText("4");
+      await setExtensionStorage(page, {
+        siteProfiles: {
+          "https://www.youtube.com": {
+            origin: "https://www.youtube.com",
+            allowedExtensionIds: [
+              "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cccccccccccccccccccccccccccccccc"
+            ],
+            updatedAt: new Date().toISOString()
           }
-        });
+        }
       });
 
       await page.reload({ waitUntil: "domcontentloaded" });

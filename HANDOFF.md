@@ -14,6 +14,7 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 - Chrome launcher for probe profiles
 - Profile-based extension metadata resolution
 - Chrome extension MVP shell in `ems-extension/`
+- Store-release manifest metadata, packaged icons, release checklist, and release ZIP builder
 
 ## Key local files
 
@@ -24,7 +25,9 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 - `tools/ems-measure.mjs`
 - `tools/Start-EMSProbeChrome.ps1`
 - `tools/Export-EMSProfileInventory.ps1`
+- `tools/Build-EMSReleasePackage.ps1`
 - `docs/EMS_MEASUREMENT.md`
+- `docs/STORE_RELEASE_PREP.md`
 
 ## What has been learned
 
@@ -140,7 +143,7 @@ Operational lesson:
 1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
 2. keep `live-estimates` as the practical near-live path for newly installed extensions, while preserving confidence labels and exact-ownership warnings
 3. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
-4. execute Store Release final prep: packaged icons, store-ready metadata, Web Store listing copy, permission/privacy explanation, release UI polish, normal-user docs, and optional UX improvements beyond the current search/filter baseline
+4. finish Store Release final prep: Chrome Web Store screenshots, optional promo tiles, final dashboard wording/localization review, and one last release UI polish pass if needed
 5. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring
 
 ## Notion context
@@ -187,3 +190,4 @@ Before reporting that filesystem cleanup or path changes are complete, run verif
 1. Choose whether to use GitHub or a manual folder/upload handoff.
 2. If using GitHub, create an empty remote repository and provide the URL, or push it yourself.
 3. If staying local for now, identify the first 1-3 extensions you actually want benchmarked so the next experiments can use a minimal probe profile.
+4. If preparing Chrome Web Store submission, capture screenshots from the dedicated test profile and review `docs/STORE_RELEASE_PREP.md`.

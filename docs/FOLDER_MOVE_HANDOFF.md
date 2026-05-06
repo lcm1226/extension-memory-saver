@@ -49,12 +49,13 @@ npm run test:e2e
 1. `HANDOFF.md`
 2. `docs/ROADMAP_REVIEW_2026-04-17.md`
 3. `docs/EMS_MEASUREMENT.md`
-4. `docs/NEW_THREAD_PROMPT.md`
+4. `docs/STORE_RELEASE_PREP.md`
+5. `docs/NEW_THREAD_PROMPT.md`
 
 ## Current invariants
 
 - stable Chrome still does not expose reliable live per-extension total memory
-- EMS is a benchmark-backed control panel, not a live memory meter
+- EMS can import near-live external probe estimates, but it is not an exact in-extension memory ownership meter
 - Playwright is the first verification gate before manual Chrome checks
 - the repo should avoid depending on any old absolute workspace path
 
@@ -64,6 +65,7 @@ npm run test:e2e
 node --check .\ems-extension\popup.js
 node --check .\tests\e2e\popup.spec.js
 npm run test:e2e
+npm run package:extension
 ```
 
 ## If you continue in a new Codex thread
