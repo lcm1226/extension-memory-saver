@@ -56,7 +56,7 @@
                 <StackPanel>
                     <TextBlock Text="Debug-enabled browser/profile" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <ComboBox x:Name="BrowserCombo" ItemsSource="{Binding BrowserItems}" DisplayMemberPath="DisplayName" SelectionChanged="BrowserCombo_SelectionChanged" />
-                    <TextBlock x:Name="BrowserHelpText" Text="Launch or select a Chrome instance with --remote-debugging-port. The Launch Probe Chrome button opens a safe empty probe profile; selecting a browser starts clone-based A/B measurement automatically." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock x:Name="BrowserHelpText" Text="Launch or select a Chrome instance with --remote-debugging-port. The Launch Probe Chrome button opens a safe empty probe profile; selecting a browser starts clone-based A/B measurement automatically. During measurement, temporary clone Chrome windows may open and close; this is expected." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,10,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16,0,0,0">
                     <Button Content="Launch Probe Chrome" Click="LaunchProbeChrome_Click" />
@@ -99,6 +99,6 @@
             </DataGrid>
         </Border>
 
-        <TextBlock Grid.Row="4" Text="Safety: EMS Desktop clones the selected profile into .tmp/desktop-runs before disabling extensions. It does not mutate the live selected profile. Values are approximate A/B deltas, not exact memory ownership." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,14,0,0" />
+        <TextBlock Grid.Row="4" Text="Safety: EMS Desktop clones the selected profile into .tmp/desktop-runs before disabling extensions. It does not mutate the live selected profile. Temporary clone Chrome windows can open/close during a run. Values are approximate A/B deltas, not exact memory ownership." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,14,0,0" />
     </Grid>
 </Window>

@@ -37,6 +37,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 4. EMS Desktop에서 `Refresh Browsers`를 누릅니다.
 5. 프로필을 선택하면 clone 기반 A/B 측정이 자동으로 시작됩니다.
 
+During measurement, temporary clone Chrome windows can open and close several times. This is expected because EMS compares one baseline run with one per-extension run; the live probe profile is not modified.
+
 ## 명령줄로 프로브 Chrome 실행
 
 ```powershell

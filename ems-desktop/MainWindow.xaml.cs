@@ -198,7 +198,7 @@ public partial class MainWindow : Window
         switch (eventName)
         {
             case "start":
-                StatusText.Text = "Cloning selected profile for safe measurement...";
+                StatusText.Text = "Cloning selected profile for safe measurement. Temporary Chrome windows may open/close.";
                 break;
             case "candidates":
                 int count = root.GetProperty("count").GetInt32();
