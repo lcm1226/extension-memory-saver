@@ -12,6 +12,7 @@ Useful commands:
 npm run desktop:list
 npm run desktop:build
 npm run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 

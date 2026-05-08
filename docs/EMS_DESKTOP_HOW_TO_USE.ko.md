@@ -10,8 +10,23 @@ EMS Desktop은 Chrome 확장 프로그램별 메모리 "정확한 소유량"을 
 
 ## 빠른 실행
 
+repo 폴더 안에서 실행:
+
 ```powershell
+cd "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe"
 npm run desktop:run
+```
+
+어느 위치에서든 실행:
+
+```powershell
+npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
+```
+
+또는 helper 스크립트:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
 앱에서 할 일:
