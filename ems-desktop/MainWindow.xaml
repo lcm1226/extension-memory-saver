@@ -1,0 +1,103 @@
+<Window x:Class="EmsDesktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EMS Desktop" Height="780" Width="1120" MinHeight="680" MinWidth="980"
+        Background="#101214" Foreground="#F5F1E8" Loaded="Window_Loaded">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#1B1D20" />
+        <SolidColorBrush x:Key="PanelBorderBrush" Color="#34383D" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#F2B84B" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#F5F1E8" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Background" Value="#25282C" />
+            <Setter Property="Foreground" Value="#F5F1E8" />
+            <Setter Property="BorderBrush" Value="#3C4147" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Background" Value="#25282C" />
+            <Setter Property="Foreground" Value="#111111" />
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#151719" />
+            <Setter Property="Foreground" Value="#F5F1E8" />
+            <Setter Property="RowBackground" Value="#1B1D20" />
+            <Setter Property="AlternatingRowBackground" Value="#202329" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="BorderBrush" Value="#34383D" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,18">
+            <TextBlock Text="EMS Desktop" FontSize="34" FontWeight="Bold" />
+            <TextBlock Text="Approximate A/B measured memory impact for the focused Chromium page." Foreground="#C9C3B6" FontSize="15" Margin="0,6,0,0" />
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Debug-enabled browser/profile" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <ComboBox x:Name="BrowserCombo" ItemsSource="{Binding BrowserItems}" DisplayMemberPath="DisplayName" SelectionChanged="BrowserCombo_SelectionChanged" />
+                    <TextBlock x:Name="BrowserHelpText" Text="Launch Chrome with --remote-debugging-port to make it measurable. Selecting a browser starts clone-based A/B measurement automatically." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,10,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16,0,0,0">
+                    <Button Content="Refresh Browsers" Click="RefreshBrowsers_Click" />
+                    <Button Content="Cancel Run" Click="CancelRun_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18" Margin="0,0,12,0">
+                <StackPanel>
+                    <TextBlock Text="Active page" Foreground="#F2B84B" FontWeight="SemiBold" />
+                    <TextBlock x:Name="ActiveTitleText" Text="No active page selected" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock x:Name="ActiveUrlText" Text="-" Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18">
+                <StackPanel>
+                    <TextBlock Text="Run status" Foreground="#F2B84B" FontWeight="SemiBold" />
+                    <TextBlock x:Name="StatusText" Text="Idle" FontSize="16" TextWrapping="Wrap" Margin="0,8,0,10" />
+                    <ProgressBar x:Name="RunProgress" Height="10" IsIndeterminate="False" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14">
+            <DataGrid x:Name="ResultsGrid" ItemsSource="{Binding ResultItems}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" AlternationCount="2">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Extension" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Approx. impact" Binding="{Binding EstimatedPrivateDrop}" Width="140" />
+                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence}" Width="110" />
+                    <DataGridTextColumn Header="Targets" Binding="{Binding TargetChange}" Width="90" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="3*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <TextBlock Grid.Row="4" Text="Safety: EMS Desktop clones the selected profile into .tmp/desktop-runs before disabling extensions. It does not mutate the live selected profile. Values are approximate A/B deltas, not exact memory ownership." Foreground="#C9C3B6" TextWrapping="Wrap" Margin="0,14,0,0" />
+    </Grid>
+</Window>

@@ -1,5 +1,21 @@
 # EMS Memory Probe
 
+## EMS Desktop Pivot
+
+The active product direction is now the Windows desktop MVP documented in `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`.
+
+The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles and A/B measured deltas so it can show rough MB impact without mutating the live selected profile.
+
+Useful commands:
+
+```powershell
+npm run desktop:list
+npm run desktop:build
+npm run desktop:run
+```
+
+A measurable browser must be launched with `--remote-debugging-port`. The desktop app lists those debug-enabled browser/profile instances and starts clone-based measurement after selection.
+
 Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
 
 ## Current scope

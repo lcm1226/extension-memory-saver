@@ -1,7 +1,7 @@
 {
   "name": "ems-memory-probe",
   "version": "1.0.0",
-  "description": "Windows-first Chromium extension memory probe and Extension Memory Saver MVP.",
+  "description": "Windows-first Chromium extension memory probe and EMS Desktop MVP.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -9,7 +9,10 @@
   "scripts": {
     "test": "echo \"Use npm run test:e2e\" && exit 1",
     "test:e2e": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:PLAYWRIGHT_BROWSERS_PATH='0'; npx playwright test --reporter=line --workers=1\"",
-    "package:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/Build-EMSReleasePackage.ps1"
+    "package:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/Build-EMSReleasePackage.ps1",
+    "desktop:list": "node .\\tools\\ems-desktop-engine.mjs list-browsers --json",
+    "desktop:build": "dotnet build .\\ems-desktop\\EmsDesktop.csproj",
+    "desktop:run": "dotnet run --project .\\ems-desktop\\EmsDesktop.csproj"
   },
   "repository": {
     "type": "git",

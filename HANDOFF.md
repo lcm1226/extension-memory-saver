@@ -1,5 +1,25 @@
 # Handoff
 
+
+## Desktop pivot checkpoint
+
+The active product direction has pivoted to `EMS Desktop`, a Windows WPF app that wraps the existing measurement harness and runs clone-based A/B measured-delta calibration.
+
+Source-of-truth docs:
+
+- `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`
+- `HANDOFF.md`
+- `docs/EMS_MEASUREMENT.md`
+
+New files/commands:
+
+- `tools/ems-desktop-engine.mjs`: lists debug-enabled Chromium browsers and runs automatic clone-based A/B calibration.
+- `ems-desktop/`: .NET 8 WPF desktop app.
+- `npm run desktop:list`: smoke-check measurable browser discovery.
+- `npm run desktop:build`: build the WPF app.
+- `npm run desktop:run`: launch the WPF app.
+
+Important invariant: calibration must clone the selected profile into `.tmp/desktop-runs/` and must not mutate the live selected profile.
 ## What this project is
 
 `EMS Memory Probe` is a research harness for measuring Chromium extension memory under Windows.

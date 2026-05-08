@@ -1,5 +1,18 @@
 # EMS Roadmap Review (2026-04-17)
 
+## Desktop Pivot Supersession
+
+As of 2026-05-08, the active product direction is `EMS Desktop`, documented in `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`.
+
+This roadmap remains useful as the extension MVP and Chrome Web Store release audit, but new measurement-product work should prioritize the desktop app:
+
+- clone-based A/B measured deltas instead of popup-imported benchmark JSON
+- debug-enabled browser/profile discovery
+- automatic sequential measurement after browser/profile selection
+- GitHub/repo docs as source of truth, not Notion
+
+The extension MVP is preserved as a validated artifact under `ems-extension/`.
+
 ## Summary
 
 The popup MVP is now functionally useful.

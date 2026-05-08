@@ -10,3 +10,15 @@ node_modules/
 playwright-report/
 test-results/
 dist/
+.tmp/
+.env
+.env.*
+!.env.example
+*.user
+*.suo
+*.pfx
+*.snk
+*.key
+*.pem
+bin/
+obj/
