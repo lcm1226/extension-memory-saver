@@ -12,9 +12,10 @@ Useful commands:
 npm run desktop:list
 npm run desktop:build
 npm run desktop:run
+.\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-A measurable browser must be launched with `--remote-debugging-port`. The desktop app lists those debug-enabled browser/profile instances and starts clone-based measurement after selection.
+A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`. The desktop app lists those debug-enabled browser/profile instances and starts clone-based measurement after selection.
 
 Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
 

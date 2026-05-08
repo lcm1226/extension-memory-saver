@@ -35,6 +35,28 @@ public partial class MainWindow : Window
         await RefreshBrowsersAsync(autoStart: true);
     }
 
+    private async void LaunchProbeChrome_Click(object sender, RoutedEventArgs e)
+    {
+        _runCancellation?.Cancel();
+        RunProgress.IsIndeterminate = true;
+        StatusText.Text = "Launching debug-enabled probe Chrome...";
+        try
+        {
+            string scriptPath = Path.Combine(_repoRoot, "tools", "Start-EMSDesktopProbeChrome.ps1");
+            string url = string.IsNullOrWhiteSpace(ActiveUrlText.Text) || ActiveUrlText.Text == "-" ? "https://www.youtube.com/" : ActiveUrlText.Text;
+            await RunPowerShellCaptureAsync("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, "-Url", url);
+            StatusText.Text = "Probe Chrome launched. Refreshing browser list...";
+            await RefreshBrowsersAsync(autoStart: true);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = ex.Message;
+        }
+        finally
+        {
+            RunProgress.IsIndeterminate = false;
+        }
+    }
     private void CancelRun_Click(object sender, RoutedEventArgs e)
     {
         _runCancellation?.Cancel();
@@ -215,6 +237,31 @@ public partial class MainWindow : Window
         return stdout;
     }
 
+    private async Task<string> RunPowerShellCaptureAsync(params string[] args)
+    {
+        using Process process = new()
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = string.Join(" ", args.Select(Quote)),
+                WorkingDirectory = _repoRoot,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }
+        };
+        process.Start();
+        string stdout = await process.StandardOutput.ReadToEndAsync();
+        string stderr = await process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? stdout : stderr);
+        }
+        return stdout;
+    }
     private Process CreateNodeProcess(params string[] args)
     {
         string allArguments = string.Join(" ", new[] { Quote(_enginePath) }.Concat(args.Select(Quote)));

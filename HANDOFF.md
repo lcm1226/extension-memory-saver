@@ -14,6 +14,8 @@ Source-of-truth docs:
 New files/commands:
 
 - `tools/ems-desktop-engine.mjs`: lists debug-enabled Chromium browsers and runs automatic clone-based A/B calibration.
+- `tools/Start-EMSDesktopProbeChrome.ps1`: launches a safe debug-enabled probe Chrome profile for desktop MVP testing.
+- `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`: Korean desktop usage guide.
 - `ems-desktop/`: .NET 8 WPF desktop app.
 - `npm run desktop:list`: smoke-check measurable browser discovery.
 - `npm run desktop:build`: build the WPF app.
