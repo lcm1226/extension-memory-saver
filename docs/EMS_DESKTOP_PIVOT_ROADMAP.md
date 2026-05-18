@@ -117,3 +117,11 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 ## Recommended Next Implementation Step
 
 Build Stage 1 and Stage 2 MVP in one pass, then verify on a dedicated test/probe Chrome profile before using personal browsing profiles.
+
+## Latest UX hardening
+
+- Portable package starts from root `EMS Desktop.exe`; CMD remains only as a compatibility launcher.
+- Desktop UI now shows a three-step onboarding flow before browser selection.
+- Clone-safety wording is visible near the top and above results.
+- Result rows use colored tags for impact, source, worker mode, and confidence.
+- Optional `Median x3` repeats each extension A/B measurement three times and displays sample spread.

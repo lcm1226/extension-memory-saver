@@ -4,7 +4,7 @@
 
 The active product direction is now the Windows desktop MVP documented in `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`.
 
-The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles, cache-first display, headless-first A/B measured deltas, and off-screen fallback so it can show rough MB impact without mutating the live selected profile.
+The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles, cache-first display, optional median x3 repeated runs, headless-first A/B measured deltas, and off-screen fallback so it can show rough MB impact without mutating the live selected profile.
 
 Useful commands:
 
@@ -31,10 +31,10 @@ npm run desktop:package
 
 The output is ignored by Git and written to:
 
-- `dist\EMS-Desktop-Portable\Start EMS Desktop.cmd`
+- `dist\\EMS-Desktop-Portable\\EMS Desktop.exe`
 - `dist\EMS-Desktop-Portable.zip`
 
-The portable package includes the self-contained WPF app, the desktop measurement tools, usage docs, and a local `runtime\node\node.exe` so the app does not require a separate Node install for normal use. It still requires an installed Chrome/Chromium browser.
+The portable package includes a root-level `EMS Desktop.exe`, the desktop measurement tools, usage docs, and a local `runtime\\node\\node.exe` so the app does not require a separate Node install for normal use. `Start EMS Desktop.cmd` remains as a compatibility launcher. It still requires an installed Chrome/Chromium browser.
 
 ## Current scope
 

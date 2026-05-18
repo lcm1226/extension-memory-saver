@@ -21,13 +21,13 @@ New files/commands:
 - `docs/EMS_DESKTOP_HOW_TO_USE.en.md`: English desktop usage guide.
 - `ems-desktop/`: .NET 8 WPF desktop app.
 
-Latest desktop UX direction: show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include `cacheStatus` and `measurementMode`.
+Latest desktop UX direction: show a three-step onboarding flow, keep clone-safety wording visible, show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include colored tags for `cacheStatus`, `measurementMode`, confidence, and optional median x3 sample metadata.
 
 Figma draft: https://www.figma.com/design/NVA8Y0PeY6UEm6PRxPfCAK
 
 - `npm run desktop:list`: smoke-check measurable browser discovery.
 - `npm run desktop:build`: build the WPF app.
-- `npm run desktop:package`: build `dist\EMS-Desktop-Portable` and `dist\EMS-Desktop-Portable.zip`.
+- `npm run desktop:package`: build `dist\\EMS-Desktop-Portable` with root `EMS Desktop.exe` and `dist\\EMS-Desktop-Portable.zip`.
 - `npm run desktop:run`: launch the WPF app.
 
 Important invariant: calibration must clone the selected profile into `.tmp/desktop-runs/` and must not mutate the live selected profile.
@@ -174,7 +174,7 @@ Operational lesson:
 
 - EMS Desktop is the active product path. The extension MVP remains a validated artifact, not the main measurement UX.
 - `calibrate-auto` is hardened around cache-first display, background refresh, headless worker mode, and off-screen fallback.
-- Verified on 2026-05-18 against the probe Chrome profile: headless worker, cached-results event, and forced off-screen worker all completed for a one-extension YouTube run. Portable packaging is available through `npm run desktop:package`.
+- Verified on 2026-05-18 against the probe Chrome profile: headless worker, cached-results event, and forced off-screen worker all completed for a one-extension YouTube run. Portable packaging is available through `npm run desktop:package`; the package now starts from root `EMS Desktop.exe` with CMD kept only as a compatibility launcher.
 
 
 ## Current next priorities

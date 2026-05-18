@@ -32,7 +32,7 @@ $repoRoot = Resolve-RepoRoot
 $distRoot = Join-Path $repoRoot "dist"
 $portableRoot = Join-Path $distRoot "EMS-Desktop-Portable"
 $projectPath = Join-Path $repoRoot "ems-desktop\EmsDesktop.csproj"
-$publishRoot = Join-Path $portableRoot "app"
+$publishRoot = $portableRoot
 
 Assert-UnderPath -Child $portableRoot -Parent $repoRoot
 Assert-UnderPath -Child $publishRoot -Parent $repoRoot
@@ -50,6 +50,16 @@ New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:EnableCompressionInSingleFile=true `
     -o $publishRoot
+
+$publishedExe = Join-Path $portableRoot "EmsDesktop.exe"
+$friendlyExe = Join-Path $portableRoot "EMS Desktop.exe"
+if (-not (Test-Path -LiteralPath $publishedExe)) {
+    throw "Published executable was not found: $publishedExe"
+}
+if (Test-Path -LiteralPath $friendlyExe) {
+    Remove-Item -LiteralPath $friendlyExe -Force
+}
+Move-Item -LiteralPath $publishedExe -Destination $friendlyExe
 
 $toolsRoot = Join-Path $portableRoot "tools"
 $docsRoot = Join-Path $portableRoot "docs"
@@ -77,23 +87,24 @@ foreach ($file in $docFiles) {
 $nodeExe = (Get-Command node.exe -ErrorAction Stop).Source
 Copy-Item -LiteralPath $nodeExe -Destination (Join-Path $nodeRoot "node.exe") -Force
 
-$cmd = @'
+$cmd = @"
 @echo off
 setlocal
-cd /d "%~dp0app"
-start "EMS Desktop" "%~dp0app\EmsDesktop.exe"
-'@
+cd /d "%~dp0"
+start "EMS Desktop" "%~dp0EMS Desktop.exe"
+"@
 Set-Content -LiteralPath (Join-Path $portableRoot "Start EMS Desktop.cmd") -Value $cmd -Encoding ASCII
 
-$readme = @'
+$readme = @"
 EMS Desktop Portable
 ====================
 
 Start:
-  Double-click "Start EMS Desktop.cmd".
+  Double-click "EMS Desktop.exe".
+  "Start EMS Desktop.cmd" is kept as a compatibility launcher.
 
 What is included:
-  app\EmsDesktop.exe
+  EMS Desktop.exe
   tools\ems-desktop-engine.mjs
   tools\ems-measure.mjs
   tools\Start-EMSDesktopProbeChrome.ps1
@@ -105,12 +116,13 @@ How to test:
   3. Install or enable the extensions you want in the probe Chrome profile.
   4. Open the target page in that probe Chrome.
   5. Click "Refresh Browsers" in EMS Desktop.
+  6. Optionally enable "Median x3" for slower but steadier results.
 
 Notes:
   EMS clones the selected probe profile before measuring.
   It does not mutate the live selected profile.
   Values are approximate A/B measured deltas, not exact memory ownership.
-'@
+"@
 Set-Content -LiteralPath (Join-Path $portableRoot "README-PORTABLE.txt") -Value $readme -Encoding UTF8
 
 if (-not $NoZip) {
@@ -122,4 +134,3 @@ if (-not $NoZip) {
 
 Write-Host "Portable build created: $portableRoot"
 if (-not $NoZip) { Write-Host "Portable zip created: $zipPath" }
-

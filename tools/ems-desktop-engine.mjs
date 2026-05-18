@@ -26,7 +26,7 @@ function repoRoot() {
 }
 
 function printHelp() {
-  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n`);
+  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--repeat-runs 1|3] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n`);
 }
 
 function parseArgs(argv) {
@@ -38,6 +38,7 @@ function parseArgs(argv) {
     else if (token === "--jsonl") options.jsonl = true;
     else if (token === "--browser-id") options.browserId = rest[++i];
     else if (token === "--max-extensions") options.maxExtensions = Number(rest[++i]);
+    else if (token === "--repeat-runs") options.repeatRuns = Number(rest[++i]);
     else if (token === "--settle-ms") options.settleMs = Number(rest[++i]);
     else if (token === "--base-port") options.basePort = Number(rest[++i]);
     else if (token === "--out") options.out = rest[++i];
@@ -576,6 +577,50 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
+
+function medianNumber(values) {
+  const sorted = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  const midpoint = Math.floor(sorted.length / 2);
+  if (sorted.length % 2) return sorted[midpoint];
+  return (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+}
+
+function summarizeRepeatedDeltas(deltas, extension, repeatRuns) {
+  const sampleEstimatedPrivateDropBytes = deltas.map((delta) => delta.estimatedPrivateDropBytes).filter((value) => Number.isFinite(value));
+  const medianEstimated = medianNumber(sampleEstimatedPrivateDropBytes);
+  const representative = deltas
+    .slice()
+    .sort((a, b) => Math.abs(a.estimatedPrivateDropBytes - medianEstimated) - Math.abs(b.estimatedPrivateDropBytes - medianEstimated))[0] ?? summarizeMeasuredDelta({ extensionSummaries: [] }, { extensionSummaries: [] }, extension);
+  const spreadBytes = sampleEstimatedPrivateDropBytes.length
+    ? Math.max(...sampleEstimatedPrivateDropBytes) - Math.min(...sampleEstimatedPrivateDropBytes)
+    : 0;
+  const contaminationById = new Map();
+  for (const contamination of deltas.flatMap((delta) => delta.contamination ?? [])) {
+    contaminationById.set(contamination.extensionId, contamination);
+  }
+  const confidence = deltas.some((delta) => delta.confidence === "low") ? "low" : representative.confidence;
+  const notes = deltas.length > 1
+    ? `Median of ${deltas.length}/${repeatRuns} A/B samples; sample spread ${formatBytes(spreadBytes)}. ${confidence === "low" ? "At least one sample had unrelated extension target-count changes." : "No unrelated extension target-count contamination was observed."}`
+    : representative.notes;
+
+  return {
+    ...representative,
+    estimatedPrivateDropBytes: medianEstimated,
+    totalPrivateDropBytes: medianNumber(deltas.map((delta) => delta.totalPrivateDropBytes)),
+    rendererPrivateDropBytes: medianNumber(deltas.map((delta) => delta.rendererPrivateDropBytes)),
+    extensionRendererPrivateDropBytes: medianNumber(deltas.map((delta) => delta.extensionRendererPrivateDropBytes)),
+    beforeTargets: Math.round(medianNumber(deltas.map((delta) => delta.beforeTargets))),
+    afterTargets: Math.round(medianNumber(deltas.map((delta) => delta.afterTargets))),
+    confidence,
+    contamination: [...contaminationById.values()],
+    repeatRuns,
+    sampleCount: deltas.length,
+    sampleEstimatedPrivateDropBytes,
+    spreadBytes,
+    notes
+  };
+}
 function normalizeCacheUrl(urlString) {
   try {
     const url = new URL(urlString);
@@ -590,14 +635,15 @@ function cacheFilePath(root) {
   return path.join(root, ".tmp", "desktop-cache", "measurements.json");
 }
 
-function measurementCacheKey(browser, extension) {
+function measurementCacheKey(browser, extension, repeatRuns = 1) {
   return stableId([
     browser.executablePath,
     browser.userDataDir,
     browser.profileDirectory,
     normalizeCacheUrl(browser.activeUrl),
     extension.extensionId,
-    extension.version
+    extension.version,
+    `repeat:${repeatRuns}`
   ]);
 }
 
@@ -616,10 +662,10 @@ async function saveMeasurementCache(root, cache) {
   await fs.writeFile(filePath, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
 }
 
-function cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs) {
+function cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs, repeatRuns) {
   const now = Date.now();
   return candidates.flatMap((extension) => {
-    const entry = cache.entries[measurementCacheKey(browser, extension)];
+    const entry = cache.entries[measurementCacheKey(browser, extension, repeatRuns)];
     if (!entry?.result || !entry.generatedAt) return [];
     const ageMs = now - Date.parse(entry.generatedAt);
     if (!Number.isFinite(ageMs) || ageMs > cacheTtlMs) return [];
@@ -631,9 +677,9 @@ function cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs) {
   });
 }
 
-async function writeResultsToCache(root, cache, browser, results) {
+async function writeResultsToCache(root, cache, browser, results, repeatRuns) {
   for (const result of results) {
-    cache.entries[measurementCacheKey(browser, result)] = {
+    cache.entries[measurementCacheKey(browser, result, repeatRuns)] = {
       generatedAt: result.generatedAt,
       targetUrl: normalizeCacheUrl(browser.activeUrl),
       result
@@ -649,6 +695,11 @@ function resolveRequestedMeasurementModes(options) {
   throw new Error(`Unknown measurement mode: ${requested}`);
 }
 
+
+function resolveRepeatRuns(options) {
+  const repeatRuns = Number.isFinite(options.repeatRuns) ? Math.trunc(options.repeatRuns) : 1;
+  return Math.min(Math.max(repeatRuns, 1), 5);
+}
 async function captureBaselineForModes({ modes, capture }) {
   const errors = [];
   for (const mode of modes) {
@@ -684,6 +735,7 @@ async function calibrateAuto(options) {
   if (!/^https?:\/\//.test(browser.activeUrl ?? "")) throw new Error("Selected browser active target is not a standard http(s) page.");
 
   const maxExtensions = Number.isFinite(options.maxExtensions) ? options.maxExtensions : DEFAULT_MAX_EXTENSIONS;
+  const repeatRuns = resolveRepeatRuns(options);
   const settleMs = Number.isFinite(options.settleMs) ? options.settleMs : DEFAULT_SETTLE_MS;
   const basePort = Number.isFinite(options.basePort) ? options.basePort : DEFAULT_BASE_PORT;
   const cacheTtlMs = Number.isFinite(options.cacheTtlMs) ? options.cacheTtlMs : DEFAULT_CACHE_TTL_MS;
@@ -695,85 +747,97 @@ async function calibrateAuto(options) {
   const snapshotsDir = path.join(runRoot, "snapshots");
   await fs.mkdir(snapshotsDir, { recursive: true });
 
-  emitJsonLine(options, { event: "start", browser, runRoot });
+  emitJsonLine(options, { event: "start", browser, runRoot, repeatRuns });
   await cloneUserDataForProbe(browser.userDataDir, browser.profileDirectory, baselineRoot);
   const installed = await collectInstalledExtensions(baselineProfileDir);
   const allCandidates = installed.filter((extension) => !extension.disabled && extensionMatchesTargetUrl(extension, browser.activeUrl));
   const candidates = allCandidates.slice(0, maxExtensions);
-  emitJsonLine(options, { event: "candidates", count: candidates.length, totalMatchingBeforeLimit: allCandidates.length, maxExtensions, candidates, measurementModes: requestedModes });
+  emitJsonLine(options, { event: "candidates", count: candidates.length, totalMatchingBeforeLimit: allCandidates.length, maxExtensions, repeatRuns, candidates, measurementModes: requestedModes });
   if (!candidates.length) throw new Error(`No enabled installed extensions declare access to ${browser.activeUrl}.`);
 
   const cache = options.noCache ? { schemaVersion: CACHE_SCHEMA_VERSION, entries: {} } : await loadMeasurementCache(root);
-  const cachedResults = options.noCache ? [] : cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs);
+  const cachedResults = options.noCache ? [] : cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs, repeatRuns);
   if (cachedResults.length) {
     emitJsonLine(options, { event: "cached-results", count: cachedResults.length, results: cachedResults });
   }
 
   const baselineByMode = new Map();
-  async function getBaselineForMode(mode) {
-    if (baselineByMode.has(mode)) return baselineByMode.get(mode);
-    const snapshotPath = path.join(snapshotsDir, mode === requestedModes[0] ? "baseline.json" : `baseline-${mode}.json`);
+  async function getBaselineForMode(mode, repeatIndex = 1) {
+    const key = `${mode}:${repeatIndex}`;
+    if (baselineByMode.has(key)) return baselineByMode.get(key);
+    const snapshotPath = path.join(snapshotsDir, repeatIndex === 1 && mode === requestedModes[0] ? "baseline.json" : `baseline-${mode}-r${repeatIndex}.json`);
     const snapshot = await captureSnapshotForClone({
       root,
       chromePath: browser.executablePath,
       userDataDir: baselineRoot,
       profileDirectory: browser.profileDirectory,
       profileDir: baselineProfileDir,
-      port: basePort,
+      port: basePort + 700 + repeatIndex + (requestedModes.indexOf(mode) * 100),
       url: browser.activeUrl,
       out: snapshotPath,
       settleMs,
       measurementMode: mode
     });
     const value = { snapshot, snapshotPath, mode };
-    baselineByMode.set(mode, value);
+    baselineByMode.set(key, value);
     return value;
   }
 
-  let activeBaseline = await captureBaselineForModes({
+  const initialBaseline = await captureBaselineForModes({
     modes: requestedModes,
     capture: async (mode) => {
-      emitJsonLine(options, { event: "worker-mode", mode, phase: "baseline" });
-      return getBaselineForMode(mode);
+      emitJsonLine(options, { event: "worker-mode", mode, phase: "baseline", repeatIndex: 1, repeatTotal: repeatRuns });
+      return getBaselineForMode(mode, 1);
     }
   });
+  let activeMode = initialBaseline.mode;
 
   const results = [];
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
-    emitJsonLine(options, { event: "candidate", index: index + 1, total: candidates.length, extension: candidate, measurementMode: activeBaseline.mode });
     const afterRoot = path.join(runRoot, `without-${candidate.extensionId}`);
     await cloneUserDataForProbe(browser.userDataDir, browser.profileDirectory, afterRoot);
     const afterProfileDir = path.join(afterRoot, browser.profileDirectory);
     await disableExtensionInClone(afterProfileDir, candidate.extensionId);
 
-    let afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeBaseline.mode}.json`);
-    let after;
-    try {
-      after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + index + 1, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeBaseline.mode });
-    } catch (error) {
-      const fallbackMode = requestedModes.find((mode) => mode !== activeBaseline.mode);
-      if (!fallbackMode) throw error;
-      emitJsonLine(options, { event: "fallback", from: activeBaseline.mode, to: fallbackMode, reason: error.message, extension: candidate });
-      activeBaseline = await getBaselineForMode(fallbackMode);
-      afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeBaseline.mode}.json`);
-      after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + index + 1, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeBaseline.mode });
+    const deltas = [];
+    let lastBaselineSnapshotPath = initialBaseline.snapshotPath;
+    let lastAfterSnapshotPath = "";
+    for (let repeatIndex = 1; repeatIndex <= repeatRuns; repeatIndex += 1) {
+      emitJsonLine(options, { event: "candidate", index: index + 1, total: candidates.length, repeatIndex, repeatTotal: repeatRuns, extension: candidate, measurementMode: activeMode });
+      let baselineForDelta = await getBaselineForMode(activeMode, repeatIndex);
+      let afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeMode}-r${repeatIndex}.json`);
+      let after;
+      try {
+        after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + 1 + (index * repeatRuns) + repeatIndex, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeMode });
+      } catch (error) {
+        const fallbackMode = requestedModes.find((mode) => mode !== activeMode);
+        if (!fallbackMode) throw error;
+        emitJsonLine(options, { event: "fallback", from: activeMode, to: fallbackMode, reason: error.message, extension: candidate, repeatIndex, repeatTotal: repeatRuns });
+        activeMode = fallbackMode;
+        baselineForDelta = await getBaselineForMode(activeMode, repeatIndex);
+        afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeMode}-r${repeatIndex}.json`);
+        after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + 1 + (index * repeatRuns) + repeatIndex, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeMode });
+      }
+
+      deltas.push(summarizeMeasuredDelta(baselineForDelta.snapshot, after, candidate));
+      lastBaselineSnapshotPath = baselineForDelta.snapshotPath;
+      lastAfterSnapshotPath = afterSnapshotPath;
     }
 
-    const delta = summarizeMeasuredDelta(activeBaseline.snapshot, after, candidate);
-    const result = withMeasurementMetadata(delta, { browser, measurementMode: activeBaseline.mode, cacheStatus: "measured", baselineSnapshotPath: activeBaseline.snapshotPath, afterSnapshotPath });
+    const delta = summarizeRepeatedDeltas(deltas, candidate, repeatRuns);
+    const result = withMeasurementMetadata(delta, { browser, measurementMode: activeMode, cacheStatus: "measured", baselineSnapshotPath: lastBaselineSnapshotPath, afterSnapshotPath: lastAfterSnapshotPath });
     results.push(result);
-    if (!options.noCache) await writeResultsToCache(root, cache, browser, [result]);
-    emitJsonLine(options, { event: "result", result });
+    if (!options.noCache) await writeResultsToCache(root, cache, browser, [result], repeatRuns);
+    emitJsonLine(options, { event: "result", index: index + 1, total: candidates.length, repeatTotal: repeatRuns, result });
   }
 
-  const payload = { generatedAt: new Date().toISOString(), mode: "desktop-ab-measured-delta", browser, runRoot, settleMs, maxExtensions, measurementModes: requestedModes, cacheTtlMs, cachedResultCount: cachedResults.length, results };
+  const payload = { generatedAt: new Date().toISOString(), mode: "desktop-ab-measured-delta", browser, runRoot, settleMs, maxExtensions, repeatRuns, measurementModes: requestedModes, cacheTtlMs, cachedResultCount: cachedResults.length, results };
   const out = options.out ?? path.join(runRoot, "desktop-calibration-results.json");
   await fs.writeFile(out, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  emitJsonLine(options, { event: "complete", outputPath: out, results });
+  emitJsonLine(options, { event: "complete", outputPath: out, repeatRuns, results });
   return payload;
 }
-
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2));
   if (!command || command === "help" || command === "--help") {

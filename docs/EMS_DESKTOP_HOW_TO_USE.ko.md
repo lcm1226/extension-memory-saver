@@ -1,80 +1,79 @@
-# EMS Desktop 사용법
+# EMS Desktop ?ъ슜踰?
+## ?꾩옱 ?곹깭
 
-## 현재 상태
+EMS Desktop? Chrome ?뺤옣 ?꾨줈洹몃옩蹂?硫붾え由??ъ슜?됱쓣 ?뺥솗???뚯쑀沅?湲곗??쇰줈 ?쒖떆?섎뒗 ?깆씠 ?꾨떃?덈떎.
 
-EMS Desktop은 Chrome 확장 프로그램별 메모리 사용량을 정확한 소유권 기준으로 표시하는 앱이 아닙니다.
+????좏깮??probe Chrome ?꾨줈?꾩쓣 ?덉쟾?섍쾶 蹂듭젣???? 媛숈? ?섏씠吏?먯꽌 ?뺤옣 ?꾨줈洹몃옩???섎굹???쒖쇅??A/B 痢≪젙???ㅽ뻾????듭쟻??硫붾え由??곹뼢媛믪쓣 蹂댁뿬以띾땲??
 
-대신 선택한 probe Chrome 프로필을 안전하게 복제한 뒤, 같은 페이지에서 확장 프로그램을 하나씩 제외한 A/B 측정을 실행해 대략적인 메모리 영향값을 보여줍니다.
+?? `AdBlock??鍮쇰㈃ ???섏씠吏 ?몄뀡 硫붾え由ш? ??40 MB 以꾩뿀??.
 
-예: `AdBlock을 빼면 이 페이지 세션 메모리가 약 40 MB 줄었다`.
+## ?ы꽣釉??ㅽ뻾
 
-## 포터블 실행
+諛고룷 ?⑦궎吏瑜?諛쏆? 寃쎌슦:
 
-배포 패키지를 받은 경우:
+1. `EMS-Desktop-Portable` ?대뜑瑜??쎈땲??
+2. `Start EMS Desktop.cmd`瑜??붾툝?대┃?⑸땲??
+3. ?깆뿉??`Launch Probe Chrome`???꾨쫭?덈떎.
+4. ?대┛ probe Chrome??痢≪젙???뺤옣 ?꾨줈洹몃옩???ㅼ튂?섍굅??耳?땲??
+5. probe Chrome?먯꽌 痢≪젙???뱀궗?댄듃瑜??쎈땲??
+6. EMS Desktop?먯꽌 `Refresh Browsers`瑜??꾨Ⅴ怨??대떦 釉뚮씪?곗?瑜??좏깮?⑸땲??
 
-1. `EMS-Desktop-Portable` 폴더를 엽니다.
-2. `Start EMS Desktop.cmd`를 더블클릭합니다.
-3. 앱에서 `Launch Probe Chrome`을 누릅니다.
-4. 열린 probe Chrome에 측정할 확장 프로그램을 설치하거나 켭니다.
-5. probe Chrome에서 측정할 웹사이트를 엽니다.
-6. EMS Desktop에서 `Refresh Browsers`를 누르고 해당 브라우저를 선택합니다.
+## 媛쒕컻 ?섍꼍?먯꽌 ?ㅽ뻾
 
-## 개발 환경에서 실행
-
-repo 폴더 안에서 실행:
+repo ?대뜑 ?덉뿉???ㅽ뻾:
 
 ```powershell
 cd "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe"
 npm run desktop:run
 ```
 
-어느 위치에서든 실행:
+?대뒓 ?꾩튂?먯꽌???ㅽ뻾:
 
 ```powershell
 npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
 ```
 
-또는 helper 스크립트:
+?먮뒗 helper ?ㅽ겕由쏀듃:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
-## 측정 흐름
+## 痢≪젙 ?먮쫫
 
-1. 앱이 debug-enabled Chromium/Chrome 브라우저를 찾습니다.
-2. 선택한 브라우저의 현재 활성 HTTP(S) 페이지를 기준으로 측정합니다.
-3. 최근 캐시가 있으면 먼저 즉시 보여줍니다.
-4. 백그라운드에서 profile clone을 만들고 headless worker로 새 측정을 실행합니다.
-5. headless 측정이 실패하면 off-screen headful worker로 재시도합니다.
-6. 측정이 끝나면 결과 테이블이 새 값으로 갱신됩니다.
+1. ?깆씠 debug-enabled Chromium/Chrome 釉뚮씪?곗?瑜?李얠뒿?덈떎.
+2. ?좏깮??釉뚮씪?곗????꾩옱 ?쒖꽦 HTTP(S) ?섏씠吏瑜?湲곗??쇰줈 痢≪젙?⑸땲??
+3. 理쒓렐 罹먯떆媛 ?덉쑝硫?癒쇱? 利됱떆 蹂댁뿬以띾땲??
+4. 諛깃렇?쇱슫?쒖뿉??profile clone??留뚮뱾怨?headless worker濡???痢≪젙???ㅽ뻾?⑸땲??
+5. headless 痢≪젙???ㅽ뙣?섎㈃ off-screen headful worker濡??ъ떆?꾪빀?덈떎.
+6. 痢≪젙???앸굹硫?寃곌낵 ?뚯씠釉붿씠 ??媛믪쑝濡?媛깆떊?⑸땲??
 
-선택한 실제 probe profile은 직접 수정하지 않습니다. 확장 비활성화 실험은 clone profile에서만 수행합니다.
+?좏깮???ㅼ젣 probe profile? 吏곸젒 ?섏젙?섏? ?딆뒿?덈떎. ?뺤옣 鍮꾪솢?깊솕 ?ㅽ뿕? clone profile?먯꽌留??섑뻾?⑸땲??
 
-## 명령줄로 probe Chrome 실행
+## 紐낅졊以꾨줈 probe Chrome ?ㅽ뻾
 
 ```powershell
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-이 명령은 repo 내부 `.tmp\ems-desktop-probe-user-data`에 별도 Chrome 프로필을 만들고 `--remote-debugging-port=9222`로 실행합니다.
+??紐낅졊? repo ?대? `.tmp\ems-desktop-probe-user-data`??蹂꾨룄 Chrome ?꾨줈?꾩쓣 留뚮뱾怨?`--remote-debugging-port=9222`濡??ㅽ뻾?⑸땲??
 
-## 결과 해석
+## 寃곌낵 ?댁꽍
 
-- `Approx. impact`: baseline 대비 해당 확장을 제외했을 때 줄어든 대략적인 private memory delta입니다.
-- `Confidence: medium`: 다른 확장 target 변화가 거의 없거나 오염이 낮은 run입니다.
-- `Confidence: low`: 다른 확장 target도 같이 변했거나 session-level delta 의존도가 큰 run입니다.
-- `Source: cached`: 이전 측정값을 먼저 보여준 상태입니다.
-- `Source: measured`: 백그라운드 측정이 끝난 새 결과입니다.
-- `Worker: headless/offscreen`: 측정에 사용된 clone Chrome 실행 방식입니다.
+- `Approx. impact`: baseline ?鍮??대떦 ?뺤옣???쒖쇅?덉쓣 ??以꾩뼱????듭쟻??private memory delta?낅땲??
+- `Confidence: medium`: ?ㅻⅨ ?뺤옣 target 蹂?붽? 嫄곗쓽 ?녾굅???ㅼ뿼????? run?낅땲??
+- `Confidence: low`: ?ㅻⅨ ?뺤옣 target??媛숈씠 蹂?덇굅??session-level delta ?섏〈?꾧? ??run?낅땲??
+- `Source: cached`: ?댁쟾 痢≪젙媛믪쓣 癒쇱? 蹂댁뿬以 ?곹깭?낅땲??
+- `Source: measured`: 諛깃렇?쇱슫??痢≪젙???앸궃 ??寃곌낵?낅땲??
+- `Worker: headless/offscreen`: 痢≪젙???ъ슜??clone Chrome ?ㅽ뻾 諛⑹떇?낅땲??
 
-## 한계
+## ?쒓퀎
 
-- Stable Chrome은 content script renderer memory를 확장 프로그램별로 정확히 나누어 주지 않습니다.
-- 값은 페이지 상태, 광고, 영상 재생 여부, 캐시, 네트워크 상태에 따라 흔들릴 수 있습니다.
-- 확장이 많으면 후보 확장 수만큼 clone Chrome 측정이 필요해 시간이 걸릴 수 있습니다.
+- Stable Chrome? content script renderer memory瑜??뺤옣 ?꾨줈洹몃옩蹂꾨줈 ?뺥솗???섎늻??二쇱? ?딆뒿?덈떎.
+- 媛믪? ?섏씠吏 ?곹깭, 愿묎퀬, ?곸긽 ?ъ깮 ?щ?, 罹먯떆, ?ㅽ듃?뚰겕 ?곹깭???곕씪 ?붾뱾由????덉뒿?덈떎.
+- ?뺤옣??留롮쑝硫??꾨낫 ?뺤옣 ?섎쭔??clone Chrome 痢≪젙???꾩슂???쒓컙??嫄몃┫ ???덉뒿?덈떎.
 
-## 개발 검증 명령
+## 媛쒕컻 寃利?紐낅졊
 
 ```powershell
 npm run desktop:list

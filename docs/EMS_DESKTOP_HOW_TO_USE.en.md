@@ -13,7 +13,7 @@ Example: `Removing AdBlock reduced this page session by about 40 MB`.
 If you received the portable package:
 
 1. Open the `EMS-Desktop-Portable` folder.
-2. Double-click `Start EMS Desktop.cmd`.
+2. Double-click `EMS Desktop.exe`. `Start EMS Desktop.cmd` is a compatibility launcher.
 3. In the app, click `Launch Probe Chrome`.
 4. Install or enable the extensions you want to measure in that probe Chrome.
 5. Open the target website in the probe Chrome.
@@ -44,7 +44,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 
 1. The app discovers debug-enabled Chromium/Chrome browsers.
 2. The selected browser's active HTTP(S) page becomes the measurement target.
-3. Recent cached results are shown immediately when available.
+3. Recent cached results are shown immediately when available. You can enable `Median x3` to run three A/B samples per extension and show the median value.
 4. A background worker clones the profile and runs a headless measurement.
 5. If headless capture fails, EMS retries with an off-screen headful worker.
 6. The results table updates when the new measurement completes.
@@ -72,7 +72,7 @@ This creates a separate Chrome profile under `.tmp\ems-desktop-probe-user-data` 
 
 - Stable Chrome does not expose exact content-script renderer ownership by extension.
 - Values can vary with page state, ads, video playback, cache, and network conditions.
-- More extensions means more clone Chrome runs, so refresh can take longer.
+- More extensions means more clone Chrome runs, so refresh can take longer. `Median x3` is slower because it triples the sample count per extension.
 
 ## Developer Verification
 

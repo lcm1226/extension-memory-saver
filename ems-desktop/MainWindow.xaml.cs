@@ -145,8 +145,13 @@ public partial class MainWindow : Window
 
         ResultItems.Clear();
         ApplyBrowserInfo(browser);
+        int repeatRuns = SelectedRepeatRuns();
         RunProgress.IsIndeterminate = true;
-        StatusText.Text = "Starting background measurement. Cached results appear first when available...";
+        RunProgress.Value = 0;
+        ProgressText.Text = repeatRuns > 1 ? "Median x3 enabled. Waiting for candidate queue..." : "Waiting for candidate queue...";
+        StatusText.Text = repeatRuns > 1
+            ? "Starting background median measurement. Cached x3 results appear first when available..."
+            : "Starting background measurement. Cached results appear first when available...";
 
         try
         {
@@ -168,7 +173,8 @@ public partial class MainWindow : Window
 
     private async Task RunCalibrationProcessAsync(BrowserItem browser, CancellationToken token)
     {
-        using Process process = CreateNodeProcess("calibrate-auto", "--browser-id", browser.Id, "--jsonl", "--max-extensions", "6");
+        int repeatRuns = SelectedRepeatRuns();
+        using Process process = CreateNodeProcess("calibrate-auto", "--browser-id", browser.Id, "--jsonl", "--max-extensions", "6", "--repeat-runs", repeatRuns.ToString());
         process.Start();
         using CancellationTokenRegistration registration = token.Register(() => KillProcessTree(process.Id));
 
@@ -206,6 +212,8 @@ public partial class MainWindow : Window
         ResultItems.Add(incoming);
     }
 
+    private int SelectedRepeatRuns() => MedianRunsCheck.IsChecked == true ? 3 : 1;
+
     private void HandleEngineEvent(string line)
     {
         using JsonDocument doc = JsonDocument.Parse(line);
@@ -214,18 +222,29 @@ public partial class MainWindow : Window
         switch (eventName)
         {
             case "start":
+                int startRepeatRuns = ReadInt(root, "repeatRuns", SelectedRepeatRuns());
+                ProgressText.Text = startRepeatRuns > 1 ? $"Preparing clones for median x{startRepeatRuns} measurement..." : "Preparing clone for measurement...";
                 StatusText.Text = "Preparing safe clone for background measurement...";
                 break;
             case "candidates":
                 int count = root.GetProperty("count").GetInt32();
                 int total = root.GetProperty("totalMatchingBeforeLimit").GetInt32();
-                StatusText.Text = $"Queued {count} site-relevant extension(s). Matching before cap: {total}.";
+                int repeatTotal = ReadInt(root, "repeatRuns", 1);
+                RunProgress.IsIndeterminate = false;
+                RunProgress.Minimum = 0;
+                RunProgress.Maximum = Math.Max(1, count * repeatTotal);
+                RunProgress.Value = 0;
+                ProgressText.Text = $"0 / {count * repeatTotal} sample(s) queued";
+                StatusText.Text = repeatTotal > 1
+                    ? $"Queued {count} site-relevant extension(s), median x{repeatTotal}. Matching before cap: {total}."
+                    : $"Queued {count} site-relevant extension(s). Matching before cap: {total}.";
                 break;
             case "cached-results":
                 foreach (JsonElement result in root.GetProperty("results").EnumerateArray())
                 {
                     UpsertResult(result);
                 }
+                ProgressText.Text = $"Showing {ResultItems.Count} cached result(s) while background refresh continues";
                 StatusText.Text = $"Showing {ResultItems.Count} cached result(s). Refreshing in background...";
                 break;
             case "worker-mode":
@@ -240,20 +259,44 @@ public partial class MainWindow : Window
             case "candidate":
                 int index = root.GetProperty("index").GetInt32();
                 int candidateTotal = root.GetProperty("total").GetInt32();
+                int repeatIndex = ReadInt(root, "repeatIndex", 1);
+                int candidateRepeatTotal = ReadInt(root, "repeatTotal", 1);
                 string name = root.GetProperty("extension").GetProperty("name").GetString() ?? "extension";
                 string candidateMode = root.TryGetProperty("measurementMode", out JsonElement candidateModeElement) ? candidateModeElement.GetString() ?? "worker" : "worker";
-                StatusText.Text = $"Refreshing {index}/{candidateTotal} in {candidateMode}: {name}";
+                int completedBefore = ((index - 1) * candidateRepeatTotal) + Math.Max(0, repeatIndex - 1);
+                RunProgress.IsIndeterminate = false;
+                RunProgress.Maximum = Math.Max(RunProgress.Maximum, candidateTotal * candidateRepeatTotal);
+                RunProgress.Value = Math.Min(RunProgress.Maximum, completedBefore);
+                ProgressText.Text = $"{completedBefore} / {candidateTotal * candidateRepeatTotal} sample(s) complete";
+                StatusText.Text = candidateRepeatTotal > 1
+                    ? $"Refreshing {index}/{candidateTotal}, sample {repeatIndex}/{candidateRepeatTotal} in {candidateMode}: {name}"
+                    : $"Refreshing {index}/{candidateTotal} in {candidateMode}: {name}";
                 break;
             case "result":
                 UpsertResult(root.GetProperty("result"));
+                int resultIndex = ReadInt(root, "index", ResultItems.Count);
+                int resultTotal = ReadInt(root, "total", Math.Max(resultIndex, ResultItems.Count));
+                int resultRepeatTotal = ReadInt(root, "repeatTotal", 1);
+                RunProgress.IsIndeterminate = false;
+                RunProgress.Maximum = Math.Max(RunProgress.Maximum, resultTotal * resultRepeatTotal);
+                RunProgress.Value = Math.Min(RunProgress.Maximum, resultIndex * resultRepeatTotal);
+                ProgressText.Text = $"{(int)RunProgress.Value} / {(int)RunProgress.Maximum} sample(s) complete";
                 break;
             case "complete":
+                RunProgress.IsIndeterminate = false;
+                if (RunProgress.Maximum > 0) RunProgress.Value = RunProgress.Maximum;
+                ProgressText.Text = $"Complete. {ResultItems.Count} result row(s).";
                 StatusText.Text = $"Complete. {ResultItems.Count} result(s) refreshed.";
                 break;
             case "error":
                 StatusText.Text = root.GetProperty("message").GetString() ?? "Engine error.";
                 break;
         }
+    }
+
+    private static int ReadInt(JsonElement item, string name, int fallback)
+    {
+        return item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int parsed) ? parsed : fallback;
     }
 
     private async Task<string> RunEngineCaptureAsync(params string[] args)
@@ -409,27 +452,107 @@ public sealed class ResultItem
     public string Mode { get; init; } = "";
     public string Confidence { get; init; } = "";
     public string TargetChange { get; init; } = "";
+    public string SampleInfo { get; init; } = "";
     public string Notes { get; init; } = "";
+    public string ImpactBrush { get; init; } = "#30343A";
+    public string SourceBrush { get; init; } = "#30343A";
+    public string ModeBrush { get; init; } = "#30343A";
+    public string ConfidenceBrush { get; init; } = "#30343A";
+    public string TagForeground { get; init; } = "#F5F1E8";
 
     public static ResultItem FromJson(JsonElement item)
     {
-        int beforeTargets = item.TryGetProperty("beforeTargets", out JsonElement before) ? before.GetInt32() : 0;
-        int afterTargets = item.TryGetProperty("afterTargets", out JsonElement after) ? after.GetInt32() : 0;
+        int beforeTargets = ReadInt(item, "beforeTargets", 0);
+        int afterTargets = ReadInt(item, "afterTargets", 0);
+        double estimatedBytes = ReadDouble(item, "estimatedPrivateDropBytes", 0);
+        int sampleCount = ReadInt(item, "sampleCount", ReadInt(item, "repeatRuns", 1));
+        double spreadBytes = ReadDouble(item, "spreadBytes", 0);
+        string source = ReadString(item, "cacheStatus");
+        string mode = ReadString(item, "measurementMode");
+        string confidence = ReadString(item, "confidence");
+
         return new ResultItem
         {
             ExtensionId = ReadString(item, "extensionId"),
             Name = ReadString(item, "name"),
-            EstimatedPrivateDrop = ReadString(item, "estimatedPrivateDrop"),
-            Source = ReadString(item, "cacheStatus"),
-            Mode = ReadString(item, "measurementMode"),
-            Confidence = ReadString(item, "confidence"),
+            EstimatedPrivateDrop = string.IsNullOrWhiteSpace(ReadString(item, "estimatedPrivateDrop")) ? FormatBytes(estimatedBytes) : ReadString(item, "estimatedPrivateDrop"),
+            Source = DisplayTag(source),
+            Mode = DisplayTag(mode),
+            Confidence = DisplayTag(confidence),
             TargetChange = $"{beforeTargets}->{afterTargets}",
-            Notes = ReadString(item, "notes")
+            SampleInfo = sampleCount > 1 ? $"{sampleCount} samples, spread {FormatBytes(spreadBytes)}" : "1 sample",
+            Notes = ReadString(item, "notes"),
+            ImpactBrush = ImpactBrushFor(estimatedBytes),
+            SourceBrush = SourceBrushFor(source),
+            ModeBrush = ModeBrushFor(mode),
+            ConfidenceBrush = ConfidenceBrushFor(confidence)
         };
     }
 
     private static string ReadString(JsonElement item, string name)
     {
         return item.TryGetProperty(name, out JsonElement value) && value.ValueKind != JsonValueKind.Null ? value.GetString() ?? "" : "";
+    }
+
+    private static int ReadInt(JsonElement item, string name, int fallback)
+    {
+        return item.TryGetProperty(name, out JsonElement value) && value.TryGetInt32(out int parsed) ? parsed : fallback;
+    }
+
+    private static double ReadDouble(JsonElement item, string name, double fallback)
+    {
+        return item.TryGetProperty(name, out JsonElement value) && value.TryGetDouble(out double parsed) ? parsed : fallback;
+    }
+
+    private static string DisplayTag(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "n/a" : value.Trim().ToLowerInvariant();
+    }
+
+    private static string FormatBytes(double bytes)
+    {
+        if (double.IsNaN(bytes)) return "n/a";
+        return $"{bytes / 1024 / 1024:0.00} MB";
+    }
+
+    private static string ImpactBrushFor(double bytes)
+    {
+        double mb = bytes / 1024 / 1024;
+        if (mb >= 100) return "#7A2525";
+        if (mb >= 30) return "#6B4A16";
+        if (mb > 0) return "#24523A";
+        return "#30343A";
+    }
+
+    private static string SourceBrushFor(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "measured" => "#24523A",
+            "cached" => "#1F4F73",
+            _ => "#30343A"
+        };
+    }
+
+    private static string ModeBrushFor(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "headless" => "#314A6E",
+            "offscreen" => "#6B4A16",
+            "visible" => "#5B3C66",
+            _ => "#30343A"
+        };
+    }
+
+    private static string ConfidenceBrushFor(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "high" => "#24523A",
+            "medium" => "#314A6E",
+            "low" => "#6B4A16",
+            _ => "#30343A"
+        };
     }
 }
