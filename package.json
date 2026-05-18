@@ -12,6 +12,7 @@
     "package:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/Build-EMSReleasePackage.ps1",
     "desktop:list": "node .\\tools\\ems-desktop-engine.mjs list-browsers --json",
     "desktop:build": "dotnet build .\\ems-desktop\\EmsDesktop.csproj",
+    "desktop:package": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/Build-EMSDesktopPortable.ps1",
     "desktop:run": "dotnet run --project .\\ems-desktop\\EmsDesktop.csproj"
   },
   "repository": {

@@ -11,14 +11,30 @@ Useful commands:
 ```powershell
 npm run desktop:list
 npm run desktop:build
+npm run desktop:package
 npm run desktop:run
 npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
+A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
 
 Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
+
+## Desktop portable package
+
+Create a one-click Windows package with:
+
+```powershell
+npm run desktop:package
+```
+
+The output is ignored by Git and written to:
+
+- `dist\EMS-Desktop-Portable\Start EMS Desktop.cmd`
+- `dist\EMS-Desktop-Portable.zip`
+
+The portable package includes the self-contained WPF app, the desktop measurement tools, usage docs, and a local `runtime\node\node.exe` so the app does not require a separate Node install for normal use. It still requires an installed Chrome/Chromium browser.
 
 ## Current scope
 
@@ -30,6 +46,9 @@ Windows-first measurement harness and extension MVP for Chromium extension memor
 
 ## Repo layout
 
+- `ems-desktop/`: Windows WPF desktop app for the active EMS product path
+- `tools/ems-desktop-engine.mjs`: desktop measurement engine with cache-first, headless-first A/B calibration
+- `tools/Build-EMSDesktopPortable.ps1`: portable desktop package builder
 - `ems-extension/`: Chrome extension MVP shell
 - `tools/ems-measure.mjs`: snapshot, profile inventory, and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile

@@ -2,13 +2,24 @@
 
 ## 현재 상태
 
-EMS Desktop은 Chrome 확장 프로그램별 메모리 "정확한 소유량"을 표시하는 앱이 아닙니다.
+EMS Desktop은 Chrome 확장 프로그램별 메모리 사용량을 정확한 소유권 기준으로 표시하는 앱이 아닙니다.
 
-대신 선택한 Chromium/Chrome 프로필을 안전하게 복제한 뒤, 같은 페이지를 기준으로 확장을 하나씩 뺀 A/B 실행을 수행하고 대략적인 메모리 영향 값을 보여줍니다.
+대신 선택한 probe Chrome 프로필을 안전하게 복제한 뒤, 같은 페이지에서 확장 프로그램을 하나씩 제외한 A/B 측정을 실행해 대략적인 메모리 영향값을 보여줍니다.
 
-예: `AdBlock을 뺐을 때 이 페이지 세션 메모리가 약 40 MB 줄었다`.
+예: `AdBlock을 빼면 이 페이지 세션 메모리가 약 40 MB 줄었다`.
 
-## 빠른 실행
+## 포터블 실행
+
+배포 패키지를 받은 경우:
+
+1. `EMS-Desktop-Portable` 폴더를 엽니다.
+2. `Start EMS Desktop.cmd`를 더블클릭합니다.
+3. 앱에서 `Launch Probe Chrome`을 누릅니다.
+4. 열린 probe Chrome에 측정할 확장 프로그램을 설치하거나 켭니다.
+5. probe Chrome에서 측정할 웹사이트를 엽니다.
+6. EMS Desktop에서 `Refresh Browsers`를 누르고 해당 브라우저를 선택합니다.
+
+## 개발 환경에서 실행
 
 repo 폴더 안에서 실행:
 
@@ -29,19 +40,18 @@ npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:r
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
-앱에서 할 일:
+## 측정 흐름
 
-1. `Launch Probe Chrome`을 누릅니다.
-2. 열린 Chrome 프로브 프로필에서 측정할 페이지를 엽니다.
-3. 필요한 확장 프로그램을 그 프로브 프로필에 설치하거나 활성화합니다.
-4. EMS Desktop에서 `Refresh Browsers`를 누릅니다.
-5. 프로필을 선택하면 clone 기반 A/B 측정이 자동으로 시작됩니다.
+1. 앱이 debug-enabled Chromium/Chrome 브라우저를 찾습니다.
+2. 선택한 브라우저의 현재 활성 HTTP(S) 페이지를 기준으로 측정합니다.
+3. 최근 캐시가 있으면 먼저 즉시 보여줍니다.
+4. 백그라운드에서 profile clone을 만들고 headless worker로 새 측정을 실행합니다.
+5. headless 측정이 실패하면 off-screen headful worker로 재시도합니다.
+6. 측정이 끝나면 결과 테이블이 새 값으로 갱신됩니다.
 
-EMS now shows recent cached results immediately when available, then refreshes them in the background.
-The default worker is `headless`; if that fails, EMS retries with an off-screen headful worker.
-The live probe profile is not modified.
+선택한 실제 probe profile은 직접 수정하지 않습니다. 확장 비활성화 실험은 clone profile에서만 수행합니다.
 
-## 명령줄로 프로브 Chrome 실행
+## 명령줄로 probe Chrome 실행
 
 ```powershell
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
@@ -49,47 +59,26 @@ The live probe profile is not modified.
 
 이 명령은 repo 내부 `.tmp\ems-desktop-probe-user-data`에 별도 Chrome 프로필을 만들고 `--remote-debugging-port=9222`로 실행합니다.
 
-## 중요한 안전 원칙
-
-- EMS Desktop은 선택된 live profile을 직접 수정하지 않습니다.
-- 실제 A/B 측정은 `.tmp\desktop-runs\` 아래 clone profile에서 수행됩니다.
-- clone에서만 확장 폴더를 `.DISABLED`로 바꿔서 측정합니다.
-- `.tmp\`, snapshots, test-results, build output은 Git에 들어가지 않습니다.
-
-## 왜 debug-enabled Chrome이 필요한가
-
-이미 일반 방식으로 실행된 Chrome은 DevTools endpoint를 외부 앱에 노출하지 않습니다.
-
-EMS Desktop은 다음 정보가 필요합니다:
-
-- 현재 열린 페이지 URL/title
-- Chrome target list
-- Chrome process memory
-- 선택된 profile path
-
-그래서 측정 대상 Chrome은 `--remote-debugging-port`로 실행되어야 합니다.
-
 ## 결과 해석
 
-- `Approx. impact`: baseline 대비 확장을 뺐을 때 줄어든 대략적인 private memory delta입니다.
-- `Confidence: medium`: 다른 확장 target 변화가 관측되지 않았거나 오염이 적은 run입니다.
-- `Confidence: low`: 다른 확장 target도 같이 변했거나 session-level delta만 강하게 반영된 run입니다.
-- `Targets before->after`: DevTools에서 보인 extension target 개수 변화입니다.
-- `Source: cached/measured`: cached means an older result was shown immediately; measured means the background refresh finished.
-- `Worker: headless/offscreen`: clone Chrome execution mode used for the measurement.
+- `Approx. impact`: baseline 대비 해당 확장을 제외했을 때 줄어든 대략적인 private memory delta입니다.
+- `Confidence: medium`: 다른 확장 target 변화가 거의 없거나 오염이 낮은 run입니다.
+- `Confidence: low`: 다른 확장 target도 같이 변했거나 session-level delta 의존도가 큰 run입니다.
+- `Source: cached`: 이전 측정값을 먼저 보여준 상태입니다.
+- `Source: measured`: 백그라운드 측정이 끝난 새 결과입니다.
+- `Worker: headless/offscreen`: 측정에 사용된 clone Chrome 실행 방식입니다.
 
 ## 한계
 
-- Stable Chrome은 content script renderer memory를 확장별로 정확히 나누어 주지 않습니다.
-- YouTube, 광고, 영상 상태, 캐시, 네트워크 상태에 따라 값이 흔들릴 수 있습니다.
-- 확장이 많으면 확장 수만큼 clone Chrome을 순차 실행하므로 시간이 걸립니다.
+- Stable Chrome은 content script renderer memory를 확장 프로그램별로 정확히 나누어 주지 않습니다.
+- 값은 페이지 상태, 광고, 영상 재생 여부, 캐시, 네트워크 상태에 따라 흔들릴 수 있습니다.
+- 확장이 많으면 후보 확장 수만큼 clone Chrome 측정이 필요해 시간이 걸릴 수 있습니다.
 
-## 개발자 검증 명령
-Default measurement runs in headless mode to avoid visible Chrome window churn. If headless capture fails, EMS falls back to an off-screen headful worker.
-
+## 개발 검증 명령
 
 ```powershell
 npm run desktop:list
 npm run desktop:build
+npm run desktop:package
 npm run test:e2e
 ```

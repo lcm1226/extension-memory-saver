@@ -11,6 +11,7 @@ public partial class MainWindow : Window
 {
     private readonly string _repoRoot;
     private readonly string _enginePath;
+    private readonly string _nodePath;
     private CancellationTokenSource? _runCancellation;
     private bool _loadingBrowsers;
 
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
         DataContext = this;
         _repoRoot = FindRepoRoot();
         _enginePath = Path.Combine(_repoRoot, "tools", "ems-desktop-engine.mjs");
+        _nodePath = FindNodeRuntime(_repoRoot);
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -300,7 +302,7 @@ public partial class MainWindow : Window
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = "node",
+                FileName = _nodePath,
                 Arguments = allArguments,
                 WorkingDirectory = _repoRoot,
                 UseShellExecute = false,
@@ -337,6 +339,22 @@ public partial class MainWindow : Window
         {
             // Best-effort cancellation cleanup.
         }
+    }
+
+    private static string FindNodeRuntime(string repoRoot)
+    {
+        string[] candidates =
+        {
+            Path.Combine(repoRoot, "runtime", "node", "node.exe"),
+            Path.Combine(repoRoot, "node.exe")
+        };
+
+        foreach (string candidate in candidates)
+        {
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        return "node";
     }
 
     private static string FindRepoRoot()

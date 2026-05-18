@@ -11,6 +11,8 @@ const DEFAULT_SETTLE_MS = 8000;
 const DEFAULT_MAX_EXTENSIONS = 6;
 const DEFAULT_BASE_PORT = 9322;
 const DEFAULT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_HTTP_TIMEOUT_MS = 1500;
+const DEFAULT_POWERSHELL_TIMEOUT_MS = 10000;
 const CACHE_SCHEMA_VERSION = 1;
 const DISABLED_SUFFIX = ".DISABLED";
 const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;
@@ -67,29 +69,50 @@ function stableId(parts) {
   return createHash("sha1").update(parts.filter(Boolean).join("|")).digest("hex").slice(0, 12);
 }
 
-async function httpJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-  return response.json();
+async function httpJson(url, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+    return response.json();
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error(`Timed out after ${timeoutMs}ms for ${url}`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-function runPowerShellJson(command) {
+function runPowerShellJson(command, timeoutMs = DEFAULT_POWERSHELL_TIMEOUT_MS) {
   return new Promise((resolve, reject) => {
     const child = spawn("powershell", ["-NoProfile", "-Command", command], { windowsHide: true });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    const settle = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      fn(value);
+    };
+    const timeout = setTimeout(() => {
+      child.kill();
+      settle(reject, new Error(`PowerShell timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
     child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
     child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
-    child.on("error", reject);
+    child.on("error", (error) => settle(reject, error));
     child.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(stderr.trim() || `PowerShell failed with exit code ${code}`));
+        settle(reject, new Error(stderr.trim() || `PowerShell failed with exit code ${code}`));
         return;
       }
       try {
-        resolve(JSON.parse(stdout || "[]"));
+        settle(resolve, JSON.parse(stdout || "[]"));
       } catch (error) {
-        reject(new Error(`Failed to parse PowerShell JSON: ${error.message}\n${stdout}`));
+        settle(reject, new Error(`Failed to parse PowerShell JSON: ${error.message}\n${stdout}`));
       }
     });
   });
@@ -97,6 +120,7 @@ function runPowerShellJson(command) {
 
 async function getWindowsChromeProcesses() {
   const psCommand = [
+    "$ErrorActionPreference = 'Stop';",
     "$procInfo = Get-CimInstance Win32_Process -Filter \"name = 'chrome.exe'\" | Select-Object ProcessId, ParentProcessId, CommandLine, ExecutablePath;",
     "$rows = foreach ($proc in $procInfo) {",
     "  [pscustomobject]@{",
@@ -112,7 +136,6 @@ async function getWindowsChromeProcesses() {
   const rows = await runPowerShellJson(psCommand);
   return Array.isArray(rows) ? rows : rows ? [rows] : [];
 }
-
 async function getForegroundWindowInfo() {
   const psCommand = [
     "Add-Type -TypeDefinition @'",
@@ -128,9 +151,9 @@ async function getForegroundWindowInfo() {
     "$handle = [Win32Foreground]::GetForegroundWindow();",
     "$builder = New-Object System.Text.StringBuilder 1024;",
     "[void][Win32Foreground]::GetWindowText($handle, $builder, $builder.Capacity);",
-    "$pid = 0;",
-    "[void][Win32Foreground]::GetWindowThreadProcessId($handle, [ref]$pid);",
-    "[pscustomobject]@{ processId = [int]$pid; title = $builder.ToString() } | ConvertTo-Json -Compress"
+    "$processId = 0;",
+    "[void][Win32Foreground]::GetWindowThreadProcessId($handle, [ref]$processId);",
+    "[pscustomobject]@{ processId = [int]$processId; title = $builder.ToString() } | ConvertTo-Json -Compress"
   ].join(" ");
 
   try {
@@ -139,7 +162,6 @@ async function getForegroundWindowInfo() {
     return null;
   }
 }
-
 function parseCommandLineArg(commandLine, name) {
   if (!commandLine) return null;
   const pattern = new RegExp(`--${name}(?:=|\\s+)(?:\"([^\"]+)\"|([^\\s\"]+))`, "i");
