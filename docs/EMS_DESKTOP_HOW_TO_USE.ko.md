@@ -37,7 +37,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 4. EMS Desktop에서 `Refresh Browsers`를 누릅니다.
 5. 프로필을 선택하면 clone 기반 A/B 측정이 자동으로 시작됩니다.
 
-During measurement, temporary clone Chrome windows can open and close several times. This is expected because EMS compares one baseline run with one per-extension run; the live probe profile is not modified.
+EMS now shows recent cached results immediately when available, then refreshes them in the background.
+The default worker is `headless`; if that fails, EMS retries with an off-screen headful worker.
+The live probe profile is not modified.
 
 ## 명령줄로 프로브 Chrome 실행
 
@@ -73,6 +75,8 @@ EMS Desktop은 다음 정보가 필요합니다:
 - `Confidence: medium`: 다른 확장 target 변화가 관측되지 않았거나 오염이 적은 run입니다.
 - `Confidence: low`: 다른 확장 target도 같이 변했거나 session-level delta만 강하게 반영된 run입니다.
 - `Targets before->after`: DevTools에서 보인 extension target 개수 변화입니다.
+- `Source: cached/measured`: cached means an older result was shown immediately; measured means the background refresh finished.
+- `Worker: headless/offscreen`: clone Chrome execution mode used for the measurement.
 
 ## 한계
 
@@ -81,6 +85,8 @@ EMS Desktop은 다음 정보가 필요합니다:
 - 확장이 많으면 확장 수만큼 clone Chrome을 순차 실행하므로 시간이 걸립니다.
 
 ## 개발자 검증 명령
+Default measurement runs in headless mode to avoid visible Chrome window churn. If headless capture fails, EMS falls back to an off-screen headful worker.
+
 
 ```powershell
 npm run desktop:list

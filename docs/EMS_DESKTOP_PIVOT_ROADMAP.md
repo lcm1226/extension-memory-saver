@@ -39,12 +39,13 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 2. Let the user select the browser/profile to measure.
 3. Identify the active HTTP(S) page.
 4. Clone the selected user data/profile into `.tmp/desktop-runs/`.
-5. Launch a baseline clone with all target extensions enabled.
+5. Launch a baseline clone with all target extensions enabled. Default worker mode is `headless`; if it fails, retry with off-screen headful fallback.
 6. For each site-relevant enabled extension:
    - clone the same profile again
    - disable only that extension in the clone
    - launch the same URL
    - capture a snapshot
+8. Cache measured results by profile/page/extension/version so the UI can show recent values immediately while a background refresh runs.
    - compare against baseline
 7. Show approximate MB delta, confidence, and contamination warnings.
 
@@ -75,6 +76,7 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 
 - Add `tools/ems-desktop-engine.mjs`.
 - Commands:
+- Verify quiet measurement mode: cached result event, headless worker, and off-screen fallback worker.
   - `list-browsers`: list debug-enabled Chromium instances with profile name, profile path, active URL/title if available.
   - `calibrate-auto`: clone the selected profile and run sequential A/B measurements for the active URL.
 - Output JSON/JSONL so the UI can stream progress.
@@ -101,14 +103,15 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 - Add explicit "no debug-enabled browser found" instructions.
 - Add run cancellation.
 - Persist latest selected browser id.
-- Cache results by `extensionId + origin + extensionVersion + chromeVersion`.
+- Cache results by selected profile, active URL, extension id, extension version, and browser executable.
 - Add repeated-run median once MVP is stable.
 
 ## Known Constraints
 
 - A normal already-running Chrome instance cannot be inspected unless it was launched with `--remote-debugging-port`.
 - Stable Chrome still does not expose exact content-script renderer ownership.
-- A/B runs can be slow on heavy pages because each candidate extension requires a cloned Chrome launch.
+- A/B runs can be slow on heavy pages because each candidate extension requires a cloned Chrome launch, but the UI should display cached results immediately and refresh in the background.
+- Headless mode may not behave exactly like a visible user tab, so worker mode is recorded per result and off-screen fallback remains available.
 - Values can vary with page load timing, ads, video state, cache, and background network activity.
 
 ## Recommended Next Implementation Step

@@ -18,6 +18,8 @@ New files/commands:
 - `tools/Start-EMSDesktopProbeChrome.ps1`: launches a safe debug-enabled probe Chrome profile for desktop MVP testing.
 - `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`: Korean desktop usage guide.
 - `ems-desktop/`: .NET 8 WPF desktop app.
+
+Latest desktop UX direction: show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include `cacheStatus` and `measurementMode`.
 - `npm run desktop:list`: smoke-check measurable browser discovery.
 - `npm run desktop:build`: build the WPF app.
 - `npm run desktop:run`: launch the WPF app.
@@ -162,6 +164,13 @@ Operational lesson:
   - popup now includes extension search plus All/Relevant/Enabled/Disabled/Pinned filters
   - latest verification also generated `test-results\live-memory-estimates-fixture.json` from an isolated throwaway Chromium profile; the output is ignored by git
 
+## Latest desktop checkpoint
+
+- EMS Desktop is the active product path. The extension MVP remains a validated artifact, not the main measurement UX.
+- `calibrate-auto` is hardened around cache-first display, background refresh, headless worker mode, and off-screen fallback.
+- Verified on 2026-05-18 against the probe Chrome profile: headless worker, cached-results event, and forced off-screen worker all completed for a one-extension YouTube run.
+
+
 ## Current next priorities
 
 1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
@@ -177,7 +186,6 @@ EMS Notion artifacts were migrated into `docs/notion-legacy/` on 2026-05-06. Ori
 ## Best cloud handoff path
 
 Use this repository as the transfer unit.
-
 - Preferred: push to GitHub, then open the repo in Cloud Codex.
 - Fallback: upload this folder or paste `HANDOFF.md` plus the latest diff output into the new session.
 - If the folder moves locally, follow `docs/FOLDER_MOVE_HANDOFF.md` and use `docs/NEW_THREAD_PROMPT.md` as the next-thread opener.

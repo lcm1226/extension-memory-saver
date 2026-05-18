@@ -4,7 +4,7 @@
 
 The active product direction is now the Windows desktop MVP documented in `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`.
 
-The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles and A/B measured deltas so it can show rough MB impact without mutating the live selected profile.
+The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles, cache-first display, headless-first A/B measured deltas, and off-screen fallback so it can show rough MB impact without mutating the live selected profile.
 
 Useful commands:
 
@@ -16,7 +16,7 @@ npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:r
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`. The desktop app lists those debug-enabled browser/profile instances and starts clone-based measurement after selection.
+A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
 
 Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
 

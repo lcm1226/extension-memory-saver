@@ -10,15 +10,21 @@ const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_SETTLE_MS = 8000;
 const DEFAULT_MAX_EXTENSIONS = 6;
 const DEFAULT_BASE_PORT = 9322;
+const DEFAULT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CACHE_SCHEMA_VERSION = 1;
 const DISABLED_SUFFIX = ".DISABLED";
 const EXTENSION_ID_PATTERN = /^[a-p]{32}$/;
+const MEASUREMENT_MODE_AUTO = "auto";
+const MEASUREMENT_MODE_HEADLESS = "headless";
+const MEASUREMENT_MODE_OFFSCREEN = "offscreen";
+const MEASUREMENT_MODE_VISIBLE = "visible";
 
 function repoRoot() {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 }
 
 function printHelp() {
-  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--settle-ms 8000]\n`);
+  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n`);
 }
 
 function parseArgs(argv) {
@@ -33,6 +39,9 @@ function parseArgs(argv) {
     else if (token === "--settle-ms") options.settleMs = Number(rest[++i]);
     else if (token === "--base-port") options.basePort = Number(rest[++i]);
     else if (token === "--out") options.out = rest[++i];
+    else if (token === "--measurement-mode") options.measurementMode = rest[++i];
+    else if (token === "--cache-ttl-ms") options.cacheTtlMs = Number(rest[++i]);
+    else if (token === "--no-cache") options.noCache = true;
   }
   return { command, options };
 }
@@ -414,16 +423,23 @@ async function disableExtensionInClone(profileDir, extensionId) {
   await fs.rename(enabledPath, disabledPath);
 }
 
-function spawnChrome({ chromePath, userDataDir, profileDirectory, port, url }) {
+function spawnChrome({ chromePath, userDataDir, profileDirectory, port, url, measurementMode }) {
   const args = [
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${userDataDir}`,
     `--profile-directory=${profileDirectory}`,
     "--no-first-run",
-    "--no-default-browser-check",
-    url
+    "--no-default-browser-check"
   ];
-  return spawn(chromePath, args, { windowsHide: false, detached: false });
+
+  if (measurementMode === MEASUREMENT_MODE_HEADLESS) {
+    args.push("--headless=new", "--disable-gpu", "--mute-audio", "--window-size=1365,900");
+  } else if (measurementMode === MEASUREMENT_MODE_OFFSCREEN) {
+    args.push("--window-position=-32000,-32000", "--window-size=1365,900", "--mute-audio", "--disable-features=CalculateNativeWinOcclusion");
+  }
+
+  args.push(url);
+  return spawn(chromePath, args, { windowsHide: measurementMode !== MEASUREMENT_MODE_VISIBLE, detached: false });
 }
 
 function killProcessTree(processId) {
@@ -467,13 +483,15 @@ async function waitForDebugPort(port, timeoutMs) {
   throw new Error(`Chrome DevTools endpoint did not become reachable on port ${port}: ${lastError?.message ?? "timeout"}`);
 }
 
-async function captureSnapshotForClone({ root, chromePath, userDataDir, profileDirectory, profileDir, port, url, out, settleMs }) {
-  const chrome = spawnChrome({ chromePath, userDataDir, profileDirectory, port, url });
+async function captureSnapshotForClone({ root, chromePath, userDataDir, profileDirectory, profileDir, port, url, out, settleMs, measurementMode }) {
+  const chrome = spawnChrome({ chromePath, userDataDir, profileDirectory, port, url, measurementMode });
   try {
     await waitForDebugPort(port, settleMs);
     await sleep(settleMs);
     await runNode([path.join(root, "tools", "ems-measure.mjs"), "snapshot", "--port", String(port), "--profile-dir", profileDir, "--out", out], root);
-    return JSON.parse(await fs.readFile(out, "utf8"));
+    const snapshot = JSON.parse(await fs.readFile(out, "utf8"));
+    snapshot.emsMeasurementMode = measurementMode;
+    return snapshot;
   } finally {
     if (chrome.pid) await killProcessTree(chrome.pid);
   }
@@ -536,6 +554,104 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
+function normalizeCacheUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return String(urlString ?? "");
+  }
+}
+
+function cacheFilePath(root) {
+  return path.join(root, ".tmp", "desktop-cache", "measurements.json");
+}
+
+function measurementCacheKey(browser, extension) {
+  return stableId([
+    browser.executablePath,
+    browser.userDataDir,
+    browser.profileDirectory,
+    normalizeCacheUrl(browser.activeUrl),
+    extension.extensionId,
+    extension.version
+  ]);
+}
+
+async function loadMeasurementCache(root) {
+  const filePath = cacheFilePath(root);
+  const parsed = await tryReadJson(filePath);
+  if (parsed?.schemaVersion === CACHE_SCHEMA_VERSION && parsed.entries && typeof parsed.entries === "object") {
+    return parsed;
+  }
+  return { schemaVersion: CACHE_SCHEMA_VERSION, entries: {} };
+}
+
+async function saveMeasurementCache(root, cache) {
+  const filePath = cacheFilePath(root);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+}
+
+function cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs) {
+  const now = Date.now();
+  return candidates.flatMap((extension) => {
+    const entry = cache.entries[measurementCacheKey(browser, extension)];
+    if (!entry?.result || !entry.generatedAt) return [];
+    const ageMs = now - Date.parse(entry.generatedAt);
+    if (!Number.isFinite(ageMs) || ageMs > cacheTtlMs) return [];
+    return [{
+      ...entry.result,
+      cacheStatus: "cached",
+      notes: `Cached ${entry.generatedAt}. Background refresh is running. ${entry.result.notes ?? ""}`.trim()
+    }];
+  });
+}
+
+async function writeResultsToCache(root, cache, browser, results) {
+  for (const result of results) {
+    cache.entries[measurementCacheKey(browser, result)] = {
+      generatedAt: result.generatedAt,
+      targetUrl: normalizeCacheUrl(browser.activeUrl),
+      result
+    };
+  }
+  await saveMeasurementCache(root, cache);
+}
+
+function resolveRequestedMeasurementModes(options) {
+  const requested = options.measurementMode ?? MEASUREMENT_MODE_AUTO;
+  if (requested === MEASUREMENT_MODE_AUTO) return [MEASUREMENT_MODE_HEADLESS, MEASUREMENT_MODE_OFFSCREEN];
+  if ([MEASUREMENT_MODE_HEADLESS, MEASUREMENT_MODE_OFFSCREEN, MEASUREMENT_MODE_VISIBLE].includes(requested)) return [requested];
+  throw new Error(`Unknown measurement mode: ${requested}`);
+}
+
+async function captureBaselineForModes({ modes, capture }) {
+  const errors = [];
+  for (const mode of modes) {
+    try {
+      return await capture(mode);
+    } catch (error) {
+      errors.push(`${mode}: ${error.message}`);
+    }
+  }
+  throw new Error(`All measurement modes failed. ${errors.join(" | ")}`);
+}
+
+function withMeasurementMetadata(result, { browser, measurementMode, cacheStatus, baselineSnapshotPath, afterSnapshotPath }) {
+  return {
+    ...result,
+    estimatedPrivateDrop: formatBytes(result.estimatedPrivateDropBytes),
+    targetUrl: browser.activeUrl,
+    generatedAt: new Date().toISOString(),
+    measurementMode,
+    cacheStatus,
+    baselineSnapshotPath,
+    afterSnapshotPath
+  };
+}
+
 async function calibrateAuto(options) {
   const root = repoRoot();
   const listing = await listBrowsers();
@@ -548,6 +664,8 @@ async function calibrateAuto(options) {
   const maxExtensions = Number.isFinite(options.maxExtensions) ? options.maxExtensions : DEFAULT_MAX_EXTENSIONS;
   const settleMs = Number.isFinite(options.settleMs) ? options.settleMs : DEFAULT_SETTLE_MS;
   const basePort = Number.isFinite(options.basePort) ? options.basePort : DEFAULT_BASE_PORT;
+  const cacheTtlMs = Number.isFinite(options.cacheTtlMs) ? options.cacheTtlMs : DEFAULT_CACHE_TTL_MS;
+  const requestedModes = resolveRequestedMeasurementModes(options);
   const runId = new Date().toISOString().replace(/[:.]/g, "-");
   const runRoot = path.join(root, ".tmp", "desktop-runs", runId);
   const baselineRoot = path.join(runRoot, "baseline");
@@ -560,29 +678,74 @@ async function calibrateAuto(options) {
   const installed = await collectInstalledExtensions(baselineProfileDir);
   const allCandidates = installed.filter((extension) => !extension.disabled && extensionMatchesTargetUrl(extension, browser.activeUrl));
   const candidates = allCandidates.slice(0, maxExtensions);
-  emitJsonLine(options, { event: "candidates", count: candidates.length, totalMatchingBeforeLimit: allCandidates.length, maxExtensions, candidates });
+  emitJsonLine(options, { event: "candidates", count: candidates.length, totalMatchingBeforeLimit: allCandidates.length, maxExtensions, candidates, measurementModes: requestedModes });
   if (!candidates.length) throw new Error(`No enabled installed extensions declare access to ${browser.activeUrl}.`);
 
-  const baselineSnapshotPath = path.join(snapshotsDir, "baseline.json");
-  const baseline = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: baselineRoot, profileDirectory: browser.profileDirectory, profileDir: baselineProfileDir, port: basePort, url: browser.activeUrl, out: baselineSnapshotPath, settleMs });
+  const cache = options.noCache ? { schemaVersion: CACHE_SCHEMA_VERSION, entries: {} } : await loadMeasurementCache(root);
+  const cachedResults = options.noCache ? [] : cachedResultsForCandidates(cache, browser, candidates, cacheTtlMs);
+  if (cachedResults.length) {
+    emitJsonLine(options, { event: "cached-results", count: cachedResults.length, results: cachedResults });
+  }
+
+  const baselineByMode = new Map();
+  async function getBaselineForMode(mode) {
+    if (baselineByMode.has(mode)) return baselineByMode.get(mode);
+    const snapshotPath = path.join(snapshotsDir, mode === requestedModes[0] ? "baseline.json" : `baseline-${mode}.json`);
+    const snapshot = await captureSnapshotForClone({
+      root,
+      chromePath: browser.executablePath,
+      userDataDir: baselineRoot,
+      profileDirectory: browser.profileDirectory,
+      profileDir: baselineProfileDir,
+      port: basePort,
+      url: browser.activeUrl,
+      out: snapshotPath,
+      settleMs,
+      measurementMode: mode
+    });
+    const value = { snapshot, snapshotPath, mode };
+    baselineByMode.set(mode, value);
+    return value;
+  }
+
+  let activeBaseline = await captureBaselineForModes({
+    modes: requestedModes,
+    capture: async (mode) => {
+      emitJsonLine(options, { event: "worker-mode", mode, phase: "baseline" });
+      return getBaselineForMode(mode);
+    }
+  });
 
   const results = [];
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
-    emitJsonLine(options, { event: "candidate", index: index + 1, total: candidates.length, extension: candidate });
+    emitJsonLine(options, { event: "candidate", index: index + 1, total: candidates.length, extension: candidate, measurementMode: activeBaseline.mode });
     const afterRoot = path.join(runRoot, `without-${candidate.extensionId}`);
     await cloneUserDataForProbe(browser.userDataDir, browser.profileDirectory, afterRoot);
     const afterProfileDir = path.join(afterRoot, browser.profileDirectory);
     await disableExtensionInClone(afterProfileDir, candidate.extensionId);
-    const afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}.json`);
-    const after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + index + 1, url: browser.activeUrl, out: afterSnapshotPath, settleMs });
-    const delta = summarizeMeasuredDelta(baseline, after, candidate);
-    const result = { ...delta, estimatedPrivateDrop: formatBytes(delta.estimatedPrivateDropBytes), targetUrl: browser.activeUrl, baselineSnapshotPath, afterSnapshotPath };
+
+    let afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeBaseline.mode}.json`);
+    let after;
+    try {
+      after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + index + 1, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeBaseline.mode });
+    } catch (error) {
+      const fallbackMode = requestedModes.find((mode) => mode !== activeBaseline.mode);
+      if (!fallbackMode) throw error;
+      emitJsonLine(options, { event: "fallback", from: activeBaseline.mode, to: fallbackMode, reason: error.message, extension: candidate });
+      activeBaseline = await getBaselineForMode(fallbackMode);
+      afterSnapshotPath = path.join(snapshotsDir, `without-${candidate.extensionId}-${activeBaseline.mode}.json`);
+      after = await captureSnapshotForClone({ root, chromePath: browser.executablePath, userDataDir: afterRoot, profileDirectory: browser.profileDirectory, profileDir: afterProfileDir, port: basePort + index + 1, url: browser.activeUrl, out: afterSnapshotPath, settleMs, measurementMode: activeBaseline.mode });
+    }
+
+    const delta = summarizeMeasuredDelta(activeBaseline.snapshot, after, candidate);
+    const result = withMeasurementMetadata(delta, { browser, measurementMode: activeBaseline.mode, cacheStatus: "measured", baselineSnapshotPath: activeBaseline.snapshotPath, afterSnapshotPath });
     results.push(result);
+    if (!options.noCache) await writeResultsToCache(root, cache, browser, [result]);
     emitJsonLine(options, { event: "result", result });
   }
 
-  const payload = { generatedAt: new Date().toISOString(), mode: "desktop-ab-measured-delta", browser, runRoot, settleMs, maxExtensions, results };
+  const payload = { generatedAt: new Date().toISOString(), mode: "desktop-ab-measured-delta", browser, runRoot, settleMs, maxExtensions, measurementModes: requestedModes, cacheTtlMs, cachedResultCount: cachedResults.length, results };
   const out = options.out ?? path.join(runRoot, "desktop-calibration-results.json");
   await fs.writeFile(out, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   emitJsonLine(options, { event: "complete", outputPath: out, results });

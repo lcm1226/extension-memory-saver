@@ -144,7 +144,7 @@ public partial class MainWindow : Window
         ResultItems.Clear();
         ApplyBrowserInfo(browser);
         RunProgress.IsIndeterminate = true;
-        StatusText.Text = "Starting clone-based A/B measurement...";
+        StatusText.Text = "Starting background measurement. Cached results appear first when available...";
 
         try
         {
@@ -190,6 +190,20 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpsertResult(JsonElement item)
+    {
+        ResultItem incoming = ResultItem.FromJson(item);
+        for (int index = 0; index < ResultItems.Count; index += 1)
+        {
+            if (ResultItems[index].ExtensionId == incoming.ExtensionId)
+            {
+                ResultItems[index] = incoming;
+                return;
+            }
+        }
+        ResultItems.Add(incoming);
+    }
+
     private void HandleEngineEvent(string line)
     {
         using JsonDocument doc = JsonDocument.Parse(line);
@@ -198,24 +212,41 @@ public partial class MainWindow : Window
         switch (eventName)
         {
             case "start":
-                StatusText.Text = "Cloning selected profile for safe measurement. Temporary Chrome windows may open/close.";
+                StatusText.Text = "Preparing safe clone for background measurement...";
                 break;
             case "candidates":
                 int count = root.GetProperty("count").GetInt32();
                 int total = root.GetProperty("totalMatchingBeforeLimit").GetInt32();
-                StatusText.Text = $"Measuring {count} site-relevant extension(s). Matching before cap: {total}.";
+                StatusText.Text = $"Queued {count} site-relevant extension(s). Matching before cap: {total}.";
+                break;
+            case "cached-results":
+                foreach (JsonElement result in root.GetProperty("results").EnumerateArray())
+                {
+                    UpsertResult(result);
+                }
+                StatusText.Text = $"Showing {ResultItems.Count} cached result(s). Refreshing in background...";
+                break;
+            case "worker-mode":
+                string mode = root.GetProperty("mode").GetString() ?? "worker";
+                StatusText.Text = $"Background worker mode: {mode}.";
+                break;
+            case "fallback":
+                string from = root.GetProperty("from").GetString() ?? "worker";
+                string to = root.GetProperty("to").GetString() ?? "fallback";
+                StatusText.Text = $"Headless worker failed from {from}; retrying with {to} fallback.";
                 break;
             case "candidate":
                 int index = root.GetProperty("index").GetInt32();
                 int candidateTotal = root.GetProperty("total").GetInt32();
                 string name = root.GetProperty("extension").GetProperty("name").GetString() ?? "extension";
-                StatusText.Text = $"Measuring {index}/{candidateTotal}: {name}";
+                string candidateMode = root.TryGetProperty("measurementMode", out JsonElement candidateModeElement) ? candidateModeElement.GetString() ?? "worker" : "worker";
+                StatusText.Text = $"Refreshing {index}/{candidateTotal} in {candidateMode}: {name}";
                 break;
             case "result":
-                ResultItems.Add(ResultItem.FromJson(root.GetProperty("result")));
+                UpsertResult(root.GetProperty("result"));
                 break;
             case "complete":
-                StatusText.Text = $"Complete. {ResultItems.Count} result(s).";
+                StatusText.Text = $"Complete. {ResultItems.Count} result(s) refreshed.";
                 break;
             case "error":
                 StatusText.Text = root.GetProperty("message").GetString() ?? "Engine error.";
@@ -353,8 +384,11 @@ public sealed class BrowserItem
 
 public sealed class ResultItem
 {
+    public string ExtensionId { get; init; } = "";
     public string Name { get; init; } = "";
     public string EstimatedPrivateDrop { get; init; } = "";
+    public string Source { get; init; } = "";
+    public string Mode { get; init; } = "";
     public string Confidence { get; init; } = "";
     public string TargetChange { get; init; } = "";
     public string Notes { get; init; } = "";
@@ -365,8 +399,11 @@ public sealed class ResultItem
         int afterTargets = item.TryGetProperty("afterTargets", out JsonElement after) ? after.GetInt32() : 0;
         return new ResultItem
         {
+            ExtensionId = ReadString(item, "extensionId"),
             Name = ReadString(item, "name"),
             EstimatedPrivateDrop = ReadString(item, "estimatedPrivateDrop"),
+            Source = ReadString(item, "cacheStatus"),
+            Mode = ReadString(item, "measurementMode"),
             Confidence = ReadString(item, "confidence"),
             TargetChange = $"{beforeTargets}->{afterTargets}",
             Notes = ReadString(item, "notes")
