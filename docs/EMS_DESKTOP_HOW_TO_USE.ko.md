@@ -1,79 +1,81 @@
-# EMS Desktop ?ъ슜踰?
-## ?꾩옱 ?곹깭
+﻿# EMS Desktop 사용법
 
-EMS Desktop? Chrome ?뺤옣 ?꾨줈洹몃옩蹂?硫붾え由??ъ슜?됱쓣 ?뺥솗???뚯쑀沅?湲곗??쇰줈 ?쒖떆?섎뒗 ?깆씠 ?꾨떃?덈떎.
+## 현재 상태
 
-????좏깮??probe Chrome ?꾨줈?꾩쓣 ?덉쟾?섍쾶 蹂듭젣???? 媛숈? ?섏씠吏?먯꽌 ?뺤옣 ?꾨줈洹몃옩???섎굹???쒖쇅??A/B 痢≪젙???ㅽ뻾????듭쟻??硫붾え由??곹뼢媛믪쓣 蹂댁뿬以띾땲??
+EMS Desktop은 Chrome 확장 프로그램별 정확한 메모리 소유량을 주장하지 않습니다.
 
-?? `AdBlock??鍮쇰㈃ ???섏씠吏 ?몄뀡 硫붾え由ш? ??40 MB 以꾩뿀??.
+선택한 probe Chrome 프로필을 안전하게 복제하고, 같은 페이지를 연 뒤 clone 안에서 확장 프로그램을 하나씩 제거해 A/B 메모리 delta를 측정합니다. 결과는 대략값입니다.
 
-## ?ы꽣釉??ㅽ뻾
+예: `AdBlock을 제거했을 때 이 페이지 세션 메모리가 약 40 MB 줄어듦`.
 
-諛고룷 ?⑦궎吏瑜?諛쏆? 寃쎌슦:
+## 포터블 실행
 
-1. `EMS-Desktop-Portable` ?대뜑瑜??쎈땲??
-2. `Start EMS Desktop.cmd`瑜??붾툝?대┃?⑸땲??
-3. ?깆뿉??`Launch Probe Chrome`???꾨쫭?덈떎.
-4. ?대┛ probe Chrome??痢≪젙???뺤옣 ?꾨줈洹몃옩???ㅼ튂?섍굅??耳?땲??
-5. probe Chrome?먯꽌 痢≪젙???뱀궗?댄듃瑜??쎈땲??
-6. EMS Desktop?먯꽌 `Refresh Browsers`瑜??꾨Ⅴ怨??대떦 釉뚮씪?곗?瑜??좏깮?⑸땲??
+배포 패키지를 받은 경우:
 
-## 媛쒕컻 ?섍꼍?먯꽌 ?ㅽ뻾
+1. `EMS-Desktop-Portable` 폴더를 엽니다.
+2. `EMS Desktop.exe`를 더블클릭합니다. `Start EMS Desktop.cmd`는 호환용 실행 파일입니다.
+3. 우측 상단 safe-clone 배지 옆 언어 선택에서 `English` 또는 `Korean`을 선택합니다.
+4. 앱에서 `프로브 Chrome 실행`을 누릅니다.
+5. 열린 probe Chrome 프로필에 측정할 확장 프로그램을 설치하거나 켭니다.
+6. probe Chrome에서 측정할 웹사이트를 엽니다.
+7. EMS Desktop에서 `브라우저 새로고침`을 누르고 해당 브라우저/프로필을 선택합니다.
 
-repo ?대뜑 ?덉뿉???ㅽ뻾:
+## 개발 환경에서 실행
+
+repo 폴더에서:
 
 ```powershell
 cd "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe"
 npm run desktop:run
 ```
 
-?대뒓 ?꾩튂?먯꽌???ㅽ뻾:
+어느 위치에서든 실행:
 
 ```powershell
 npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
 ```
 
-?먮뒗 helper ?ㅽ겕由쏀듃:
+또는 helper 스크립트:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
-## 痢≪젙 ?먮쫫
+## 측정 흐름
 
-1. ?깆씠 debug-enabled Chromium/Chrome 釉뚮씪?곗?瑜?李얠뒿?덈떎.
-2. ?좏깮??釉뚮씪?곗????꾩옱 ?쒖꽦 HTTP(S) ?섏씠吏瑜?湲곗??쇰줈 痢≪젙?⑸땲??
-3. 理쒓렐 罹먯떆媛 ?덉쑝硫?癒쇱? 利됱떆 蹂댁뿬以띾땲??
-4. 諛깃렇?쇱슫?쒖뿉??profile clone??留뚮뱾怨?headless worker濡???痢≪젙???ㅽ뻾?⑸땲??
-5. headless 痢≪젙???ㅽ뙣?섎㈃ off-screen headful worker濡??ъ떆?꾪빀?덈떎.
-6. 痢≪젙???앸굹硫?寃곌낵 ?뚯씠釉붿씠 ??媛믪쑝濡?媛깆떊?⑸땲??
+1. 앱이 debug-enabled Chromium/Chrome 브라우저를 찾습니다.
+2. 선택한 브라우저의 현재 활성 HTTP(S) 페이지가 측정 대상이 됩니다.
+3. 최근 캐시 결과가 있으면 먼저 즉시 보여줍니다. `Median x3`를 켜면 확장 프로그램마다 A/B 샘플을 3회 실행해 median 값을 표시합니다.
+4. 백그라운드 worker가 프로필을 clone하고 headless 측정을 실행합니다.
+5. headless 캡처가 실패하면 off-screen headful worker로 재시도합니다.
+6. 새 측정이 끝나면 결과 표가 갱신됩니다.
 
-?좏깮???ㅼ젣 probe profile? 吏곸젒 ?섏젙?섏? ?딆뒿?덈떎. ?뺤옣 鍮꾪솢?깊솕 ?ㅽ뿕? clone profile?먯꽌留??섑뻾?⑸땲??
+선택한 실제 probe 프로필은 수정하지 않습니다. 확장 비활성화는 clone 프로필 안에서만 수행됩니다. 따라서 현재 EMS Desktop은 선택한 브라우저에서 바로 `이 확장 비활성화`를 실행하는 live control을 제공하지 않습니다. 나중에 제어 기능을 추가한다면 명시적인 브라우저 전체 동작으로 만들거나 companion Chrome extension으로 구현해야 합니다.
 
-## 紐낅졊以꾨줈 probe Chrome ?ㅽ뻾
+## 명령줄로 probe Chrome 실행
 
 ```powershell
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-??紐낅졊? repo ?대? `.tmp\ems-desktop-probe-user-data`??蹂꾨룄 Chrome ?꾨줈?꾩쓣 留뚮뱾怨?`--remote-debugging-port=9222`濡??ㅽ뻾?⑸땲??
+이 명령은 repo 내부 `.tmp\ems-desktop-probe-user-data`에 별도 Chrome 프로필을 만들고 `--remote-debugging-port=9222`로 실행합니다.
 
-## 寃곌낵 ?댁꽍
+## 결과 해석
 
-- `Approx. impact`: baseline ?鍮??대떦 ?뺤옣???쒖쇅?덉쓣 ??以꾩뼱????듭쟻??private memory delta?낅땲??
-- `Confidence: medium`: ?ㅻⅨ ?뺤옣 target 蹂?붽? 嫄곗쓽 ?녾굅???ㅼ뿼????? run?낅땲??
-- `Confidence: low`: ?ㅻⅨ ?뺤옣 target??媛숈씠 蹂?덇굅??session-level delta ?섏〈?꾧? ??run?낅땲??
-- `Source: cached`: ?댁쟾 痢≪젙媛믪쓣 癒쇱? 蹂댁뿬以 ?곹깭?낅땲??
-- `Source: measured`: 諛깃렇?쇱슫??痢≪젙???앸궃 ??寃곌낵?낅땲??
-- `Worker: headless/offscreen`: 痢≪젙???ъ슜??clone Chrome ?ㅽ뻾 諛⑹떇?낅땲??
+- `예상 영향`: baseline clone 대비 해당 확장을 제거했을 때 줄어든 대략적인 private memory delta입니다.
+- `신뢰도: 보통`: 관련 없는 확장 target 변화가 거의 없거나 관측되지 않은 run입니다.
+- `신뢰도: 낮음`: 다른 확장 target도 변했거나 session-level delta 의존도가 큰 run입니다.
+- `출처: 캐시됨`: 이전 측정값을 먼저 보여주는 상태입니다.
+- `출처: 측정됨`: 백그라운드 측정이 완료된 새 결과입니다.
+- `작업 방식: 백그라운드/오프스크린`: 측정에 사용된 clone Chrome 실행 방식입니다.
 
-## ?쒓퀎
+## 한계
 
-- Stable Chrome? content script renderer memory瑜??뺤옣 ?꾨줈洹몃옩蹂꾨줈 ?뺥솗???섎늻??二쇱? ?딆뒿?덈떎.
-- 媛믪? ?섏씠吏 ?곹깭, 愿묎퀬, ?곸긽 ?ъ깮 ?щ?, 罹먯떆, ?ㅽ듃?뚰겕 ?곹깭???곕씪 ?붾뱾由????덉뒿?덈떎.
-- ?뺤옣??留롮쑝硫??꾨낫 ?뺤옣 ?섎쭔??clone Chrome 痢≪젙???꾩슂???쒓컙??嫄몃┫ ???덉뒿?덈떎.
+- Stable Chrome은 content script renderer memory를 확장 프로그램별로 정확히 나눠주지 않습니다.
+- 값은 페이지 상태, 광고, 영상 재생, 캐시, 네트워크 활동에 따라 달라질 수 있습니다.
+- 확장이 많을수록 clone Chrome 실행 횟수가 늘어나므로 갱신 시간이 길어질 수 있습니다. `Median x3`는 샘플 수가 3배라 더 느립니다.
 
-## 媛쒕컻 寃利?紐낅졊
+## 개발 검증 명령
 
 ```powershell
 npm run desktop:list

@@ -17,7 +17,7 @@ npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:r
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
+A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. The desktop UI has an English/Korean language selector next to the safe-clone badge. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
 
 Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
 

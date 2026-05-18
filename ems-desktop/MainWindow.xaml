@@ -62,14 +62,23 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="EMS Desktop" FontSize="36" FontWeight="Bold" />
-                <TextBlock Text="Approximate A/B measured memory impact for the focused Chromium page." Foreground="{StaticResource MutedBrush}" FontSize="15" Margin="0,6,0,0" />
+                <TextBlock x:Name="SubtitleText" Text="Approximate A/B measured memory impact for the focused Chromium page." Foreground="{StaticResource MutedBrush}" FontSize="15" Margin="0,6,0,0" />
             </StackPanel>
-            <Border Grid.Column="1" Background="#241F14" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="14" Padding="14,10" VerticalAlignment="Center">
-                <StackPanel>
-                    <TextBlock Text="Safe clone measurement" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
-                    <TextBlock Text="Live profile is never modified" Foreground="#F5F1E8" FontSize="13" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Margin="0,0,14,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="LanguageLabel" Text="Language" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,4" />
+                    <ComboBox x:Name="LanguageCombo" Width="132" SelectionChanged="LanguageCombo_SelectionChanged" SelectedIndex="0">
+                        <ComboBoxItem Content="English" Tag="en" />
+                        <ComboBoxItem Content="Korean" Tag="ko" />
+                    </ComboBox>
                 </StackPanel>
-            </Border>
+                <Border Background="#241F14" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="14" Padding="14,10" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock x:Name="SafeCloneTitleText" Text="Safe clone measurement" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SafeCloneBodyText" Text="Live profile is never modified" Foreground="#F5F1E8" FontSize="13" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Grid>
 
         <Border Grid.Row="1" Background="#151719" BorderBrush="#2F4A5A" BorderThickness="1" CornerRadius="16" Padding="16" Margin="0,0,0,14">
@@ -80,16 +89,16 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,12,0">
-                    <TextBlock Text="1. Launch probe Chrome" Foreground="#7FD3FF" FontWeight="Bold" />
-                    <TextBlock Text="Use the button below. This opens a separate debug-enabled profile." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <TextBlock x:Name="Step1TitleText" Text="1. Launch probe Chrome" Foreground="#7FD3FF" FontWeight="Bold" />
+                    <TextBlock x:Name="Step1BodyText" Text="Use the button below. This opens a separate debug-enabled profile." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,12,0">
-                    <TextBlock Text="2. Open the target page" Foreground="#7FD3FF" FontWeight="Bold" />
-                    <TextBlock Text="Install or enable extensions in that probe profile, then open the page to measure." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <TextBlock x:Name="Step2TitleText" Text="2. Open the target page" Foreground="#7FD3FF" FontWeight="Bold" />
+                    <TextBlock x:Name="Step2BodyText" Text="Install or enable extensions in that probe profile, then open the page to measure." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="3. Read measured deltas" Foreground="#7FD3FF" FontWeight="Bold" />
-                    <TextBlock Text="Cached values appear first. A headless worker refreshes results in the background." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <TextBlock x:Name="Step3TitleText" Text="3. Read measured deltas" Foreground="#7FD3FF" FontWeight="Bold" />
+                    <TextBlock x:Name="Step3BodyText" Text="Cached values appear first. A headless worker refreshes results in the background." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -101,15 +110,15 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Debug-enabled browser/profile" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock x:Name="BrowserLabelText" Text="Debug-enabled browser/profile" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <ComboBox x:Name="BrowserCombo" ItemsSource="{Binding BrowserItems}" DisplayMemberPath="DisplayName" SelectionChanged="BrowserCombo_SelectionChanged" />
                     <TextBlock x:Name="BrowserHelpText" Text="Select a probe Chrome with --remote-debugging-port. EMS shows cached results immediately, then refreshes with headless measurement and off-screen fallback." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16,0,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Launch Probe Chrome" Click="LaunchProbeChrome_Click" />
-                        <Button Content="Refresh Browsers" Click="RefreshBrowsers_Click" />
-                        <Button Content="Cancel Run" Click="CancelRun_Click" />
+                        <Button x:Name="LaunchProbeButton" Content="Launch Probe Chrome" Click="LaunchProbeChrome_Click" />
+                        <Button x:Name="RefreshButton" Content="Refresh Browsers" Click="RefreshBrowsers_Click" />
+                        <Button x:Name="CancelButton" Content="Cancel Run" Click="CancelRun_Click" />
                     </StackPanel>
                     <CheckBox x:Name="MedianRunsCheck" Content="Median x3 for higher confidence (slower)" ToolTip="Runs three A/B samples per extension and reports the median delta." HorizontalAlignment="Right" />
                 </StackPanel>
@@ -123,14 +132,14 @@
             </Grid.ColumnDefinitions>
             <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18" Margin="0,0,12,0">
                 <StackPanel>
-                    <TextBlock Text="Active page" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
+                    <TextBlock x:Name="ActivePageLabelText" Text="Active page" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
                     <TextBlock x:Name="ActiveTitleText" Text="No active page selected" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" Margin="0,8,0,0" />
                     <TextBlock x:Name="ActiveUrlText" Text="-" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
             <Border Grid.Column="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18">
                 <StackPanel>
-                    <TextBlock Text="Run status" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
+                    <TextBlock x:Name="RunStatusLabelText" Text="Run status" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
                     <TextBlock x:Name="StatusText" Text="Idle" FontSize="16" TextWrapping="Wrap" Margin="0,8,0,6" />
                     <TextBlock x:Name="ProgressText" Text="No run in progress" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,8" />
                     <ProgressBar x:Name="RunProgress" Height="10" IsIndeterminate="False" />
@@ -139,14 +148,14 @@
         </Grid>
 
         <Border Grid.Row="4" Background="#171A1D" BorderBrush="#304134" BorderThickness="1" CornerRadius="14" Padding="14" Margin="0,0,0,14">
-            <TextBlock Text="Safety: EMS clones the selected profile before disabling extensions. Measurements run in the clone only; the selected live profile and installed extensions are not mutated." Foreground="#BFE8C7" TextWrapping="Wrap" />
+            <TextBlock x:Name="SafetyBannerText" Text="Safety: EMS clones the selected profile before disabling extensions. Measurements run in the clone only; the selected live profile and installed extensions are not mutated." Foreground="#BFE8C7" TextWrapping="Wrap" />
         </Border>
 
         <Border Grid.Row="5" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14">
             <DataGrid x:Name="ResultsGrid" ItemsSource="{Binding ResultItems}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" AlternationCount="2" MinRowHeight="58">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Extension" Binding="{Binding Name}" Width="2*" />
-                    <DataGridTemplateColumn Header="Approx. impact" Width="150">
+                    <DataGridTextColumn x:Name="ExtensionColumn" Header="Extension" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTemplateColumn x:Name="ImpactColumn" Header="Approx. impact" Width="150">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="{Binding ImpactBrush}" CornerRadius="10" Padding="9,5" HorizontalAlignment="Left">
@@ -155,7 +164,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Source" Width="105">
+                    <DataGridTemplateColumn x:Name="SourceColumn" Header="Source" Width="105">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="{Binding SourceBrush}" CornerRadius="10" Padding="8,4" HorizontalAlignment="Left">
@@ -164,7 +173,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Worker" Width="110">
+                    <DataGridTemplateColumn x:Name="WorkerColumn" Header="Worker" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="{Binding ModeBrush}" CornerRadius="10" Padding="8,4" HorizontalAlignment="Left">
@@ -173,7 +182,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Confidence" Width="125">
+                    <DataGridTemplateColumn x:Name="ConfidenceColumn" Header="Confidence" Width="125">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="{Binding ConfidenceBrush}" CornerRadius="10" Padding="8,4" HorizontalAlignment="Left">
@@ -182,13 +191,13 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Samples" Binding="{Binding SampleInfo}" Width="160" />
-                    <DataGridTextColumn Header="Targets" Binding="{Binding TargetChange}" Width="90" />
-                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2.4*" />
+                    <DataGridTextColumn x:Name="SamplesColumn" Header="Samples" Binding="{Binding SampleInfo}" Width="160" />
+                    <DataGridTextColumn x:Name="TargetsColumn" Header="Targets" Binding="{Binding TargetChange}" Width="90" />
+                    <DataGridTextColumn x:Name="NotesColumn" Header="Notes" Binding="{Binding Notes}" Width="2.4*" />
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
 
-        <TextBlock Grid.Row="6" Text="Values are approximate A/B deltas, not exact memory ownership. Page state, ads, video playback, cache, and network activity can move results." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
+        <TextBlock x:Name="FooterText" Grid.Row="6" Text="Values are approximate A/B deltas, not exact memory ownership. Page state, ads, video playback, cache, and network activity can move results." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
     </Grid>
 </Window>

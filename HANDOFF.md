@@ -21,7 +21,7 @@ New files/commands:
 - `docs/EMS_DESKTOP_HOW_TO_USE.en.md`: English desktop usage guide.
 - `ems-desktop/`: .NET 8 WPF desktop app.
 
-Latest desktop UX direction: show a three-step onboarding flow, keep clone-safety wording visible, show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include colored tags for `cacheStatus`, `measurementMode`, confidence, and optional median x3 sample metadata.
+Latest desktop UX direction: show a three-step onboarding flow, keep clone-safety wording visible, include an English/Korean language selector, show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include colored tags for `cacheStatus`, `measurementMode`, confidence, and optional median x3 sample metadata. EMS Desktop does not mutate the live selected profile and does not provide tab-scoped live extension kill controls.
 
 Figma draft: https://www.figma.com/design/NVA8Y0PeY6UEm6PRxPfCAK
 

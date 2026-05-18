@@ -14,10 +14,11 @@ If you received the portable package:
 
 1. Open the `EMS-Desktop-Portable` folder.
 2. Double-click `EMS Desktop.exe`. `Start EMS Desktop.cmd` is a compatibility launcher.
-3. In the app, click `Launch Probe Chrome`.
-4. Install or enable the extensions you want to measure in that probe Chrome.
-5. Open the target website in the probe Chrome.
-6. In EMS Desktop, click `Refresh Browsers` and select that browser.
+3. Choose `English` or `Korean` from the language selector near the top-right safe-clone badge.
+4. In the app, click `Launch Probe Chrome`.
+5. Install or enable the extensions you want to measure in that probe Chrome.
+6. Open the target website in the probe Chrome.
+7. In EMS Desktop, click `Refresh Browsers` and select that browser.
 
 ## Development Run
 
@@ -49,7 +50,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 5. If headless capture fails, EMS retries with an off-screen headful worker.
 6. The results table updates when the new measurement completes.
 
-The selected live probe profile is not modified. Extension disabling happens only in cloned profiles.
+The selected live probe profile is not modified. Extension disabling happens only in cloned profiles. EMS Desktop therefore does not currently provide a live "disable this extension now" control for the selected browser. If control actions are added later, they should be explicit browser-wide actions or implemented through a companion Chrome extension.
 
 ## Launch Probe Chrome From CLI
 
