@@ -26,7 +26,7 @@ function repoRoot() {
 }
 
 function printHelp() {
-  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--repeat-runs 1|3] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n`);
+  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--repeat-runs 1|3] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n  node tools/ems-desktop-engine.mjs verify-safety [--json]\n`);
 }
 
 function parseArgs(argv) {
@@ -68,6 +68,14 @@ async function pathExists(filePath) {
 
 function stableId(parts) {
   return createHash("sha1").update(parts.filter(Boolean).join("|")).digest("hex").slice(0, 12);
+}
+
+function assertUnderPath(childPath, parentPath) {
+  const childFull = path.resolve(childPath);
+  const parentFull = path.resolve(parentPath);
+  const relative = path.relative(parentFull, childFull);
+  if (relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative))) return childFull;
+  throw new Error(`Refusing to operate outside ${parentFull}: ${childFull}`);
 }
 
 async function httpJson(url, timeoutMs = DEFAULT_HTTP_TIMEOUT_MS) {
@@ -288,7 +296,7 @@ async function listBrowsers() {
     browsers,
     warnings,
     notes: [
-      "Only Chromium instances launched with --remote-debugging-port can be measured.",
+      "Only Probe Chrome or advanced Chromium instances with a DevTools endpoint can be measured.",
       "A/B calibration clones the selected profile into .tmp/desktop-runs before changing extension files."
     ]
   };
@@ -741,8 +749,9 @@ async function calibrateAuto(options) {
   const cacheTtlMs = Number.isFinite(options.cacheTtlMs) ? options.cacheTtlMs : DEFAULT_CACHE_TTL_MS;
   const requestedModes = resolveRequestedMeasurementModes(options);
   const runId = new Date().toISOString().replace(/[:.]/g, "-");
-  const runRoot = path.join(root, ".tmp", "desktop-runs", runId);
-  const baselineRoot = path.join(runRoot, "baseline");
+  const desktopRunsRoot = path.join(root, ".tmp", "desktop-runs");
+  const runRoot = assertUnderPath(path.join(desktopRunsRoot, runId), desktopRunsRoot);
+  const baselineRoot = assertUnderPath(path.join(runRoot, "baseline"), runRoot);
   const baselineProfileDir = path.join(baselineRoot, browser.profileDirectory);
   const snapshotsDir = path.join(runRoot, "snapshots");
   await fs.mkdir(snapshotsDir, { recursive: true });
@@ -795,7 +804,7 @@ async function calibrateAuto(options) {
   const results = [];
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
-    const afterRoot = path.join(runRoot, `without-${candidate.extensionId}`);
+    const afterRoot = assertUnderPath(path.join(runRoot, `without-${candidate.extensionId}`), runRoot);
     await cloneUserDataForProbe(browser.userDataDir, browser.profileDirectory, afterRoot);
     const afterProfileDir = path.join(afterRoot, browser.profileDirectory);
     await disableExtensionInClone(afterProfileDir, candidate.extensionId);
@@ -838,6 +847,71 @@ async function calibrateAuto(options) {
   emitJsonLine(options, { event: "complete", outputPath: out, repeatRuns, results });
   return payload;
 }
+
+async function verifySafety() {
+  const root = repoRoot();
+  const tmpRoot = path.join(root, ".tmp");
+  const sourceUserDataDir = assertUnderPath(path.join(tmpRoot, "safety-source-user-data"), tmpRoot);
+  const desktopRunsRoot = assertUnderPath(path.join(tmpRoot, "desktop-runs"), tmpRoot);
+  const runRoot = assertUnderPath(path.join(desktopRunsRoot, "safety-verify"), desktopRunsRoot);
+  const cloneRoot = assertUnderPath(path.join(runRoot, "without-extension"), runRoot);
+  const profileDirectory = "Default";
+  const extensionId = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const extensionVersion = "1.0.0";
+  const sourceProfileDir = path.join(sourceUserDataDir, profileDirectory);
+  const sourceExtensionPath = path.join(sourceProfileDir, "Extensions", extensionId, extensionVersion);
+  const sourceDisabledPath = path.join(sourceProfileDir, "Extensions", `${extensionId}${DISABLED_SUFFIX}`);
+  const cloneProfileDir = path.join(cloneRoot, profileDirectory);
+  const cloneEnabledPath = path.join(cloneProfileDir, "Extensions", extensionId);
+  const cloneDisabledPath = path.join(cloneProfileDir, "Extensions", `${extensionId}${DISABLED_SUFFIX}`);
+
+  await fs.rm(sourceUserDataDir, { recursive: true, force: true });
+  await fs.rm(runRoot, { recursive: true, force: true });
+  await fs.mkdir(sourceExtensionPath, { recursive: true });
+  await fs.writeFile(path.join(sourceExtensionPath, "manifest.json"), JSON.stringify({
+    manifest_version: 3,
+    name: "EMS Safety Smoke Extension",
+    version: extensionVersion,
+    host_permissions: ["https://example.com/*"]
+  }, null, 2), "utf8");
+
+  await cloneUserDataForProbe(sourceUserDataDir, profileDirectory, cloneRoot);
+  await disableExtensionInClone(cloneProfileDir, extensionId);
+
+  const checks = [
+    {
+      name: "clone-root-under-desktop-runs",
+      ok: assertUnderPath(cloneRoot, desktopRunsRoot) === path.resolve(cloneRoot)
+    },
+    {
+      name: "source-extension-still-enabled",
+      ok: await pathExists(sourceExtensionPath)
+    },
+    {
+      name: "source-extension-not-renamed",
+      ok: !(await pathExists(sourceDisabledPath))
+    },
+    {
+      name: "clone-extension-disabled",
+      ok: !(await pathExists(cloneEnabledPath)) && (await pathExists(cloneDisabledPath))
+    },
+    {
+      name: "cache-under-tmp-desktop-cache",
+      ok: assertUnderPath(cacheFilePath(root), path.join(tmpRoot, "desktop-cache")) === path.resolve(cacheFilePath(root))
+    }
+  ];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: "desktop-safety-smoke",
+    ok: checks.every((check) => check.ok),
+    sourceUserDataDir,
+    runRoot,
+    cloneRoot,
+    checks
+  };
+}
+
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2));
   if (!command || command === "help" || command === "--help") {
@@ -852,6 +926,12 @@ async function main() {
   if (command === "calibrate-auto") {
     const payload = await calibrateAuto(options);
     if (!options.jsonl) console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+  if (command === "verify-safety") {
+    const payload = await verifySafety();
+    console.log(JSON.stringify(payload, null, options.json ? 2 : 0));
+    if (!payload.ok) process.exitCode = 1;
     return;
   }
   throw new Error(`Unknown command: ${command}`);

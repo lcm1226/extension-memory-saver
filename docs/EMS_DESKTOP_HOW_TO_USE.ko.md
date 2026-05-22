@@ -1,10 +1,10 @@
-﻿# EMS Desktop 사용법
+# EMS Desktop Companion 사용법
 
 ## 현재 상태
 
-EMS Desktop은 Chrome 확장 프로그램별 정확한 메모리 소유량을 주장하지 않습니다.
+EMS Desktop은 복제된 프로브 프로필에서 A/B delta를 안전하게 측정해, 어떤 Chrome 확장 프로그램이 페이지 메모리 비용을 늘리는지 추정합니다. 실제 프로필을 수정하지 않으며 정확한 Chrome 메모리 소유량을 주장하지 않습니다.
 
-선택한 probe Chrome 프로필을 안전하게 복제하고, 같은 페이지를 연 뒤 clone 안에서 확장 프로그램을 하나씩 제거해 A/B 메모리 delta를 측정합니다. 결과는 대략값입니다.
+Chrome extension은 검증된 artifact이자 선택적 helper 후보로 유지합니다. 메인 측정 UX는 데스크톱 앱입니다.
 
 예: `AdBlock을 제거했을 때 이 페이지 세션 메모리가 약 40 MB 줄어듦`.
 
@@ -18,33 +18,33 @@ EMS Desktop은 Chrome 확장 프로그램별 정확한 메모리 소유량을 �
 4. 앱에서 `프로브 Chrome 실행`을 누릅니다.
 5. 열린 probe Chrome 프로필에 측정할 확장 프로그램을 설치하거나 켭니다.
 6. probe Chrome에서 측정할 웹사이트를 엽니다.
-7. EMS Desktop에서 `브라우저 새로고침`을 누르고 해당 브라우저/프로필을 선택합니다.
+7. EMS Desktop에서 `프로필 새로고침`을 누르고 해당 프로필을 선택합니다.
 
 ## 개발 환경에서 실행
 
 repo 폴더에서:
 
 ```powershell
-cd "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe"
+cd "C:\Users\lcmru\Desktop\EMS\ems-memory-probe"
 npm run desktop:run
 ```
 
 어느 위치에서든 실행:
 
 ```powershell
-npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
 ```
 
 또는 helper 스크립트:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
 ## 측정 흐름
 
-1. 앱이 debug-enabled Chromium/Chrome 브라우저를 찾습니다.
-2. 선택한 브라우저의 현재 활성 HTTP(S) 페이지가 측정 대상이 됩니다.
+1. 앱이 프로브 Chrome 프로필을 찾습니다. 고급 사용자가 직접 실행한 Chromium도 여기에 표시될 수 있습니다.
+2. 선택한 프로필의 현재 활성 HTTP(S) 페이지가 측정 대상이 됩니다.
 3. 최근 캐시 결과가 있으면 먼저 즉시 보여줍니다. `Median x3`를 켜면 확장 프로그램마다 A/B 샘플을 3회 실행해 median 값을 표시합니다.
 4. 백그라운드 worker가 프로필을 clone하고 headless 측정을 실행합니다.
 5. headless 캡처가 실패하면 off-screen headful worker로 재시도합니다.
@@ -52,13 +52,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 
 선택한 실제 probe 프로필은 수정하지 않습니다. 확장 비활성화는 clone 프로필 안에서만 수행됩니다. 따라서 현재 EMS Desktop은 선택한 브라우저에서 바로 `이 확장 비활성화`를 실행하는 live control을 제공하지 않습니다. 나중에 제어 기능을 추가한다면 명시적인 브라우저 전체 동작으로 만들거나 companion Chrome extension으로 구현해야 합니다.
 
-## 명령줄로 probe Chrome 실행
+## 고급: 명령줄로 probe Chrome 실행
 
 ```powershell
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-이 명령은 repo 내부 `.tmp\ems-desktop-probe-user-data`에 별도 Chrome 프로필을 만들고 `--remote-debugging-port=9222`로 실행합니다.
+이 명령은 repo 내부 `.tmp\ems-desktop-probe-user-data`에 별도 Chrome 프로필을 만들고 EMS 측정에 필요한 DevTools endpoint를 켭니다. 대부분의 사용자는 앱의 `프로브 Chrome 실행` 버튼을 쓰는 편이 낫습니다.
 
 ## 결과 해석
 
@@ -79,6 +79,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 
 ```powershell
 npm run desktop:list
+npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package
 npm run test:e2e

@@ -2,13 +2,17 @@
 
 ## Decision
 
-EMS is pivoting from a Chrome-extension-first product to a Windows desktop app for approximate Chromium extension memory impact analysis.
+EMS is pivoting from a Chrome-extension-first product to a Windows desktop companion for approximate Chromium extension memory impact analysis.
 
-The extension MVP remains in the repo as a validated artifact, but the active source of truth for new work is this desktop roadmap plus `HANDOFF.md`.
+The extension MVP remains in the repo as a validated artifact and optional helper candidate, but the active source of truth for new work is this desktop roadmap plus `HANDOFF.md`.
 
 ## Product Goal
 
-Show which extensions are likely adding meaningful memory cost on the currently focused Chromium page.
+Show which extensions are likely adding meaningful memory cost on the currently focused Probe Chrome page.
+
+Product sentence:
+
+> EMS Desktop estimates which Chrome extensions add memory cost on a page by safely measuring A/B deltas in cloned probe profiles. It does not mutate your live profile and does not claim exact Chrome memory ownership.
 
 The primary metric is an approximate A/B measured delta:
 
@@ -28,15 +32,16 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 
 ### Inputs
 
-- Running Chrome/Chromium instances that expose `--remote-debugging-port`.
-- The selected browser's user data directory and profile directory.
+- Probe Chrome profiles launched from EMS Desktop by default.
+- Advanced manually launched Chrome/Chromium instances that expose a DevTools endpoint.
+- The selected profile's user data directory and profile directory.
 - The currently focused page URL when it can be matched through DevTools targets.
 - Installed extension manifests from the selected profile.
 
 ### A/B Flow
 
-1. Detect debug-enabled browsers.
-2. Let the user select the browser/profile to measure.
+1. Detect Probe Chrome profiles and advanced manually launched Chromium instances.
+2. Let the user select the profile to measure.
 3. Identify the active HTTP(S) page.
 4. Clone the selected user data/profile into `.tmp/desktop-runs/`.
 5. Launch a baseline clone with all target extensions enabled. Default worker mode is `headless`; if it fails, retry with off-screen headful fallback.
@@ -77,7 +82,7 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 - Add `tools/ems-desktop-engine.mjs`.
 - Commands:
 - Verify quiet measurement mode: cached result event, headless worker, and off-screen fallback worker.
-  - `list-browsers`: list debug-enabled Chromium instances with profile name, profile path, active URL/title if available.
+  - `list-browsers`: list Probe Chrome and advanced Chromium measurement profiles with profile name, profile path, active URL/title if available.
   - `calibrate-auto`: clone the selected profile and run sequential A/B measurements for the active URL.
 - Output JSON/JSONL so the UI can stream progress.
 
@@ -94,13 +99,14 @@ This is intentionally not exact ownership of renderer memory. It is a practical 
 ### Stage 3: Verification
 
 - Verify JS syntax for desktop engine.
-- Verify `list-browsers` does not crash without debug-enabled Chrome.
+- Verify `list-browsers` does not crash without a Probe Chrome profile.
+- Verify `desktop:verify-safety` keeps extension mutations inside cloned profiles.
 - Verify WPF build.
 - Preserve existing `npm run test:e2e` coverage for the old extension artifact.
 
 ### Stage 4: Usability Hardening
 
-- Add explicit "no debug-enabled browser found" instructions.
+- Add explicit "Launch Probe Chrome" guidance when no measurable profile is found.
 - Add run cancellation.
 - Persist latest selected browser id.
 - Cache results by selected profile, active URL, extension id, extension version, and browser executable.
@@ -122,6 +128,8 @@ Build Stage 1 and Stage 2 MVP in one pass, then verify on a dedicated test/probe
 
 - Portable package starts from root `EMS Desktop.exe`; CMD remains only as a compatibility launcher.
 - Desktop UI now shows a three-step onboarding flow before browser selection.
+- `Launch Probe Chrome` is the default user path; remote-debugging flag details are advanced guidance.
 - Clone-safety wording is visible near the top and above results.
 - Result rows use colored tags for impact, source, worker mode, and confidence.
 - Optional `Median x3` repeats each extension A/B measurement three times and displays sample spread.
+- `desktop:verify-safety` smoke-checks clone-only extension mutation without launching Chrome.

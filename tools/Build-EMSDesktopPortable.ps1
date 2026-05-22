@@ -50,6 +50,9 @@ New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:EnableCompressionInSingleFile=true `
     -o $publishRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish failed with exit code $LASTEXITCODE."
+}
 
 $publishedExe = Join-Path $portableRoot "EmsDesktop.exe"
 $friendlyExe = Join-Path $portableRoot "EMS Desktop.exe"
@@ -115,13 +118,13 @@ How to test:
   2. Click "Launch Probe Chrome".
   3. Install or enable the extensions you want in the probe Chrome profile.
   4. Open the target page in that probe Chrome.
-  5. Click "Refresh Browsers" in EMS Desktop.
+  5. Click "Refresh Profiles" in EMS Desktop.
   6. Optionally enable "Median x3" for slower but steadier results.
 
 Notes:
   EMS clones the selected probe profile before measuring.
   It does not mutate the live selected profile.
-  Values are approximate A/B measured deltas, not exact memory ownership.
+  Values are approximate A/B measured deltas from cloned probe profiles, not exact Chrome memory ownership.
 "@
 Set-Content -LiteralPath (Join-Path $portableRoot "README-PORTABLE.txt") -Value $readme -Encoding UTF8
 

@@ -62,7 +62,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="EMS Desktop" FontSize="36" FontWeight="Bold" />
-                <TextBlock x:Name="SubtitleText" Text="Approximate A/B measured memory impact for the focused Chromium page." Foreground="{StaticResource MutedBrush}" FontSize="15" Margin="0,6,0,0" />
+                <TextBlock x:Name="SubtitleText" Text="Desktop companion for approximate extension memory impact in Probe Chrome." Foreground="{StaticResource MutedBrush}" FontSize="15" Margin="0,6,0,0" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <StackPanel Margin="0,0,14,0" VerticalAlignment="Center">
@@ -90,7 +90,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,12,0">
                     <TextBlock x:Name="Step1TitleText" Text="1. Launch probe Chrome" Foreground="#7FD3FF" FontWeight="Bold" />
-                    <TextBlock x:Name="Step1BodyText" Text="Use the button below. This opens a separate debug-enabled profile." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <TextBlock x:Name="Step1BodyText" Text="Use the button below. This opens a separate measurement profile." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <TextBlock x:Name="Step2TitleText" Text="2. Open the target page" Foreground="#7FD3FF" FontWeight="Bold" />
@@ -110,14 +110,14 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock x:Name="BrowserLabelText" Text="Debug-enabled browser/profile" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock x:Name="BrowserLabelText" Text="Probe Chrome profile" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <ComboBox x:Name="BrowserCombo" ItemsSource="{Binding BrowserItems}" DisplayMemberPath="DisplayName" SelectionChanged="BrowserCombo_SelectionChanged" />
-                    <TextBlock x:Name="BrowserHelpText" Text="Select a probe Chrome with --remote-debugging-port. EMS shows cached results immediately, then refreshes with headless measurement and off-screen fallback." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock x:Name="BrowserHelpText" Text="Launch Probe Chrome, install or enable target extensions, open the page, then refresh. Advanced manually launched Chromium instances also appear here." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16,0,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button x:Name="LaunchProbeButton" Content="Launch Probe Chrome" Click="LaunchProbeChrome_Click" />
-                        <Button x:Name="RefreshButton" Content="Refresh Browsers" Click="RefreshBrowsers_Click" />
+                        <Button x:Name="RefreshButton" Content="Refresh Profiles" Click="RefreshBrowsers_Click" />
                         <Button x:Name="CancelButton" Content="Cancel Run" Click="CancelRun_Click" />
                     </StackPanel>
                     <CheckBox x:Name="MedianRunsCheck" Content="Median x3 for higher confidence (slower)" ToolTip="Runs three A/B samples per extension and reports the median delta." HorizontalAlignment="Right" />
@@ -198,6 +198,6 @@
             </DataGrid>
         </Border>
 
-        <TextBlock x:Name="FooterText" Grid.Row="6" Text="Values are approximate A/B deltas, not exact memory ownership. Page state, ads, video playback, cache, and network activity can move results." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
+        <TextBlock x:Name="FooterText" Grid.Row="6" Text="Values are approximate A/B deltas from cloned probe profiles, not exact Chrome memory ownership. Page state, ads, video playback, cache, and network activity can move results." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
     </Grid>
 </Window>

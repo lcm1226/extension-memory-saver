@@ -1,10 +1,10 @@
-# EMS Desktop How To Use
+# EMS Desktop Companion How To Use
 
 ## Current Status
 
-EMS Desktop does not claim exact per-extension memory ownership in Chrome.
+EMS Desktop estimates which Chrome extensions add memory cost on a page by safely measuring A/B deltas in cloned probe profiles. It does not mutate your live profile and does not claim exact Chrome memory ownership.
 
-It safely clones the selected probe Chrome profile, loads the same page, removes one extension at a time inside the clone, and reports the approximate A/B memory delta.
+The Chrome extension remains a validated artifact and optional helper candidate. The desktop app is the primary measurement UX.
 
 Example: `Removing AdBlock reduced this page session by about 40 MB`.
 
@@ -18,33 +18,33 @@ If you received the portable package:
 4. In the app, click `Launch Probe Chrome`.
 5. Install or enable the extensions you want to measure in that probe Chrome.
 6. Open the target website in the probe Chrome.
-7. In EMS Desktop, click `Refresh Browsers` and select that browser.
+7. In EMS Desktop, click `Refresh Profiles` and select that profile.
 
 ## Development Run
 
 From the repo folder:
 
 ```powershell
-cd "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe"
+cd "C:\Users\lcmru\Desktop\EMS\ems-memory-probe"
 npm run desktop:run
 ```
 
 From any folder:
 
 ```powershell
-npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
 ```
 
 Or use the helper script:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe\tools\Start-EMSDesktop.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
 ## Measurement Flow
 
-1. The app discovers debug-enabled Chromium/Chrome browsers.
-2. The selected browser's active HTTP(S) page becomes the measurement target.
+1. The app discovers Probe Chrome profiles. Advanced manually launched Chromium instances can also appear here.
+2. The selected profile's active HTTP(S) page becomes the measurement target.
 3. Recent cached results are shown immediately when available. You can enable `Median x3` to run three A/B samples per extension and show the median value.
 4. A background worker clones the profile and runs a headless measurement.
 5. If headless capture fails, EMS retries with an off-screen headful worker.
@@ -52,13 +52,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Code
 
 The selected live probe profile is not modified. Extension disabling happens only in cloned profiles. EMS Desktop therefore does not currently provide a live "disable this extension now" control for the selected browser. If control actions are added later, they should be explicit browser-wide actions or implemented through a companion Chrome extension.
 
-## Launch Probe Chrome From CLI
+## Advanced: Launch Probe Chrome From CLI
 
 ```powershell
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-This creates a separate Chrome profile under `.tmp\ems-desktop-probe-user-data` and launches it with `--remote-debugging-port=9222`.
+This creates a separate Chrome profile under `.tmp\ems-desktop-probe-user-data` and launches it with the DevTools endpoint EMS needs for measurement. Most users should prefer the app's `Launch Probe Chrome` button.
 
 ## Reading Results
 
@@ -79,6 +79,7 @@ This creates a separate Chrome profile under `.tmp\ems-desktop-probe-user-data` 
 
 ```powershell
 npm run desktop:list
+npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package
 npm run test:e2e

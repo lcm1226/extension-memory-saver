@@ -77,9 +77,10 @@ public partial class MainWindow : Window
     private string LocalizeEngineMessage(string message)
     {
         if (!IsKorean || string.IsNullOrWhiteSpace(message)) return message;
-        if (message == "Only Chromium instances launched with --remote-debugging-port can be measured.")
+        if (message == "Only Chromium instances launched with --remote-debugging-port can be measured." ||
+            message == "Only Probe Chrome or advanced Chromium instances with a DevTools endpoint can be measured.")
         {
-            return "--remote-debugging-port\uB85C \uC2E4\uD589\uB41C Chromium \uBE0C\uB77C\uC6B0\uC800\uB9CC \uCE21\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
+            return "프로브 Chrome 또는 DevTools endpoint가 켜진 고급 Chromium만 측정할 수 있습니다.";
         }
         if (message.StartsWith("Could not inspect chrome.exe command lines:", StringComparison.Ordinal))
         {
@@ -124,27 +125,27 @@ public partial class MainWindow : Window
 
     private void ApplyLanguage()
     {
-        SubtitleText.Text = Ui("Approximate A/B measured memory impact for the focused Chromium page.", "현재 Chromium 페이지의 확장 프로그램 메모리 영향을 A/B 방식으로 추정합니다.");
+        SubtitleText.Text = Ui("Desktop companion for approximate extension memory impact in Probe Chrome.", "프로브 Chrome에서 확장 프로그램의 대략적인 메모리 영향을 측정하는 데스크톱 도구입니다.");
         LanguageLabel.Text = Ui("Language", "언어");
         SafeCloneTitleText.Text = Ui("Safe clone measurement", "안전한 복제 측정");
         SafeCloneBodyText.Text = Ui("Live profile is never modified", "실제 프로필은 수정하지 않음");
         Step1TitleText.Text = Ui("1. Launch probe Chrome", "1. 프로브 Chrome 실행");
-        Step1BodyText.Text = Ui("Use the button below. This opens a separate debug-enabled profile.", "아래 버튼으로 별도의 디버그 프로필을 엽니다.");
+        Step1BodyText.Text = Ui("Use the button below. This opens a separate measurement profile.", "아래 버튼으로 별도의 측정용 프로필을 엽니다.");
         Step2TitleText.Text = Ui("2. Open the target page", "2. 측정할 페이지 열기");
         Step2BodyText.Text = Ui("Install or enable extensions in that probe profile, then open the page to measure.", "프로브 프로필에 확장을 설치하거나 켠 뒤 측정할 페이지를 엽니다.");
         Step3TitleText.Text = Ui("3. Read measured deltas", "3. 측정 결과 확인");
         Step3BodyText.Text = Ui("Cached values appear first. A headless worker refreshes results in the background.", "캐시된 값이 먼저 표시되고 백그라운드 worker가 결과를 갱신합니다.");
-        BrowserLabelText.Text = Ui("Debug-enabled browser/profile", "디버그가 켜진 브라우저/프로필");
-        BrowserHelpText.Text = Ui("Select a probe Chrome with --remote-debugging-port. EMS shows cached results immediately, then refreshes with headless measurement and off-screen fallback.", "--remote-debugging-port로 실행된 프로브 Chrome을 선택하세요. EMS는 캐시 결과를 먼저 보여준 뒤 headless 측정과 off-screen fallback으로 갱신합니다.");
+        BrowserLabelText.Text = Ui("Probe Chrome profile", "프로브 Chrome 프로필");
+        BrowserHelpText.Text = Ui("Launch Probe Chrome, install or enable target extensions, open the page, then refresh. Advanced manually launched Chromium instances also appear here.", "프로브 Chrome을 실행하고 측정할 확장을 설치하거나 켠 뒤 페이지를 열고 새로고침하세요. 고급 사용자가 직접 실행한 Chromium도 여기에 표시됩니다.");
         LaunchProbeButton.Content = Ui("Launch Probe Chrome", "프로브 Chrome 실행");
-        RefreshButton.Content = Ui("Refresh Browsers", "브라우저 새로고침");
+        RefreshButton.Content = Ui("Refresh Profiles", "프로필 새로고침");
         CancelButton.Content = Ui("Cancel Run", "측정 취소");
         MedianRunsCheck.Content = Ui("Median x3 for higher confidence (slower)", "신뢰도 향상용 Median x3 (느림)");
         MedianRunsCheck.ToolTip = Ui("Runs three A/B samples per extension and reports the median delta.", "확장 프로그램마다 A/B 샘플을 3회 실행하고 median delta를 표시합니다.");
         ActivePageLabelText.Text = Ui("Active page", "활성 페이지");
         RunStatusLabelText.Text = Ui("Run status", "측정 상태");
         SafetyBannerText.Text = Ui("Safety: EMS clones the selected profile before disabling extensions. Measurements run in the clone only; the selected live profile and installed extensions are not mutated.", "안전 원칙: EMS는 확장을 비활성화하기 전에 선택한 프로필을 복제합니다. 측정은 clone에서만 실행되며 실제 프로필과 설치된 확장은 수정하지 않습니다.");
-        FooterText.Text = Ui("Values are approximate A/B deltas, not exact memory ownership. Page state, ads, video playback, cache, and network activity can move results.", "값은 정확한 메모리 소유량이 아니라 대략적인 A/B delta입니다. 페이지 상태, 광고, 영상 재생, 캐시, 네트워크 활동에 따라 달라질 수 있습니다.");
+        FooterText.Text = Ui("Values are approximate A/B deltas from cloned probe profiles, not exact Chrome memory ownership. Page state, ads, video playback, cache, and network activity can move results.", "값은 복제된 프로브 프로필에서 얻은 대략적인 A/B delta이며 정확한 Chrome 메모리 소유량이 아닙니다. 페이지 상태, 광고, 영상 재생, 캐시, 네트워크 활동에 따라 달라질 수 있습니다.");
 
         ExtensionColumn.Header = Ui("Extension", "확장 프로그램");
         ImpactColumn.Header = Ui("Approx. impact", "예상 영향");
@@ -177,7 +178,7 @@ public partial class MainWindow : Window
     {
         _runCancellation?.Cancel();
         RunProgress.IsIndeterminate = true;
-        SetStatus("Launching debug-enabled probe Chrome...", "디버그가 켜진 프로브 Chrome을 실행하는 중...");
+        SetStatus("Launching Probe Chrome measurement profile...", "프로브 Chrome 측정 프로필을 실행하는 중...");
         try
         {
             string scriptPath = Path.Combine(_repoRoot, "tools", "Start-EMSDesktopProbeChrome.ps1");
@@ -219,7 +220,7 @@ public partial class MainWindow : Window
         _resultJsonByExtensionId.Clear();
         BrowserCombo.SelectedItem = null;
         RunProgress.IsIndeterminate = true;
-        SetStatus("Scanning debug-enabled Chromium browsers...", "디버그가 켜진 Chromium 브라우저를 찾는 중...");
+        SetStatus("Looking for Probe Chrome profiles...", "프로브 Chrome 프로필을 찾는 중...");
         ActiveTitleText.Text = Ui("No active page selected", "선택된 활성 페이지 없음");
         ActiveUrlText.Text = "-";
 
@@ -242,7 +243,7 @@ public partial class MainWindow : Window
 
             if (BrowserItems.Count == 0)
             {
-                SetStatus("No measurable browser found. Launch Chrome with --remote-debugging-port, then refresh.", "측정 가능한 브라우저를 찾지 못했습니다. --remote-debugging-port로 Chrome을 실행한 뒤 새로고침하세요.");
+                SetStatus("No Probe Chrome profile found. Click Launch Probe Chrome, open the target page, then refresh.", "프로브 Chrome 프로필을 찾지 못했습니다. 프로브 Chrome 실행을 누르고 대상 페이지를 연 뒤 새로고침하세요.");
                 return;
             }
 

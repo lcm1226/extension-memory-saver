@@ -1,9 +1,11 @@
 # Handoff
 
 
-## Desktop pivot checkpoint
+## Desktop companion pivot checkpoint
 
-The active product direction has pivoted to `EMS Desktop`, a Windows WPF app that wraps the existing measurement harness and runs clone-based A/B measured-delta calibration.
+The active product direction is `EMS Desktop`, a Windows desktop companion that estimates Chrome extension memory impact through clone-based A/B measured-delta calibration.
+
+Product sentence: EMS Desktop estimates which Chrome extensions add memory cost on a page by safely measuring A/B deltas in cloned probe profiles. It does not mutate your live profile and does not claim exact Chrome memory ownership.
 
 Source-of-truth docs:
 
@@ -13,7 +15,7 @@ Source-of-truth docs:
 
 New files/commands:
 
-- `tools/ems-desktop-engine.mjs`: lists debug-enabled Chromium browsers and runs automatic clone-based A/B calibration.
+- `tools/ems-desktop-engine.mjs`: lists Probe Chrome and advanced Chromium measurement profiles, then runs automatic clone-based A/B calibration.
 - `tools/Start-EMSDesktop.ps1`: builds and runs the WPF desktop app from any current directory.
 - `tools/Start-EMSDesktopProbeChrome.ps1`: launches a safe debug-enabled probe Chrome profile for desktop MVP testing.
 - `tools/Build-EMSDesktopPortable.ps1`: builds the portable desktop folder and ZIP.
@@ -21,11 +23,12 @@ New files/commands:
 - `docs/EMS_DESKTOP_HOW_TO_USE.en.md`: English desktop usage guide.
 - `ems-desktop/`: .NET 8 WPF desktop app.
 
-Latest desktop UX direction: show a three-step onboarding flow, keep clone-safety wording visible, include an English/Korean language selector, show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include colored tags for `cacheStatus`, `measurementMode`, confidence, and optional median x3 sample metadata. EMS Desktop does not mutate the live selected profile and does not provide tab-scoped live extension kill controls.
+Latest desktop UX direction: use `Launch Probe Chrome` as the default path, keep remote-debugging details in advanced guidance, show a three-step onboarding flow, keep clone-safety wording visible, include an English/Korean language selector, show cached results immediately, then run a background refresh with a headless worker by default and off-screen headful fallback when headless capture fails. Result rows include colored tags for `cacheStatus`, `measurementMode`, confidence, and optional median x3 sample metadata. EMS Desktop does not mutate the live selected profile and does not provide tab-scoped live extension kill controls.
 
 Figma draft: https://www.figma.com/design/NVA8Y0PeY6UEm6PRxPfCAK
 
 - `npm run desktop:list`: smoke-check measurable browser discovery.
+- `npm run desktop:verify-safety`: smoke-check clone-only measurement invariants without launching Chrome.
 - `npm run desktop:build`: build the WPF app.
 - `npm run desktop:package`: build `dist\\EMS-Desktop-Portable` with root `EMS Desktop.exe` and `dist\\EMS-Desktop-Portable.zip`.
 - `npm run desktop:run`: launch the WPF app.
@@ -33,9 +36,9 @@ Figma draft: https://www.figma.com/design/NVA8Y0PeY6UEm6PRxPfCAK
 Important invariant: calibration must clone the selected profile into `.tmp/desktop-runs/` and must not mutate the live selected profile.
 ## What this project is
 
-`EMS Memory Probe` is a research harness for measuring Chromium extension memory under Windows.
+`EMS Memory Probe` is now centered on EMS Desktop, a Windows desktop companion for approximate Chromium extension memory impact measurement.
 
-The project now also includes an extension MVP that uses benchmark-backed guidance instead of claiming live per-extension memory truth.
+The Chrome extension remains as a validated artifact and optional helper candidate. It is not the primary measurement UX.
 
 ## What has been built
 
@@ -44,7 +47,7 @@ The project now also includes an extension MVP that uses benchmark-backed guidan
 - Snapshot diff summarizer
 - Chrome launcher for probe profiles
 - Profile-based extension metadata resolution
-- Chrome extension MVP shell in `ems-extension/`
+- Chrome extension artifact in `ems-extension/`
 - Store-release manifest metadata, packaged icons, release checklist, and release ZIP builder
 
 ## Key local files
@@ -111,38 +114,13 @@ Operational lesson:
 
 ## Recommended next work
 
-1. Use `docs/EMS_MVP_SPEC.md` as the product baseline and `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap audit.
-2. Load `ems-extension/` in Chrome as an unpacked extension and verify:
-   - current site
-   - non-web tabs such as `chrome://extensions` stay inventory-only and do not expose site actions
-   - installed extension list
-   - relevance inference
-     - host permission matching
-     - homepage host matching
-     - browser-wide / tab-level permission hints
-   - enable/disable
-   - save/restore site setup
-   - apply/clear saved site setup
-   - benchmark import/reset controls
-   - profile-inventory JSON import for manifest-signal relevance enrichment
-   - status messages clearly explain which extensions changed or were skipped
-    - protected/unavailable extensions are visibly non-toggleable
-   - browser-wide action banner stays visible and matches the current tab mode
-   - popup help/trust explainer reflects the current benchmark-backed and browser-wide-action model
-    - `docs/example-benchmark-labels.json` imports cleanly
-3. Run `npm run test:e2e` for the current Playwright smoke test.
-   - this uses a test-only popup query override plus mock extensions and a test-only management fixture
-- current assertions cover inventory metrics, relevance labeling, browser-wide trust banner copy, `Lighten This Site`, `Restore Previous State`, `Save Current Setup`, `Apply Saved Setup`, `Clear Saved Setup`, benchmark import/reset, profile-inventory manifest-signal import, help/trust copy, inventory-only behavior on non-web tabs, protected/unavailable bulk-action skips, and saved-setup conflict handling against protected states
-4. Use `node .\tools\ems-measure.mjs live-estimates --port 9222 --profile-dir <TEST_PROFILE_DIR> --target-url <URL> --out .\test-results\live-memory-estimates.json` to generate near-live popup-importable memory estimates. Use `--apply-to-ems` only after the EMS service worker has been opened once.
-5. Use `node .\tools\ems-measure.mjs export-labels <before> <after> --source <scenario> --out <file>` to turn one clean A/B probe run into popup-import JSON.
-6. Use `node .\tools\ems-measure.mjs discover-scenarios <before.json> <after-dir> --after-prefix <prefix> --out <scenarios.json>` to generate a scenario spec from one baseline and a folder of after snapshots.
-7. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to write `test-results\profile-inventory.json` with manifest-only relevance signals from a test/probe profile.
-8. Use `node .\tools\ems-measure.mjs build-catalog <scenarios.json> --out <file>` to build one import catalog from multiple scenarios.
-   - if one target disappears in the `after` snapshot, the scenario can omit extension selectors entirely
-   - if the diff is ambiguous, add `extensionId`, `extensionName`, or `extensionNameContains`
-9. Keep `Ctrl+Shift+E` as the shipped default shortcut. Treat `Ctrl+D` as a user-side manual remap only because Chrome bookmark shortcuts take priority.
-10. Only return to deeper measurement work when it unblocks a concrete product decision.
-11. Public stable metadata still does not expose `optional_host_permissions` or `content_scripts.matches` through `chrome.management.ExtensionInfo`, so deeper relevance inference is currently API-capped.
+1. Keep EMS Desktop as the primary product path and use `Launch Probe Chrome` as the default measurement flow.
+2. Run `npm run desktop:verify-safety` before measurement-engine changes to confirm clone-only behavior.
+3. Run `npm run desktop:build` after WPF or engine integration changes.
+4. Run `npm run desktop:package` before release packaging changes.
+5. Preserve `npm run test:e2e` as regression coverage for the validated extension artifact.
+6. Treat `ems-extension/` as an optional helper candidate only; do not restore it as the primary measurement UI.
+7. Only design Desktop-to-extension communication after the desktop MVP proves the helper would reduce real friction.
 
 ## Latest verified checkpoint
 
@@ -172,18 +150,19 @@ Operational lesson:
 
 ## Latest desktop checkpoint
 
-- EMS Desktop is the active product path. The extension MVP remains a validated artifact, not the main measurement UX.
+- EMS Desktop is the active product path. The extension remains a validated artifact, not the main measurement UX.
 - `calibrate-auto` is hardened around cache-first display, background refresh, headless worker mode, and off-screen fallback.
+- `desktop:verify-safety` now creates a fake profile, clones it under `.tmp\desktop-runs\`, disables an extension only in the clone, and verifies the fake source profile remains unchanged.
 - Verified on 2026-05-18 against the probe Chrome profile: headless worker, cached-results event, and forced off-screen worker all completed for a one-extension YouTube run. Portable packaging is available through `npm run desktop:package`; the package now starts from root `EMS Desktop.exe` with CMD kept only as a compatibility launcher.
 
 
 ## Current next priorities
 
-1. keep profile-inventory generation/import as an explicit probe step for now, using `Export-EMSProfileInventory.ps1` to reduce manual command friction
-2. keep `live-estimates` as the practical near-live path for newly installed extensions, while preserving confidence labels and exact-ownership warnings
-3. extend scenario discovery only when richer datasets need more metadata than the current one-baseline/many-after flow
-4. finish Store Release final prep: Chrome Web Store screenshots, optional promo tiles, final dashboard wording/localization review, and one last release UI polish pass if needed
-5. expand benchmark catalog coverage only for extensions/sites that are actually worth measuring
+1. keep EMS Desktop copy and docs centered on `Launch Probe Chrome`, cloned profiles, and approximate A/B deltas
+2. keep remote-debugging flag details in advanced guidance, not primary user flow
+3. verify measurement safety with `npm run desktop:verify-safety` before engine changes
+4. preserve old extension Playwright coverage as regression protection
+5. defer optional helper design until Desktop MVP friction is clear enough to justify it
 
 ## Notion context
 
@@ -206,9 +185,10 @@ After moving it:
 2. if Git warns about ownership, run `git config --global --add safe.directory "<new-path>"`
 3. run `npm install`
 4. run `PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium`
-5. run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` for repo-local browser resolution
-6. re-load the unpacked `ems-extension/` from the new path in Chrome because unpacked-extension paths are absolute
-7. read `HANDOFF.md`, `docs/FOLDER_MOVE_HANDOFF.md`, and `docs/ROADMAP_REVIEW_2026-04-17.md` before editing
+5. run `npm run desktop:verify-safety`
+6. run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` for repo-local browser resolution
+7. re-load the unpacked `ems-extension/` from the new path only if you are testing the optional extension artifact, because unpacked-extension paths are absolute
+8. read `HANDOFF.md`, `docs/FOLDER_MOVE_HANDOFF.md`, and `docs/EMS_DESKTOP_PIVOT_ROADMAP.md` before editing
 
 ## Working rule
 
@@ -220,7 +200,7 @@ Before reporting that filesystem cleanup or path changes are complete, run verif
 
 ## What the user needs to do
 
-1. Choose whether to use GitHub or a manual folder/upload handoff.
-2. If using GitHub, create an empty remote repository and provide the URL, or push it yourself.
-3. If staying local for now, identify the first 1-3 extensions you actually want benchmarked so the next experiments can use a minimal probe profile.
-4. If preparing Chrome Web Store submission, capture screenshots from the dedicated test profile and review `docs/STORE_RELEASE_PREP.md`.
+1. Use EMS Desktop's `Launch Probe Chrome` button for normal measurement.
+2. Install or enable the extensions to measure in that Probe Chrome profile.
+3. Open the target page in Probe Chrome, then use `Refresh Profiles`.
+4. Treat the Chrome extension as an optional helper artifact unless a future helper contract is explicitly designed.

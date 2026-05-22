@@ -1,25 +1,28 @@
 # EMS Memory Probe
 
-## EMS Desktop Pivot
+## EMS Desktop Companion Pivot
 
-The active product direction is now the Windows desktop MVP documented in `docs/EMS_DESKTOP_PIVOT_ROADMAP.md`.
+The active product is now EMS Desktop, a Windows desktop companion for approximate Chrome extension memory impact analysis.
 
-The old Chrome extension remains in `ems-extension/` as a validated artifact, but the desktop app is the path for approximate per-page extension memory impact. The desktop MVP uses cloned probe profiles, cache-first display, optional median x3 repeated runs, headless-first A/B measured deltas, and off-screen fallback so it can show rough MB impact without mutating the live selected profile.
+EMS Desktop estimates which Chrome extensions add memory cost on a page by safely measuring A/B deltas in cloned probe profiles. It does not mutate your live profile and does not claim exact Chrome memory ownership.
+
+The Chrome extension remains in `ems-extension/` as a validated artifact and optional helper candidate. It is not the primary measurement UX. The desktop app owns measurement execution, results, cache-first display, optional median x3 repeated runs, headless-first A/B measured deltas, and off-screen fallback.
 
 Useful commands:
 
 ```powershell
 npm run desktop:list
+npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package
 npm run desktop:run
-npm --prefix "C:\Users\lcmru\Desktop\Codex Draft\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 
-A measurable browser must be launched with `--remote-debugging-port`. Use `tools/Start-EMSDesktopProbeChrome.ps1` or the app `Launch Probe Chrome` button for a safe empty probe profile. The desktop UI has an English/Korean language selector next to the safe-clone badge. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`. The desktop app lists those debug-enabled browser/profile instances, shows cached measurements when available, and refreshes them in the background.
+Default user flow: click `Launch Probe Chrome`, install or enable the extensions to measure in that separate profile, open the target page, then click `Refresh Profiles`. Advanced users can still connect a manually launched Chromium instance that exposes DevTools, but that is not the normal path. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`.
 
-Windows-first measurement harness and extension MVP for Chromium extension memory experiments.
+Windows-first desktop companion and measurement harness for Chromium extension memory experiments.
 
 ## Desktop portable package
 
@@ -38,9 +41,11 @@ The portable package includes a root-level `EMS Desktop.exe`, the desktop measur
 
 ## Current scope
 
-- Capture Chrome DevTools Protocol targets from a remote debugging port
-- Capture live `chrome.exe` memory from Windows
-- Export near-live per-extension memory estimates with confidence labels from the current Chrome process snapshot
+- Launch a separate Probe Chrome profile for measurement
+- Discover Probe Chrome and advanced manually launched Chromium measurement profiles
+- Clone selected profiles before A/B extension changes
+- Capture live `chrome.exe` memory from Windows during clone runs
+- Export near-live per-extension memory estimates with confidence labels from external probe snapshots
 - Resolve extension ids to profile-installed extension names, versions, and manifest relevance signals
 - Compare two snapshots and summarize session-level deltas
 
@@ -49,7 +54,7 @@ The portable package includes a root-level `EMS Desktop.exe`, the desktop measur
 - `ems-desktop/`: Windows WPF desktop app for the active EMS product path
 - `tools/ems-desktop-engine.mjs`: desktop measurement engine with cache-first, headless-first A/B calibration
 - `tools/Build-EMSDesktopPortable.ps1`: portable desktop package builder
-- `ems-extension/`: Chrome extension MVP shell
+- `ems-extension/`: validated Chrome extension artifact and optional helper candidate
 - `tools/ems-measure.mjs`: snapshot, profile inventory, and diff CLI
 - `tools/Start-EMSProbeChrome.ps1`: helper to launch Chrome with a probe profile
 - `tools/Export-EMSProfileInventory.ps1`: lightweight wrapper that writes popup-importable profile inventory JSON
@@ -89,25 +94,18 @@ Stable Chrome cannot yet support:
 
 ## Immediate next steps
 
-1. Load `ems-extension/` as an unpacked extension and verify popup behavior in Chrome.
-2. Keep the Windows probe as a supporting benchmark workflow, not as the product itself.
-3. Validate site profile actions and benchmark import/reset flow in the popup.
-4. Use `docs/example-benchmark-labels.json` if you want a safe example import file.
-5. Use `docs/ROADMAP_REVIEW_2026-04-17.md` as the current gap list before starting more feature work.
-6. Use `node .\tools\ems-measure.mjs live-estimates --port 9222 --profile-dir <TEST_PROFILE_DIR> --target-url <URL> --out .\test-results\live-memory-estimates.json` when you want near-live popup-importable memory estimates.
-7. Use `node .\tools\ems-measure.mjs export-labels ...` when you want A/B probe results in popup-import format.
-8. Use `node .\tools\ems-measure.mjs discover-scenarios .\snapshots\yt3-baseline.json .\snapshots ...` when you want to generate a catalog scenario spec from one baseline and a folder of after snapshots.
-9. Use `.\tools\Export-EMSProfileInventory.ps1 -ProfileDir <TEST_PROFILE_DIR>` to inspect manifest-only relevance signals from a test/probe profile and write `test-results\profile-inventory.json`.
-10. Use `node .\tools\ems-measure.mjs build-catalog .\docs\youtube-benchmark-scenarios.json ...` when you want one catalog from multiple scenarios.
-11. In scenario specs, omit extension selectors when the `after` snapshot removes exactly one extension target; only add `extensionId`, `extensionName`, or `extensionNameContains` when the diff is ambiguous.
-12. Use `npm run test:e2e` for the current Playwright popup smoke test.
-13. Use `npm run package:extension` to create `dist\extension-memory-saver-0.2.0.zip` for Chrome Web Store upload testing.
-14. Use `docs/STORE_RELEASE_PREP.md` for listing copy, permission/privacy rationale, screenshot requirements, and the remaining manual release checklist.
-15. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
+1. Run `npm run desktop:verify-safety` before measurement-related changes.
+2. Run EMS Desktop and use `Launch Probe Chrome` as the default measurement path.
+3. Install or enable the extensions to measure in the Probe Chrome profile, open the target page, then click `Refresh Profiles`.
+4. Use `Median x3` only when slower repeated samples are worth the confidence improvement.
+5. Keep `ems-extension/` as a regression-protected artifact and optional helper candidate, not the main measurement UI.
+6. Use `npm run test:e2e` to preserve the old extension behavior while the desktop product becomes primary.
+7. Use `npm run desktop:build` and `npm run desktop:package` before release packaging changes.
+8. If this repo moves to a new folder or machine, follow `docs/FOLDER_MOVE_HANDOFF.md` before continuing work.
 
-## Current MVP shell
+## Chrome extension artifact
 
-The extension shell currently includes:
+The extension artifact currently includes:
 
 - popup with current site title and origin
 - installed extension inventory from `chrome.management`
@@ -146,7 +144,7 @@ It does not yet include:
 
 ## Local test
 
-Use only a dedicated Chrome test profile for manual EMS verification. Do not validate EMS behavior against the default personal Chrome profile.
+Use EMS Desktop with `Launch Probe Chrome` for primary manual verification. Use only a dedicated Chrome test profile for optional extension artifact checks. Do not validate EMS behavior against the default personal Chrome profile.
 
 1. Open `chrome://extensions`
 2. Enable Developer mode
@@ -163,8 +161,9 @@ See `docs/HOW_TO_USE.ko.md` or `docs/HOW_TO_USE.en.md` for the shorter user-faci
 
 1. Install repo dependencies with `npm install`
 2. Install Playwright Chromium with `npx playwright install chromium`
-3. Run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` so it uses the repo-local Playwright browser
-4. Run `npm run package:extension` when release package output needs to be verified
+3. Run `npm run desktop:verify-safety` to smoke-check clone-only measurement invariants
+4. Run `npm run test:e2e`; the npm script sets `PLAYWRIGHT_BROWSERS_PATH=0` so it uses the repo-local Playwright browser
+5. Run `npm run package:extension` when release package output needs to be verified
 
 Current automated coverage:
 
