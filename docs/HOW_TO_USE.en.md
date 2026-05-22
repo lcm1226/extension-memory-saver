@@ -68,7 +68,7 @@ The core limitation remains: stable Chrome does not attribute content-script mem
 ## Main Buttons
 
 - `Lighten This Site`: keeps likely site-relevant, saved, all-sites, and pinned extensions enabled while disabling the rest browser-wide.
-- `Pause Site Extensions`: disables enabled extensions matched to the current site, except pinned/protected extensions. This is a live helper action, but Chrome applies it browser-wide.
+- `Pause Site Extensions`: disables enabled extensions matched to the current site, except pinned/protected extensions. This is a live helper action, but Chrome applies it browser-wide. EMS arms auto-restore for the original tab when it closes, leaves the origin, or after 30 minutes.
 - `Restore Previous State`: restores the extension states saved before the last `Lighten This Site`, `Pause Site Extensions`, or `Apply Saved Setup`.
 - `Save Current Setup`: saves the currently enabled extension set for the current site.
 - `Apply Saved Setup`: applies the saved set to the current browser extension state.

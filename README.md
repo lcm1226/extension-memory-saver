@@ -12,6 +12,7 @@ Useful commands:
 
 ```powershell
 npm run desktop:list
+npm run desktop:seed-profile5
 npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package
@@ -21,6 +22,8 @@ npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
 ```
 
 Default user flow: click `Launch Probe Chrome`, install or enable the extensions to measure in that separate profile, open the target page, then click `Refresh Profiles`. Advanced users can still connect a manually launched Chromium instance that exposes DevTools, but that is not the normal path. Korean and English usage notes live in `docs/EMS_DESKTOP_HOW_TO_USE.ko.md` and `docs/EMS_DESKTOP_HOW_TO_USE.en.md`.
+
+For the current local YouTube test profile, seed the default Probe Chrome profile from Chrome `Profile 5` with `npm run desktop:seed-profile5`, then use `Launch Probe Chrome`. This copies selected profile/extension state into `.tmp\ems-desktop-probe-user-data\Default`; it does not mutate the source Chrome profile.
 
 Windows-first desktop companion and measurement harness for Chromium extension memory experiments.
 
@@ -114,6 +117,7 @@ The extension artifact currently includes:
 - homepage host matching and permission-based relevance hints
 - global enable/disable actions
 - `Pause Site Extensions`, which disables enabled extensions matched to the current site while clearly warning that Chrome applies the state browser-wide
+- auto-restore for live pause when the original tab closes, leaves the origin, or the pause timer expires
 - save/restore current site setup
 - apply/clear saved site setup for the current origin
 - correct inventory-only handling for non-web tabs such as `chrome://extensions`
@@ -158,7 +162,7 @@ Use EMS Desktop with `Launch Probe Chrome` for primary manual verification. Use 
 
 See `docs/HOW_TO_USE.ko.md` or `docs/HOW_TO_USE.en.md` for the shorter user-facing flow.
 
-Live control note: the optional extension helper can disable extensions live through Chrome's `management` API. `Pause Site Extensions` targets extensions matched to the current site, but Chrome does not provide a stable page-only disable API, so the disabled state applies across the browser until `Restore Previous State` or a manual re-enable.
+Live control note: the optional extension helper can disable extensions live through Chrome's `management` API. `Pause Site Extensions` targets extensions matched to the current site, but Chrome does not provide a stable page-only disable API, so the disabled state applies across the browser until `Restore Previous State`, auto-restore on tab close/origin change/timer, or a manual re-enable.
 
 ## Automated verification
 

@@ -54,6 +54,10 @@ async function setExtensionStorage(page, values) {
   }), values);
 }
 
+async function getExtensionStorage(page, keys) {
+  return page.evaluate((storageKeys) => chrome.storage.local.get(storageKeys), keys);
+}
+
 test.describe("EMS popup", () => {
   test("covers inventory, save/apply/restore/clear flow, import/reset, and trust copy", async () => {
     test.setTimeout(90_000);
@@ -103,6 +107,8 @@ test.describe("EMS popup", () => {
 
       const youtubeRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockTube Helper" }) });
       const docsRow = page.locator(".extension-row", { has: page.locator(".extension-name", { hasText: "MockDocs Helper" }) });
+      const youtubeExtensionId = await youtubeRow.evaluate((node) => node.dataset.extensionId);
+      const docsExtensionId = await docsRow.evaluate((node) => node.dataset.extensionId);
 
       await expect(youtubeRow.locator(".relevance-pill")).toContainText("matches this site");
       await expect(youtubeRow.locator(".impact-pill")).toContainText("not measured");
@@ -150,14 +156,18 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-enabled")).toHaveText("1");
       await expect(page.locator("#status")).toContainText("disabled site-matched extensions across this browser");
       await expect(page.locator("#status")).toContainText("Disabled 1: MockTube Helper");
+      await expect(page.locator("#status")).toContainText("Auto-restore is armed");
       await expect(youtubeRow).toHaveAttribute("data-extension-state", "disabled");
+      const pauseStorage = await getExtensionStorage(page, ["livePauseSession"]);
+      expect(pauseStorage.livePauseSession.origin).toBe("https://www.youtube.com");
+      expect(pauseStorage.livePauseSession.snapshot.enabledExtensionIds).toContain(youtubeExtensionId);
 
       await page.getByRole("button", { name: "Restore Previous State" }).click();
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#status")).toContainText("Re-enabled 1: MockTube Helper");
+      const restoredStorage = await getExtensionStorage(page, ["livePauseSession"]);
+      expect(restoredStorage.livePauseSession).toBeUndefined();
 
-      const youtubeExtensionId = await youtubeRow.evaluate((node) => node.dataset.extensionId);
-      const docsExtensionId = await docsRow.evaluate((node) => node.dataset.extensionId);
       const importPayload = {
         extensions: {
           [youtubeExtensionId]: {

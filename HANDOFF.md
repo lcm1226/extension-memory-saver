@@ -28,6 +28,7 @@ Latest desktop UX direction: use `Launch Probe Chrome` as the default path, keep
 Figma draft: https://www.figma.com/design/NVA8Y0PeY6UEm6PRxPfCAK
 
 - `npm run desktop:list`: smoke-check measurable browser discovery.
+- `npm run desktop:seed-profile5`: seed `.tmp\ems-desktop-probe-user-data\Default` from the local Chrome `Profile 5` / `Test` profile before launching Probe Chrome.
 - `npm run desktop:verify-safety`: smoke-check clone-only measurement invariants without launching Chrome.
 - `npm run desktop:build`: build the WPF app.
 - `npm run desktop:package`: build `dist\\EMS-Desktop-Portable` with root `EMS Desktop.exe` and `dist\\EMS-Desktop-Portable.zip`.
@@ -127,7 +128,7 @@ Operational lesson:
 - latest local verification includes Playwright coverage for:
   - inventory metrics and relevance labeling
   - browser-wide trust banner copy
-  - `Pause Site Extensions` live helper action, targeted by current-site relevance but applied browser-wide by Chrome
+  - `Pause Site Extensions` live helper action, targeted by current-site relevance but applied browser-wide by Chrome, with auto-restore on tab close/origin change/timer
   - `Lighten This Site`
   - `Restore Previous State`
   - `Save Current Setup`

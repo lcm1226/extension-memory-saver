@@ -41,6 +41,14 @@ Or use the helper script:
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\ems-memory-probe\tools\Start-EMSDesktop.ps1"
 ```
 
+For the current local `Test` Chrome profile, seed the Probe Chrome profile first:
+
+```powershell
+npm run desktop:seed-profile5
+```
+
+This copies selected extension/profile state from Chrome `Profile 5` into `.tmp\ems-desktop-probe-user-data\Default`. The source profile is not modified.
+
 ## Measurement Flow
 
 1. The app discovers Probe Chrome profiles. Advanced manually launched Chromium instances can also appear here.
@@ -50,7 +58,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\
 5. If headless capture fails, EMS retries with an off-screen headful worker.
 6. The results table updates when the new measurement completes.
 
-The selected live probe profile is not modified. Extension disabling for measurement happens only in cloned profiles. Live control belongs to the optional Chrome extension helper: it can disable extensions with Chrome's `management` API, including a `Pause Site Extensions` action that targets current-site matches. Chrome does not provide a stable page-only disable API, so helper actions are explicit browser-wide state changes.
+The selected live probe profile is not modified. Extension disabling for measurement happens only in cloned profiles. Live control belongs to the optional Chrome extension helper: it can disable extensions with Chrome's `management` API, including a `Pause Site Extensions` action that targets current-site matches and arms auto-restore on tab close, origin change, or timer expiry. Chrome does not provide a stable page-only disable API, so helper actions are explicit browser-wide state changes with guardrails.
 
 ## Advanced: Launch Probe Chrome From CLI
 
@@ -79,6 +87,7 @@ This creates a separate Chrome profile under `.tmp\ems-desktop-probe-user-data` 
 
 ```powershell
 npm run desktop:list
+npm run desktop:seed-profile5
 npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package

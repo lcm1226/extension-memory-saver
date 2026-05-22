@@ -26,7 +26,7 @@ function repoRoot() {
 }
 
 function printHelp() {
-  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--repeat-runs 1|3] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n  node tools/ems-desktop-engine.mjs verify-safety [--json]\n`);
+  console.log(`EMS Desktop Engine\n\nUsage:\n  node tools/ems-desktop-engine.mjs list-browsers [--json]\n  node tools/ems-desktop-engine.mjs seed-probe-profile --source-profile-directory "Profile 5" [--json]\n  node tools/ems-desktop-engine.mjs calibrate-auto --browser-id <id> [--jsonl] [--max-extensions 6] [--repeat-runs 1|3] [--settle-ms 8000] [--measurement-mode auto|headless|offscreen|visible]\n  node tools/ems-desktop-engine.mjs verify-safety [--json]\n`);
 }
 
 function parseArgs(argv) {
@@ -44,6 +44,10 @@ function parseArgs(argv) {
     else if (token === "--out") options.out = rest[++i];
     else if (token === "--measurement-mode") options.measurementMode = rest[++i];
     else if (token === "--cache-ttl-ms") options.cacheTtlMs = Number(rest[++i]);
+    else if (token === "--source-user-data-dir") options.sourceUserDataDir = rest[++i];
+    else if (token === "--source-profile-directory") options.sourceProfileDirectory = rest[++i];
+    else if (token === "--target-user-data-dir") options.targetUserDataDir = rest[++i];
+    else if (token === "--target-profile-directory") options.targetProfileDirectory = rest[++i];
     else if (token === "--no-cache") options.noCache = true;
   }
   return { command, options };
@@ -419,14 +423,14 @@ async function copyPathIfExists(from, to) {
   await fs.cp(from, to, { recursive: true, force: true, errorOnExist: false });
 }
 
-async function cloneUserDataForProbe(sourceUserDataDir, sourceProfileDirectory, targetUserDataDir) {
+async function cloneUserDataForProbe(sourceUserDataDir, sourceProfileDirectory, targetUserDataDir, targetProfileDirectory = sourceProfileDirectory) {
   await fs.rm(targetUserDataDir, { recursive: true, force: true });
   await fs.mkdir(targetUserDataDir, { recursive: true });
   await copyPathIfExists(path.join(sourceUserDataDir, "Local State"), path.join(targetUserDataDir, "Local State"));
   await copyPathIfExists(path.join(sourceUserDataDir, "First Run"), path.join(targetUserDataDir, "First Run"));
 
   const sourceProfileDir = path.join(sourceUserDataDir, sourceProfileDirectory);
-  const targetProfileDir = path.join(targetUserDataDir, sourceProfileDirectory);
+  const targetProfileDir = path.join(targetUserDataDir, targetProfileDirectory);
   await fs.mkdir(targetProfileDir, { recursive: true });
   const profileItems = [
     "Extensions",
@@ -442,7 +446,25 @@ async function cloneUserDataForProbe(sourceUserDataDir, sourceProfileDirectory, 
   for (const item of profileItems) {
     await copyPathIfExists(path.join(sourceProfileDir, item), path.join(targetProfileDir, item));
   }
+  await rewriteSeededLocalState(targetUserDataDir, sourceProfileDirectory, targetProfileDirectory);
   return targetProfileDir;
+}
+
+async function rewriteSeededLocalState(targetUserDataDir, sourceProfileDirectory, targetProfileDirectory) {
+  if (sourceProfileDirectory === targetProfileDirectory) return;
+
+  const localStatePath = path.join(targetUserDataDir, "Local State");
+  const localState = await tryReadJson(localStatePath);
+  if (!localState?.profile?.info_cache?.[sourceProfileDirectory]) return;
+
+  localState.profile.info_cache[targetProfileDirectory] = {
+    ...localState.profile.info_cache[sourceProfileDirectory],
+    name: `EMS Probe (${localState.profile.info_cache[sourceProfileDirectory].name ?? sourceProfileDirectory})`
+  };
+  if (sourceProfileDirectory !== targetProfileDirectory) {
+    delete localState.profile.info_cache[sourceProfileDirectory];
+  }
+  await fs.writeFile(localStatePath, `${JSON.stringify(localState)}\n`);
 }
 
 async function disableExtensionInClone(profileDir, extensionId) {
@@ -912,6 +934,77 @@ async function verifySafety() {
   };
 }
 
+async function seedProbeProfile(options) {
+  const root = repoRoot();
+  const tmpRoot = path.join(root, ".tmp");
+  const defaultSourceUserDataDir = process.env.LOCALAPPDATA
+    ? path.join(process.env.LOCALAPPDATA, "Google", "Chrome", "User Data")
+    : "";
+  const sourceUserDataDir = path.resolve(options.sourceUserDataDir ?? defaultSourceUserDataDir);
+  const sourceProfileDirectory = options.sourceProfileDirectory;
+  const targetUserDataDir = assertUnderPath(
+    path.resolve(options.targetUserDataDir ?? path.join(tmpRoot, "ems-desktop-probe-user-data")),
+    tmpRoot
+  );
+  const targetProfileDirectory = options.targetProfileDirectory ?? "Default";
+
+  if (!sourceProfileDirectory) {
+    throw new Error("Missing --source-profile-directory, for example: --source-profile-directory \"Profile 5\"");
+  }
+  if (!sourceUserDataDir) {
+    throw new Error("Could not resolve a Chrome User Data directory. Pass --source-user-data-dir explicitly.");
+  }
+  if (!(await pathExists(sourceUserDataDir))) {
+    throw new Error(`Source Chrome User Data directory not found: ${sourceUserDataDir}`);
+  }
+
+  const sourceProfileDir = path.join(sourceUserDataDir, sourceProfileDirectory);
+  if (!(await pathExists(sourceProfileDir))) {
+    throw new Error(`Source Chrome profile directory not found: ${sourceProfileDir}`);
+  }
+  if (path.resolve(sourceUserDataDir) === path.resolve(targetUserDataDir)) {
+    throw new Error("Refusing to seed a probe profile into the same Chrome User Data directory.");
+  }
+
+  const targetProfileDir = await cloneUserDataForProbe(
+    sourceUserDataDir,
+    sourceProfileDirectory,
+    targetUserDataDir,
+    targetProfileDirectory
+  );
+  const installedExtensions = await collectInstalledExtensions(targetProfileDir);
+  const youtubeRelated = installedExtensions.filter((extension) => {
+    const haystack = [
+      extension.name,
+      extension.description,
+      ...(extension.manifestSignals?.hostPermissions ?? []),
+      ...(extension.manifestSignals?.optionalHostPermissions ?? []),
+      ...(extension.manifestSignals?.contentScriptMatches ?? [])
+    ].join(" ").toLowerCase();
+    return haystack.includes("youtube") || haystack.includes("youtu.be");
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: "seed-probe-profile",
+    ok: true,
+    sourceUserDataDir,
+    sourceProfileDirectory,
+    sourceProfileDir,
+    targetUserDataDir,
+    targetProfileDirectory,
+    targetProfileDir,
+    extensionCount: installedExtensions.length,
+    youtubeRelatedCount: youtubeRelated.length,
+    youtubeRelatedExtensions: youtubeRelated.map((extension) => ({
+      extensionId: extension.extensionId,
+      name: extension.name,
+      version: extension.version
+    })),
+    note: "Launch Probe Chrome with the default profile directory to measure this seeded probe profile."
+  };
+}
+
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2));
   if (!command || command === "help" || command === "--help") {
@@ -920,6 +1013,11 @@ async function main() {
   }
   if (command === "list-browsers") {
     const payload = await listBrowsers();
+    console.log(JSON.stringify(payload, null, options.json ? 2 : 0));
+    return;
+  }
+  if (command === "seed-probe-profile") {
+    const payload = await seedProbeProfile(options);
     console.log(JSON.stringify(payload, null, options.json ? 2 : 0));
     return;
   }

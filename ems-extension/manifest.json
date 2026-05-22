@@ -6,6 +6,7 @@
   "description": "Control site-related Chrome extensions and import benchmark-backed memory estimates.",
   "homepage_url": "https://github.com/lcm1226/extension-memory-saver",
   "permissions": [
+    "alarms",
     "management",
     "storage",
     "tabs"

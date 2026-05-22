@@ -1,11 +1,14 @@
 const STORAGE_KEYS = {
   siteProfiles: "siteProfiles",
   restoreSnapshot: "restoreSnapshot",
+  livePauseSession: "livePauseSession",
   pinnedExtensionIds: "pinnedExtensionIds",
   benchmarkLabels: "benchmarkLabels",
   manifestSignals: "manifestSignals",
   memoryEstimates: "memoryEstimates"
 };
+
+const LIVE_PAUSE_MAX_MS = 30 * 60 * 1000;
 
 const SITE_RELEVANCE_HEURISTICS = [
   {
@@ -57,6 +60,7 @@ const state = {
   storage: {
     siteProfiles: {},
     restoreSnapshot: null,
+    livePauseSession: null,
     pinnedExtensionIds: [],
     benchmarkLabels: {},
     manifestSignals: {},
@@ -187,14 +191,16 @@ function bindEvents() {
   }));
 
   ui.pauseSiteExtensionsButton.addEventListener("click", () => runWithStatus("Pausing site extensions...", async () => {
-    await saveRestoreSnapshot();
+    const snapshot = await saveRestoreSnapshot();
     const change = await pauseCurrentSiteExtensions();
+    change.livePause = await beginLivePauseSession(snapshot, change);
     await refresh();
     setStatus(buildPauseSiteStatus(change));
   }));
 
   ui.restoreButton.addEventListener("click", () => runWithStatus("Restoring previous state...", async () => {
     const change = await restorePreviousState();
+    await clearLivePauseSession();
     await refresh();
     setStatus(buildRestoreStatus(change));
   }));
@@ -301,6 +307,7 @@ async function refresh() {
   state.storage = {
     siteProfiles: storage[STORAGE_KEYS.siteProfiles] ?? {},
     restoreSnapshot: storage[STORAGE_KEYS.restoreSnapshot] ?? null,
+    livePauseSession: storage[STORAGE_KEYS.livePauseSession] ?? null,
     pinnedExtensionIds: storage[STORAGE_KEYS.pinnedExtensionIds] ?? [],
     benchmarkLabels: storage[STORAGE_KEYS.benchmarkLabels] ?? {},
     manifestSignals: storage[STORAGE_KEYS.manifestSignals] ?? {},
@@ -809,13 +816,16 @@ async function clearSavedSetupForSite() {
 }
 
 async function saveRestoreSnapshot() {
-  const enabledExtensionIds = state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id);
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.restoreSnapshot]: {
-      createdAt: new Date().toISOString(),
-      enabledExtensionIds
-    }
-  });
+  const snapshot = {
+    createdAt: new Date().toISOString(),
+    enabledExtensionIds: state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id),
+    extensionStates: state.extensions.map((extension) => ({
+      id: extension.id,
+      enabled: extension.enabled
+    }))
+  };
+  await chrome.storage.local.set({ [STORAGE_KEYS.restoreSnapshot]: snapshot });
+  return snapshot;
 }
 
 async function restorePreviousState() {
@@ -884,6 +894,43 @@ async function pauseCurrentSiteExtensions() {
 
 function isSitePauseCandidate(extension) {
   return extension.relevance.score >= 300 || extension.relevance.label === "all sites access";
+}
+
+async function beginLivePauseSession(snapshot, change) {
+  if (!change.disabledNames.length || !snapshot || !state.origin) {
+    return { registered: false };
+  }
+
+  const session = {
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + LIVE_PAUSE_MAX_MS).toISOString(),
+    tabId: Number.isInteger(state.tab?.id) ? state.tab.id : null,
+    origin: state.origin,
+    url: state.tab?.url ?? "",
+    title: state.tab?.title ?? "",
+    snapshot
+  };
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "ems.begin-live-pause",
+      session
+    });
+    if (response?.ok === false) {
+      return { registered: false, error: response.error || "Background helper rejected the live pause session." };
+    }
+    return { registered: true, expiresAt: session.expiresAt };
+  } catch (error) {
+    return { registered: false, error: error.message || String(error) };
+  }
+}
+
+async function clearLivePauseSession() {
+  try {
+    await chrome.runtime.sendMessage({ type: "ems.clear-live-pause" });
+  } catch {
+    await chrome.storage.local.remove(STORAGE_KEYS.livePauseSession);
+  }
 }
 
 async function applyEnabledSet(keepEnabledIds) {
@@ -1590,6 +1637,13 @@ function buildPauseSiteStatus(change) {
   const pinnedSummary = buildPinnedSummary(change);
   if (pinnedSummary) {
     parts.push(pinnedSummary);
+  }
+  if (change.livePause?.registered) {
+    parts.push("Auto-restore is armed for this tab when it closes, leaves this origin, or after 30 minutes.");
+  } else if (change.livePause?.error) {
+    parts.push(`Auto-restore could not be armed: ${change.livePause.error} Use Restore Previous State manually.`);
+  } else {
+    parts.push("Use Restore Previous State to re-enable the previous setup.");
   }
 
   return `Pause Site Extensions disabled site-matched extensions across this browser. ${parts.join(" ")}`;
