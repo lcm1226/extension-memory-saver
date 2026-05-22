@@ -16,13 +16,14 @@
 
       <section class="actions">
         <button id="lighten-site" class="primary">Lighten This Site</button>
+        <button id="pause-site-extensions" class="danger">Pause Site Extensions</button>
         <button id="restore-state">Restore Previous State</button>
         <button id="save-setup">Save Current Setup</button>
       </section>
 
       <section class="trust-banner" aria-live="polite">
         <strong>Browser-wide actions:</strong>
-        <p id="action-scope-note">Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save and Clear only change this site's saved profile.</p>
+        <p id="action-scope-note">Enable, Disable, Pause, Lighten, Restore, and Apply change extension state across all tabs and windows. Save and Clear only change this site's saved profile.</p>
       </section>
 
       <section class="summary">
@@ -97,13 +98,14 @@
         <ul class="help-list">
           <li><strong>Likely relevant</strong> comes from saved setup, host access, homepage match, imported manifest signals, and lightweight permission hints.</li>
           <li><strong>Memory Impact</strong> combines imported live process estimates and repeatable benchmark scenarios. Treat it as practical guidance, not exact renderer ownership.</li>
+          <li><strong>Pause Site Extensions</strong> disables enabled extensions matched to the current site. Chrome applies this browser-wide, so use Restore Previous State when finished.</li>
           <li><strong>Enable / Disable</strong> changes browser-wide extension state. Some extensions can be protected by Chrome.</li>
         </ul>
       </details>
 
       <footer class="footer-note">
         <p>
-          Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Memory impact values are imported live estimates or measured scenario deltas, not exact renderer ownership.
+          Enable, Disable, Pause, Lighten, Restore, and Apply change extension state across all tabs and windows. Save, Clear, Import, and Reset do not change live browser-wide extension state. Memory impact values are imported live estimates or measured scenario deltas, not exact renderer ownership.
         </p>
       </footer>
     </main>

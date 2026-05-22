@@ -149,6 +149,7 @@ const ui = {
   actionScopeNote: document.getElementById("action-scope-note"),
   template: document.getElementById("extension-row-template"),
   lightenButton: document.getElementById("lighten-site"),
+  pauseSiteExtensionsButton: document.getElementById("pause-site-extensions"),
   restoreButton: document.getElementById("restore-state"),
   saveButton: document.getElementById("save-setup"),
   siteProfileSummary: document.getElementById("site-profile-summary"),
@@ -183,6 +184,13 @@ function bindEvents() {
     const change = await lightenCurrentSite();
     await refresh();
     setStatus(buildLightenStatus(change));
+  }));
+
+  ui.pauseSiteExtensionsButton.addEventListener("click", () => runWithStatus("Pausing site extensions...", async () => {
+    await saveRestoreSnapshot();
+    const change = await pauseCurrentSiteExtensions();
+    await refresh();
+    setStatus(buildPauseSiteStatus(change));
   }));
 
   ui.restoreButton.addEventListener("click", () => runWithStatus("Restoring previous state...", async () => {
@@ -619,7 +627,7 @@ function renderActionScopeNote() {
     return;
   }
 
-  ui.actionScopeNote.textContent = "Enable, Disable, Lighten, Restore, and Apply change extension state across all tabs and windows. Save and Clear only change this site's saved profile.";
+  ui.actionScopeNote.textContent = "Enable, Disable, Pause, Lighten, Restore, and Apply change extension state across all tabs and windows. Pause targets the current site but is not tab-only. Save and Clear only change this site's saved profile.";
 }
 
 function renderSiteProfileCard() {
@@ -842,6 +850,40 @@ async function lightenCurrentSite() {
   }
 
   return applyEnabledSet(keepEnabledIds);
+}
+
+async function pauseCurrentSiteExtensions() {
+  ensureOrigin();
+
+  const keepEnabledIds = new Set(state.extensions.filter((extension) => extension.enabled).map((extension) => extension.id));
+  const changeMeta = {
+    candidateCount: 0,
+    skippedPinnedNames: []
+  };
+
+  for (const extension of state.extensions) {
+    if (!extension.enabled || !isSitePauseCandidate(extension)) {
+      continue;
+    }
+
+    changeMeta.candidateCount += 1;
+    if (extension.pinned) {
+      changeMeta.skippedPinnedNames.push(extension.name);
+      continue;
+    }
+
+    keepEnabledIds.delete(extension.id);
+  }
+
+  const change = await applyEnabledSet(keepEnabledIds);
+  return {
+    ...change,
+    ...changeMeta
+  };
+}
+
+function isSitePauseCandidate(extension) {
+  return extension.relevance.score >= 300 || extension.relevance.label === "all sites access";
 }
 
 async function applyEnabledSet(keepEnabledIds) {
@@ -1525,6 +1567,34 @@ function buildLightenStatus(change) {
   return `Lighten This Site updated browser-wide extension state. ${parts.join(" ")}`;
 }
 
+function buildPauseSiteStatus(change) {
+  if (!change.disabledNames.length) {
+    const skippedSummary = buildSkippedSummary(change);
+    const pinnedSummary = buildPinnedSummary(change);
+    const detailParts = [skippedSummary, pinnedSummary].filter(Boolean);
+
+    if (change.candidateCount === 0) {
+      return `Pause Site Extensions found no enabled extensions matched to ${state.origin || "this site"}. No browser-wide changes were made.`;
+    }
+    if (detailParts.length) {
+      return `Pause Site Extensions could not disable every matched extension across this browser. ${detailParts.join(" ")}`;
+    }
+    return "Pause Site Extensions made no browser-wide changes. Matched extensions were already disabled.";
+  }
+
+  const parts = [`Disabled ${change.disabledNames.length}: ${joinNames(change.disabledNames)}.`];
+  const skippedSummary = buildSkippedSummary(change);
+  if (skippedSummary) {
+    parts.push(skippedSummary);
+  }
+  const pinnedSummary = buildPinnedSummary(change);
+  if (pinnedSummary) {
+    parts.push(pinnedSummary);
+  }
+
+  return `Pause Site Extensions disabled site-matched extensions across this browser. ${parts.join(" ")}`;
+}
+
 function buildRestoreStatus(change) {
   if (!change.disabledNames.length && !change.enabledNames.length) {
     if (change.skippedDisableNames.length || change.skippedEnableNames.length) {
@@ -1596,6 +1666,14 @@ function buildSkippedSummary(change) {
   return parts.join(" ");
 }
 
+function buildPinnedSummary(change) {
+  if (!change.skippedPinnedNames?.length) {
+    return "";
+  }
+
+  return `Left pinned ${change.skippedPinnedNames.length}: ${joinNames(change.skippedPinnedNames)}.`;
+}
+
 function joinNames(names) {
   if (!names.length) {
     return "none";
@@ -1623,6 +1701,7 @@ function disablePrimaryActions(disabled) {
   const hasMemoryEstimates = Boolean(Object.keys(state.storage.memoryEstimates).length);
 
   ui.lightenButton.disabled = disabled || !hasOrigin;
+  ui.pauseSiteExtensionsButton.disabled = disabled || !hasOrigin;
   ui.restoreButton.disabled = disabled || !state.storage.restoreSnapshot;
   ui.saveButton.disabled = disabled || !hasOrigin;
   ui.applySavedSetupButton.disabled = disabled || !hasOrigin || !hasSavedSetup;

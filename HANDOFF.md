@@ -119,7 +119,7 @@ Operational lesson:
 3. Run `npm run desktop:build` after WPF or engine integration changes.
 4. Run `npm run desktop:package` before release packaging changes.
 5. Preserve `npm run test:e2e` as regression coverage for the validated extension artifact.
-6. Treat `ems-extension/` as an optional helper candidate only; do not restore it as the primary measurement UI.
+6. Treat `ems-extension/` as an optional helper only; do not restore it as the primary measurement UI.
 7. Only design Desktop-to-extension communication after the desktop MVP proves the helper would reduce real friction.
 
 ## Latest verified checkpoint
@@ -127,6 +127,7 @@ Operational lesson:
 - latest local verification includes Playwright coverage for:
   - inventory metrics and relevance labeling
   - browser-wide trust banner copy
+  - `Pause Site Extensions` live helper action, targeted by current-site relevance but applied browser-wide by Chrome
   - `Lighten This Site`
   - `Restore Previous State`
   - `Save Current Setup`

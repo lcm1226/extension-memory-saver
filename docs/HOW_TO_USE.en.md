@@ -67,8 +67,9 @@ The core limitation remains: stable Chrome does not attribute content-script mem
 
 ## Main Buttons
 
-- `Lighten This Site`: disables likely site-relevant extensions browser-wide.
-- `Restore Previous State`: restores the extension states saved before the last `Lighten This Site`.
+- `Lighten This Site`: keeps likely site-relevant, saved, all-sites, and pinned extensions enabled while disabling the rest browser-wide.
+- `Pause Site Extensions`: disables enabled extensions matched to the current site, except pinned/protected extensions. This is a live helper action, but Chrome applies it browser-wide.
+- `Restore Previous State`: restores the extension states saved before the last `Lighten This Site`, `Pause Site Extensions`, or `Apply Saved Setup`.
 - `Save Current Setup`: saves the currently enabled extension set for the current site.
 - `Apply Saved Setup`: applies the saved set to the current browser extension state.
 - `Clear Saved Setup`: deletes the saved setup for the current site.
@@ -77,4 +78,4 @@ The core limitation remains: stable Chrome does not attribute content-script mem
 
 ## Warning
 
-Enable, Disable, Lighten, Restore, and Apply are not tab-only actions. Chrome extension state changes apply browser-wide.
+Enable, Disable, Pause, Lighten, Restore, and Apply are not tab-only actions. Chrome extension state changes apply browser-wide.

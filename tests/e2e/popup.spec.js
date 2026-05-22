@@ -146,6 +146,16 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#metric-enabled")).toHaveText("2");
       await expect(page.locator("#status")).toContainText("Re-enabled 1: MockDocs Helper");
 
+      await page.getByRole("button", { name: "Pause Site Extensions" }).click();
+      await expect(page.locator("#metric-enabled")).toHaveText("1");
+      await expect(page.locator("#status")).toContainText("disabled site-matched extensions across this browser");
+      await expect(page.locator("#status")).toContainText("Disabled 1: MockTube Helper");
+      await expect(youtubeRow).toHaveAttribute("data-extension-state", "disabled");
+
+      await page.getByRole("button", { name: "Restore Previous State" }).click();
+      await expect(page.locator("#metric-enabled")).toHaveText("2");
+      await expect(page.locator("#status")).toContainText("Re-enabled 1: MockTube Helper");
+
       const youtubeExtensionId = await youtubeRow.evaluate((node) => node.dataset.extensionId);
       const docsExtensionId = await docsRow.evaluate((node) => node.dataset.extensionId);
       const importPayload = {
@@ -282,6 +292,7 @@ test.describe("EMS popup", () => {
       await expect(page.locator("#action-scope-note")).toContainText("inventory-only");
       await expect(page.locator("#site-profile-summary")).toContainText("does not expose a standard web origin");
       await expect(page.getByRole("button", { name: "Lighten This Site" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Pause Site Extensions" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Save Current Setup" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Apply Saved Setup" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Clear Saved Setup" })).toBeDisabled();

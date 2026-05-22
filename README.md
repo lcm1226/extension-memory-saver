@@ -113,6 +113,7 @@ The extension artifact currently includes:
 - hostname + name/description heuristic relevance boosts for common sites
 - homepage host matching and permission-based relevance hints
 - global enable/disable actions
+- `Pause Site Extensions`, which disables enabled extensions matched to the current site while clearly warning that Chrome applies the state browser-wide
 - save/restore current site setup
 - apply/clear saved site setup for the current origin
 - correct inventory-only handling for non-web tabs such as `chrome://extensions`
@@ -156,6 +157,8 @@ Use EMS Desktop with `Launch Probe Chrome` for primary manual verification. Use 
 8. If you want a custom shortcut, open `chrome://extensions/shortcuts`
 
 See `docs/HOW_TO_USE.ko.md` or `docs/HOW_TO_USE.en.md` for the shorter user-facing flow.
+
+Live control note: the optional extension helper can disable extensions live through Chrome's `management` API. `Pause Site Extensions` targets extensions matched to the current site, but Chrome does not provide a stable page-only disable API, so the disabled state applies across the browser until `Restore Previous State` or a manual re-enable.
 
 ## Automated verification
 

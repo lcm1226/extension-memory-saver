@@ -50,7 +50,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\
 5. If headless capture fails, EMS retries with an off-screen headful worker.
 6. The results table updates when the new measurement completes.
 
-The selected live probe profile is not modified. Extension disabling happens only in cloned profiles. EMS Desktop therefore does not currently provide a live "disable this extension now" control for the selected browser. If control actions are added later, they should be explicit browser-wide actions or implemented through a companion Chrome extension.
+The selected live probe profile is not modified. Extension disabling for measurement happens only in cloned profiles. Live control belongs to the optional Chrome extension helper: it can disable extensions with Chrome's `management` API, including a `Pause Site Extensions` action that targets current-site matches. Chrome does not provide a stable page-only disable API, so helper actions are explicit browser-wide state changes.
 
 ## Advanced: Launch Probe Chrome From CLI
 
