@@ -17,7 +17,7 @@ npm run desktop:verify-safety
 npm run desktop:build
 npm run desktop:package
 npm run desktop:run
-npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver" run desktop:run
 .\tools\Start-EMSDesktopProbeChrome.ps1 -Url "https://www.youtube.com/"
 ```
 

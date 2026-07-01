@@ -25,20 +25,20 @@ If you received the portable package:
 From the repo folder:
 
 ```powershell
-cd "C:\Users\lcmru\Desktop\EMS\ems-memory-probe"
+cd "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver"
 npm run desktop:run
 ```
 
 From any folder:
 
 ```powershell
-npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver" run desktop:run
 ```
 
 Or use the helper script:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\ems-memory-probe\tools\Start-EMSDesktop.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver\tools\Start-EMSDesktop.ps1"
 ```
 
 For the current local `Test` Chrome profile, seed the Probe Chrome profile first:

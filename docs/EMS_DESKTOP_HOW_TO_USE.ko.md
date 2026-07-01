@@ -25,20 +25,20 @@ Chrome extension은 검증된 artifact이자 선택적 helper 후보로 유지�
 repo 폴더에서:
 
 ```powershell
-cd "C:\Users\lcmru\Desktop\EMS\ems-memory-probe"
+cd "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver"
 npm run desktop:run
 ```
 
 어느 위치에서든 실행:
 
 ```powershell
-npm --prefix "C:\Users\lcmru\Desktop\EMS\ems-memory-probe" run desktop:run
+npm --prefix "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver" run desktop:run
 ```
 
 또는 helper 스크립트:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\EMS\ems-memory-probe\tools\Start-EMSDesktop.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lcmru\Desktop\Codex HQ\Extension-Memory-Saver\tools\Start-EMSDesktop.ps1"
 ```
 
 ## 측정 흐름
